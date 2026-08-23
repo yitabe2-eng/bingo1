@@ -20,7 +20,7 @@ socketio = SocketIO(app, cors_allowed_origins="*", async_mode="gevent", ping_tim
 ADMIN_ID = os.getenv("ADMIN_ID") 
 BOT_TOKEN = os.getenv("BOT_TOKEN") 
 MONGO_URL = os.getenv("MONGO_URL")
-WEB_APP_URL = os.getenv("WEB_APP_URL", "https://habesha-dice-bot.onrender.com") 
+WEB_APP_URL = os.getenv("WEB_APP_URL", "https://bingo1-pjyb.onrender.com") 
 
 client = MongoClient(MONGO_URL, serverSelectionTimeoutMS=2000)
 db = client['bingo_db']
