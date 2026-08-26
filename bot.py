@@ -265,7 +265,6 @@ def webhook():
                     success_count = 0
                     fail_count = 0
                     
-                    # አዝራሮቹ (Inline Buttons) እንዲኖሩ የሚደረግ ማቀናበሪያ
                     broadcast_markup = {
                         "inline_keyboard": [
                             [{"text": "👉 Beshbingo (10ብር)", "url": "https://t.me/beshbingo1bot"}],
@@ -349,7 +348,6 @@ def webhook():
 
     return "OK", 200
 
-# 🌟 የተስተካከለ የምዝገባ እና መግቢያ ሎጂክ ከ chat_id ጋር (ከቴሌግራም ዌብ አፕ ጋር የተገናኘ)
 @app.route('/register_or_login', methods=['POST'])
 def register_or_login():
     data = request.json or {}
@@ -461,6 +459,7 @@ def reset_game():
 
 def game_loop():
     balls = [f"{'BINGO'[i//15]}{i+1}" for i in range(75)]
+    global reset_task_reference
     while True:
         current_status = game_state["status"]
         if current_status == "lobby":
@@ -498,6 +497,17 @@ def game_loop():
                         game_state["status"] = "result"
                         game_state["winner"] = "No Winner (Insufficient Players)"
                         refund_all_sold_tickets()
+                        
+                        # ✨ የተስተካከለ: ተጫዋች ሲያንስ ቆጥሮ ወደ ሎቢ እንዲመለስ የሚደረግ ሎጂክ
+                        def player_shortage_reset():
+                            for t in range(5, -1, -1):
+                                if game_state["status"] != "result":
+                                    return
+                                game_state["timer"] = t
+                                broadcast_game_state()
+                                socketio.sleep(1)
+                            reset_game()
+                        reset_task_reference = socketio.start_background_task(player_shortage_reset)
                         break
 
                     game_state["current_ball"] = b
@@ -517,7 +527,6 @@ def game_loop():
                         broadcast_game_state()
                         socketio.sleep(1)
                     reset_game()
-                global reset_task_reference
                 reset_task_reference = socketio.start_background_task(house_countdown_and_reset)
             broadcast_game_state()
         socketio.sleep(1)
@@ -765,4 +774,3 @@ def handle_connect():
 
 if __name__ == '__main__':
     socketio.run(app, host='0.0.0.0', port=int(os.environ.get("PORT", 10000)))
-
