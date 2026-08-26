@@ -498,7 +498,6 @@ def game_loop():
                         game_state["winner"] = "No Winner (Insufficient Players)"
                         refund_all_sold_tickets()
                         
-                        # ✨ የተስተካከለ: ተጫዋች ሲያንስ ቆጥሮ ወደ ሎቢ እንዲመለስ የሚደረግ ሎጂክ
                         def player_shortage_reset():
                             for t in range(5, -1, -1):
                                 if game_state["status"] != "result":
