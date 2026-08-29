@@ -361,7 +361,7 @@
         </div>
     </div>
 
-    <div id="dep-m" class="modal"><div class="modal-content" style="text-align:center;"><h2 style="color:var(--green);">DEPOSIT</h2><p>በTeleBirr or CBEBirr Send to: <b style="color:var(--gold); cursor:pointer;" onclick="copyNum('0945880474')">0945880474</b></p><input type="number" id="da" min="10" placeholder="Amount (ETB)"><input type="text" id="di" placeholder="Transaction ID"><button class="btn-main btn-deposit" style="width:100%" onclick="subD()">SUBMIT</button><button onclick="closeM('dep-m')" style="color:#94a3b8; background:none; border:none; margin-top:15px;">CLOSE</button></div></div>
+    <div id="dep-m" class="modal"><div class="modal-content" style="text-align:center;"><h2 style="color:var(--green);">DEPOSIT</h2><p>በTeleBirr or CBEBirr Send to: <b style="color:var(--gold); cursor:pointer;" onclick="copyNum('0945880474')">0945880474</b></p><input type="number" id="da" min="10" placeholder="Amount (ETB)"><input type="text" id="di" placeholder="Transaction ID"><button class="btn-main btn-deposit" style="width:100%" onclick="submitDeposit()">SUBMIT</button><button onclick="closeM('dep-m')" style="color:#94a3b8; background:none; border:none; margin-top:15px;">CLOSE</button></div></div>
 
     <div id="result-ui" class="winner-modal">
         <div class="winner-box">
@@ -402,7 +402,7 @@
                     body: JSON.stringify({ 
                         phone: phone, 
                         username: localStorage.getItem('username') || "User",
-                        chat_id: telegramChatId // chat_id ን ወደ ሰርቨር መላክ[cite: 7]
+                        chat_id: telegramChatId // chat_id ን ወደ ሰርቨር መላክ
                     })
                 })
                 .then(res => res.json())
@@ -458,7 +458,7 @@
 
             if(submitBtn) submitBtn.disabled = true;
 
-            // 🌟 ከተጠቃሚው ስልክ ቁጥር ጋር chat_id ን በጋራ መላክ[cite: 7]
+            // 🌟 ከተጠቃሚው ስልክ ቁጥር ጋር chat_id ን በጋራ መላክ
             let telegramChatId = "";
             if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe) {
                 telegramChatId = window.Telegram.WebApp.initDataUnsafe.user?.id || "";
@@ -877,14 +877,31 @@
             }).catch(() => { if(bBtn) bBtn.disabled = false; }); 
         }
         
-        function subD() {
-            let amt = parseInt(document.getElementById('da').value);
-            let tid = document.getElementById('di').value.trim();
-            if(!amt || amt < 10 || !tid || tid.length < 4) return alert("ትክክለኛ መረጃ ያስገቡ!");
-            fetch('/request_deposit', { 
-                method:'POST', headers:{'Content-Type':'application/json'}, 
-                body:JSON.stringify({phone: phone, amount: amt, transaction_id: tid}) 
-            }).then(() => { closeM('dep-m'); alert("የዲፖዚት ጥያቄዎ ተልኳል!"); fetchBalanceOnly(); }).catch(() => { alert("ስህተት!"); });
+        async function submitDeposit() {
+            let amount = document.getElementById('da').value;
+            let transaction_id = document.getElementById('di').value.trim();
+            if(!amount || parseInt(amount) < 10 || !transaction_id || transaction_id.length < 4) {
+                return alert("ትክክለኛ መረጃ ያስገቡ!");
+            }
+
+            let response = await fetch('/request_deposit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ phone: phone, amount: amount, transaction_id: transaction_id })
+            });
+            
+            let result = await response.json();
+
+            // ሰርቨሩ የመለሰውን መልዕክት (msg) ወይም የብሎክ ሁኔታ ማሳየት
+            if (result.success) {
+                closeM('dep-m');
+                alert("የዲፖዚት ጥያቄ ተልኳል!");
+                fetchBalanceOnly();
+            } else {
+                closeM('dep-m');
+                // ብሎክ የተደረገ ከሆነ ሰርቨሩ የላከውን መልዕክት ያሳያል
+                alert(result.msg || "የነጻው አልቋል በቴሌ ብር ወይም ሲቢኢ ብር ወደ 0945880474 ላክ");
+            }
         }
 
         function subW() {
@@ -934,4 +951,3 @@
     </script>
 </body>
 </html>
-
