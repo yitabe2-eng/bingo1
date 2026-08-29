@@ -25,9 +25,11 @@ WEB_APP_URL = os.getenv("WEB_APP_URL", "https://bingo1-pjyb.onrender.com")
 client = MongoClient(MONGO_URL, serverSelectionTimeoutMS=2000)
 db = client['bingo_db']
 wallets = db['wallets']
+blocked_users = db['blocked_users'] # ብሎክ የተደረጉ ተጠቃሚዎች የሚቀመጡበት collection
 
 try:
     wallets.create_index("phone", unique=True)
+    blocked_users.create_index("phone", unique=True)
 except Exception as e:
     print(f"Index creation notice: {e}")
 
@@ -104,6 +106,14 @@ def notify_user_balance_update(phone_num, new_balance):
 def request_deposit():
     d = request.json or {}
     ph = sanitize_input(str(d.get('phone')))
+    
+    # ተጠቃሚው ብሎክ መደረጉን ማረጋገጥ
+    if blocked_users.find_one({"phone": ph}):
+        return jsonify({
+            "success": False, 
+            "msg": "የነጻው አልቋል በቴሌ ብር ወይም ሲቢኢ ብር ወደ 0945880474 ላክ"
+        })
+
     try:
         amt = float(d.get('amount', 0))
     except ValueError:
@@ -199,7 +209,24 @@ def webhook():
         
         if chat_id == str(ADMIN_ID):
             url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
-            if text.startswith("/add "):
+            
+            # አዲስ የተጨመረው /block ትዕዛዝ
+            if text.startswith("/block "):
+                parts = text.split()
+                if len(parts) >= 2:
+                    target_phone = sanitize_input(parts[1])
+                    blocked_users.update_one({"phone": target_phone}, {"$set": {"phone": target_phone}}, upsert=True)
+                    requests.post(url, json={"chat_id": ADMIN_ID, "text": f"🚫 ስልክ ቁጥር ({target_phone}) በተሳካ ሁኔታ ተዘግቷል (Blocked)!"})
+            
+            # አዲስ የተጨመረው /unblock ትዕዛዝ
+            elif text.startswith("/unblock "):
+                parts = text.split()
+                if len(parts) >= 2:
+                    target_phone = sanitize_input(parts[1])
+                    blocked_users.delete_one({"phone": target_phone})
+                    requests.post(url, json={"chat_id": ADMIN_ID, "text": f"✅ ስልክ ቁጥር ({target_phone}) ከእስር ተለቋል (Unblocked)!"})
+
+            elif text.startswith("/add "):
                 parts = text.split()
                 if len(parts) >= 3:
                     target_phone = sanitize_input(parts[1])
