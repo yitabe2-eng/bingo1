@@ -793,7 +793,7 @@ def handle_connect():
     if not loop_started:
         loop_started = True
         set_webhook()
-      socketio.start_background_task(game_loop)
+        socketio.start_background_task(game_loop)
     broadcast_game_state()
 
 if __name__ == '__main__':
