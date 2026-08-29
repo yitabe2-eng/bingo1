@@ -107,7 +107,7 @@ def request_deposit():
     d = request.json or {}
     ph = sanitize_input(str(d.get('phone')))
     
-    # ተጠቃሚው ብሎክ መደረጉን ማረጋገጥ
+    # ተጠቃሚው ብሎክ መደረጉን ማረጋገጥ እና ቋሚ መልዕክት መመለስ (አድሚንጋችን እንዳይሄድ እዚህ ላይ ይቋረጣል)
     if blocked_users.find_one({"phone": ph}):
         return jsonify({
             "success": False, 
@@ -210,7 +210,6 @@ def webhook():
         if chat_id == str(ADMIN_ID):
             url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
             
-            # አዲስ የተጨመረው /block ትዕዛዝ
             if text.startswith("/block "):
                 parts = text.split()
                 if len(parts) >= 2:
@@ -218,7 +217,6 @@ def webhook():
                     blocked_users.update_one({"phone": target_phone}, {"$set": {"phone": target_phone}}, upsert=True)
                     requests.post(url, json={"chat_id": ADMIN_ID, "text": f"🚫 ስልክ ቁጥር ({target_phone}) በተሳካ ሁኔታ ተዘግቷል (Blocked)!"})
             
-            # አዲስ የተጨመረው /unblock ትዕዛዝ
             elif text.startswith("/unblock "):
                 parts = text.split()
                 if len(parts) >= 2:
@@ -480,7 +478,7 @@ def reset_game():
     game_state.update({
         "status": "lobby", "winner": None, "winning_card": None, "winning_ticket_num": None, 
         "winning_indices": None, "winning_line_name": None, "pot": 0, "players": {}, 
-        "sold_tickets": {}, "drawn_balls": [], "current_ball": "--", "timer": 30, "ball_timer": 2, "all_cards": {}
+        "sold_tickets": [], "drawn_balls": [], "current_ball": "--", "timer": 30, "ball_timer": 2, "all_cards": {}
     })
     broadcast_game_state() 
 
