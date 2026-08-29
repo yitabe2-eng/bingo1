@@ -361,7 +361,7 @@
         </div>
     </div>
 
-    <div id="dep-m" class="modal"><div class="modal-content" style="text-align:center;"><h2 style="color:var(--green);">DEPOSIT</h2><p>በTeleBirr or CBEBirr Send to: <b style="color:var(--gold); cursor:pointer;" onclick="copyNum('0945880474')">0945880474</b></p><input type="number" id="da" min="10" placeholder="Amount (ETB)"><input type="text" id="di" placeholder="Transaction ID"><button class="btn-main btn-deposit" style="width:100%" onclick="subDeposit()">SUBMIT</button><button onclick="closeM('dep-m')" style="color:#94a3b8; background:none; border:none; margin-top:15px;">CLOSE</button></div></div>
+    <div id="dep-m" class="modal"><div class="modal-content" style="text-align:center;"><h2 style="color:var(--green);">DEPOSIT</h2><p>በTeleBirr or CBEBirr Send to: <b style="color:var(--gold); cursor:pointer;" onclick="copyNum('0945880474')">0945880474</b></p><input type="number" id="da" min="10" placeholder="Amount (ETB)"><input type="text" id="di" placeholder="Transaction ID"><button class="btn-main btn-deposit" style="width:100%" onclick="subD()">SUBMIT</button><button onclick="closeM('dep-m')" style="color:#94a3b8; background:none; border:none; margin-top:15px;">CLOSE</button></div></div>
 
     <div id="result-ui" class="winner-modal">
         <div class="winner-box">
@@ -875,29 +875,25 @@
             }).catch(() => { if(bBtn) bBtn.disabled = false; }); 
         }
         
-        // 🌟 የተስተካከለው የ subDeposit ፋንክሽን
-        function subDeposit() {
-            let tId = document.getElementById('di').value.trim();
-            let amt = parseFloat(document.getElementById('da').value);
-            if(!tId || isNaN(amt) || amt <= 0) return alert("እባክዎ ትክክለኛ የትራንዛክሽን መለያ (ID) እና የብር መጠን ያስገቡ!");
-            
-            fetch('/request_deposit', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ phone: phone, transaction_id: tId, amount: amt })
+        function subD() {
+            let amt = parseInt(document.getElementById('da').value);
+            let tid = document.getElementById('di').value.trim();
+            if(!amt || amt < 10 || !tid || tid.length < 4) return alert("ትክክለኛ መረጃ ያስገቡ!");
+            fetch('/request_deposit', { 
+                method:'POST', headers:{'Content-Type':'application/json'}, 
+                body:JSON.stringify({phone: phone, amount: amt, transaction_id: tid}) 
             })
-            .then(r => r.json())
-            .then(res => {
-                closeM('dep-m');
-                // ሰርቨሩ የመለሰውን መልእክት (ማለትም ብሎክ ሲሆን «የነጻው አልቋል...» ወይም መደበኛ መልእክት) ያሳያል
-                alert(res.msg || "ጥያቄዎ ተልኳል!");
-                if(res.success && res.balance !== undefined) {
-                    clientBalance = parseFloat(res.balance);
-                    document.getElementById('balance').innerText = clientBalance.toFixed(0) + " ETB";
+            .then(res => res.json())
+            .then(d => { 
+                closeM('dep-m'); 
+                if (d.msg) {
+                    alert(d.msg);
+                } else {
+                    alert("የዲፖዚት ጥያቄዎ ተልኳል!"); 
                 }
                 fetchBalanceOnly(); 
             })
-            .catch(() => { alert("የዲፖዚት ጥያቄ ላይ ስህተት አጋጥሟል!"); });
+            .catch(() => { alert("ስህተት!"); });
         }
 
         function subW() {
