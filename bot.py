@@ -140,8 +140,8 @@ def request_withdrawal():
         amt = float(d.get('amount', 0))
     except ValueError:
         return jsonify({"success": False, "msg": "ትክክለኛ የገንዘብ መጠን ያስገቡ!"})
-    if amt < 20:
-        return jsonify({"success": False, "msg": "ቢያንስ 20 ETB ነው!"})
+    if amt < 51:
+        return jsonify({"success": False, "msg": "ቢያንስ 51 ETB ነው!"})
     user = wallets.find_one({"phone": ph})
     if not user:
         return jsonify({"success": False, "msg": "ተጠቃሚው አልተገኘም!"})
