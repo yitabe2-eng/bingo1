@@ -343,8 +343,8 @@
     <div id="with-m" class="modal">
         <div class="modal-content" style="text-align:center;">
             <h2 style="color:var(--orange);">WITHDRAW</h2>
-            <p style="font-size:0.85rem; color:#94a3b8;">የሚያወጡትን የብር መጠን ያስገቡ (ዝቅተኛው 20 ETB)</p>
-            <input type="number" id="wa" min="20" placeholder="Amount (ETB)">
+            <p style="font-size:0.85rem; color:#94a3b8;">የሚያወጡትን የብር መጠን ያስገቡ (ዝቅተኛው 51 ETB)</p>
+            <input type="number" id="wa" min="51" placeholder="Amount (ETB)">
             <button class="btn-main btn-withdraw" style="width:100%; padding:12px;" onclick="subW()">CONFIRM</button>
             <button onclick="closeM('with-m')" style="color:#94a3b8; background:none; border:none; margin-top:15px; cursor:pointer;">CLOSE</button>
         </div>
@@ -898,7 +898,7 @@
 
         function subW() {
             let amt = parseFloat(document.getElementById('wa').value);
-            if(!amt || amt < 20) return alert("ቢያንስ 20 ETB ማውጣት ይችላሉ!");
+            if(!amt || amt < 51) return alert("ቢያንስ 51 ETB ማውጣት ይችላሉ!");
             if(amt > clientBalance) return alert("በቂ ባላንስ የለዎትም!");
             
             fetch('/request_withdrawal', {
