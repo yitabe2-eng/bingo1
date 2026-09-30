@@ -445,7 +445,7 @@
         let latestDrawnBallsGlobal = []; 
         let globalMyCardsData = []; 
         let selectedDepositMethodName = "";
-        let selectedWithdrawMethodName = ""; 
+        let selectedWithdrawMethodName = "TELE BIRR"; // 🌟 ነባሪ ዋጋ ተሰጥቷል
 
         window.onload = function() {
             let telegramChatId = "";
@@ -813,13 +813,13 @@
             document.getElementById('di').value = '';
         }
 
-        // 🌟 ዊድሮው ፍሰት መቆጣጠሪያ ተግባራት
+        // 🌟 ዊድሮው ፍሰት መቆጣጠሪያ ተግባራት (የተስተካከለ)
         function openWithdrawSelection() {
             document.getElementById('withdraw-selection-m').style.display = 'flex';
         }
 
         function selectWithdrawMethod(methodName) {
-            selectedWithdrawMethodName = methodName;
+            selectedWithdrawMethodName = methodName; // 🌟 የተመረጠው ሜተድ ተይዟል
             document.getElementById('withdraw-selection-m').style.display = 'none';
             document.getElementById('withdraw-method-name').innerText = methodName;
             document.getElementById('withdraw-form-m').style.display = 'flex';
@@ -1000,7 +1000,7 @@
             fetch('/request_withdrawal', {
                 method: 'POST', 
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ phone: phone, amount: amt, method: selectedWithdrawMethodName })
+                body: JSON.stringify({ phone: phone, amount: amt, method: selectedWithdrawMethodName }) // 🌟 የተመረጠው ሜተድ እዚህ ይላካል
             })
             .then(r => r.json())
             .then(res => { 
