@@ -104,18 +104,6 @@
         .stats b { display: block; font-size: 0.95rem; color: var(--gold); }
         
         #lobby-ui { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
-        
-        /* የምስል ማሳያ ቅጥ (Style) */
-        #game-intro-image {
-            width: 90%;
-            max-width: 380px;
-            margin: 8px auto;
-            border-radius: 12px;
-            border: 2px solid var(--gold);
-            box-shadow: 0 8px 16px rgba(0,0,0,0.4);
-            display: block;
-        }
-
         .action-bar { display: flex; justify-content: center; gap: 5px; padding: 4px 8px; flex-wrap: wrap; }
         .btn-main { flex: 1; min-width: 70px; padding: 9px 4px; border: none; border-radius: 8px; font-weight: 900; cursor: pointer; text-transform: uppercase; font-size: 0.7rem; transition: 0.3s; }
         .btn-deposit { background: var(--green); color: #000; }
@@ -272,6 +260,18 @@
             width: 100%;
             justify-content: center;
         }
+        /* 🌟 የተጨመረው የዲፖዚት መመሪያ ስታይል */
+        .deposit-guide-box {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 10px;
+            margin-bottom: 12px;
+            font-size: 0.85rem;
+            line-height: 1.5;
+            color: #e2e8f0;
+            text-align: left;
+        }
     </style>
 </head>
 <body>
@@ -310,10 +310,6 @@
         </div>
 
         <div id="lobby-ui">
-            
-            <!-- የምስል ማሳያ (ከሎቢ አዝራሮች በላይ የተጨመረው ምስል) -->
-            <img src="https://i.ibb.co/7r0Tf8v/Telegram-Buttons.png" alt="BESH BINGO Menu" id="game-intro-image">
-
             <div class="action-bar">
                 <button class="btn-main btn-deposit" onclick="openM('dep-m')">📥 DEPOSIT</button>
                 <button class="btn-main btn-transfer" onclick="openM('trans-m')">💸 TRANSFER</button>
@@ -377,7 +373,23 @@
         </div>
     </div>
 
-    <div id="dep-m" class="modal"><div class="modal-content" style="text-align:center;"><h2 style="color:var(--green);">DEPOSIT</h2><p>በTeleBirr or CBEBirr Send to: <b style="color:var(--gold); cursor:pointer;" onclick="copyNum('0945880474')">0945880474</b></p><input type="number" id="da" min="10" placeholder="Amount (ETB)"><input type="text" id="di" placeholder="Transaction ID"><button class="btn-main btn-deposit" style="width:100%" onclick="subD()">SUBMIT</button><button onclick="closeM('dep-m')" style="color:#94a3b8; background:none; border:none; margin-top:15px;">CLOSE</button></div></div>
+    <!-- 🌟 ዲፖዚት ሞዳል (በምስሉ መሰረት የተስተካከለ) -->
+    <div id="dep-m" class="modal">
+        <div class="modal-content" style="text-align:center;">
+            <h2 style="color:var(--green); margin-top:0;">DEPOSIT</h2>
+            <div class="deposit-guide-box">
+                <b>📌 የክፍያ መመሪያ:</b><br>
+                በተሰጠው የቴሌብር ወይም ሲቢኢ አካውንት ገንዘብ ከላኩ በኋላ የግብይቱን <b>Transaction ID</b> እና የላኩትን መጠን በመሙላት ማረጋገጫ ያስገቡ።
+            </div>
+            <p style="font-size:0.85rem; margin-bottom:5px;">Send money via TeleBirr or CBEBirr to:</p>
+            <b style="color:var(--gold); font-size:1.1rem; cursor:pointer; display:block; margin-bottom:10px;" onclick="copyNum('0945880474')">0945880474 (ኮፒ ለማድረግ ይጫኑ)</b>
+            
+            <input type="number" id="da" min="10" placeholder="Amount (ETB)">
+            <input type="text" id="di" placeholder="Transaction ID">
+            <button class="btn-main btn-deposit" style="width:100%; padding:12px; margin-top:5px;" onclick="subD()">SUBMIT</button>
+            <button onclick="closeM('dep-m')" style="color:#94a3b8; background:none; border:none; margin-top:15px; cursor:pointer;">CLOSE</button>
+        </div>
+    </div>
 
     <div id="result-ui" class="winner-modal">
         <div class="winner-box">
