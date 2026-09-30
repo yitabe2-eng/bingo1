@@ -310,10 +310,9 @@
 
         <div id="lobby-ui">
             <div class="action-bar">
-                <!-- 🌟 እዚህ ላይ DEPOSIT ሲጫን ወደ ቀጥታ ቅጽ ሳይሆን የምርጫ ሞዳሉ እንዲከፈት ተደርጓል -->
                 <button class="btn-main btn-deposit" onclick="openDepositSelection()">📥 DEPOSIT</button>
                 <button class="btn-main btn-transfer" onclick="openM('trans-m')">💸 TRANSFER</button>
-                <button class="btn-main btn-withdraw" onclick="openM('with-m')">📤 WITHDRAW</button>
+                <button class="btn-main btn-withdraw" onclick="openWithdrawSelection()">📤 WITHDRAW</button>
                 <button class="btn-main btn-how-to" onclick="openM('guide-m')">📖 GUIDE</button>
             </div>
             
@@ -352,13 +351,31 @@
     <!-- ሞዳሎች -->
     <div id="guide-m" class="modal"><div class="modal-content"><h2 style="color:var(--gold); text-align:center; margin-top:0;">📖 መመሪያ</h2><p style="color:#fff; line-height: 1.6; font-size:0.9rem;">1. ጨዋታው እንዲጀምር ቢያንስ 2 ተጫዋቾች ሊኖሩ ይገባል。<br>2. ካርቴላ ለመግዛት ሎቢ ላይ ያሉትን ቁጥሮች ይጫኑ (ማክሲመም 2 መግዛት ይቻላል)。<br>3. ጨዋታው ሲጀምር ኳሶች በየጊዜው ይጣላሉ。<br>4. መስመር ሲሞላ ፈጥነው BINGO የሚለውን ይጫኑ!</p><button class="btn-main" style="width:100%; background:var(--red); color:white; margin-top:15px;" onclick="closeM('guide-m')">እሺ</button></div></div>
     
-    <div id="with-m" class="modal">
+    <!-- 🌟 1. ዊድሮው (Withdraw) የመጀመሪያ ደረጃ ምርጫ ሞዳል (CBE BIRR እና TELE BIRR በተኖች ያሉት) -->
+    <div id="withdraw-selection-m" class="modal">
         <div class="modal-content" style="text-align:center;">
-            <h2 style="color:var(--orange);">WITHDRAW</h2>
+            <h2 style="color:var(--orange); margin-top:0; font-size:1.1rem;">💳 የገንዘብ ማወጫ መንገድ ይምረጡ (Select Withdraw Method)</h2>
+            <p style="font-size:0.85rem; color:#94a3b8; margin-bottom:15px;">እባክዎ ገንዘብ የሚቀበሉበትን አካውንት ዓይነት ይምረጡ፡</p>
+            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                <button class="btn-main" style="background:#2563eb; color:white; padding:12px;" onclick="selectWithdrawMethod('CBE BIRR')">CBE BIRR</button>
+                <button class="btn-main" style="background:var(--green); color:#000; padding:12px;" onclick="selectWithdrawMethod('TELE BIRR')">TELE BIRR</button>
+            </div>
+            <button onclick="closeM('withdraw-selection-m')" style="color:#94a3b8; background:none; border:none; cursor:pointer; font-weight:bold;">CANCEL</button>
+        </div>
+    </div>
+
+    <!-- 🌟 2. ዊድሮው (Withdraw) የቅጽ ሞዳል (Amount, Confirm, Close) -->
+    <div id="withdraw-form-m" class="modal">
+        <div class="modal-content" style="text-align:center;">
+            <h2 id="withdraw-method-title" style="color:var(--orange); margin-top:0;">WITHDRAW</h2>
+            <div class="deposit-guide-box">
+                <b>📌 ማሳሰቢያ:</b><br>
+                በመረጡት የ <span id="withdraw-method-name" style="color:var(--gold);">TELE BIRR</span> አካውንት (በተመዘገቡበት ስልክ ቁጥር) ገንዘብዎ ይላካል።
+            </div>
             <p style="font-size:0.85rem; color:#94a3b8;">የሚያወጡትን የብር መጠን ያስገቡ (ዝቅተኛው 51 ETB)</p>
             <input type="number" id="wa" min="51" placeholder="Amount (ETB)">
             <button class="btn-main btn-withdraw" style="width:100%; padding:12px;" onclick="subW()">CONFIRM</button>
-            <button onclick="closeM('with-m')" style="color:#94a3b8; background:none; border:none; margin-top:15px; cursor:pointer;">CLOSE</button>
+            <button onclick="closeWithdrawForm()" style="color:#94a3b8; background:none; border:none; margin-top:15px; cursor:pointer; font-weight:bold;">CLOSE</button>
         </div>
     </div>
     
@@ -373,7 +390,7 @@
         </div>
     </div>
 
-    <!-- 🌟 1. ዲፖዚት የመጀመሪያ ደረጃ ምርጫ ሞዳል (CBE BIRR እና TELE BIRR በተኖች ያሉት) -->
+    <!-- ዲፖዚት የመጀመሪያ ደረጃ ምርጫ ሞዳል -->
     <div id="dep-selection-m" class="modal">
         <div class="modal-content" style="text-align:center;">
             <h2 style="color:var(--gold); margin-top:0; font-size:1.1rem;">💳 የማንጸኛ መንገድ ይምረጡ (Select Deposit Method)</h2>
@@ -386,13 +403,13 @@
         </div>
     </div>
 
-    <!-- 🌟 2. ዲፖዚት የቅጽ ሞዳል (Amount, Transaction ID, Submit, Cancel) -->
+    <!-- ዲፖዚት የቅጽ ሞዳል -->
     <div id="dep-form-m" class="modal">
         <div class="modal-content" style="text-align:center;">
             <h2 id="dep-method-title" style="color:var(--green); margin-top:0;">DEPOSIT</h2>
             <div class="deposit-guide-box">
                 <b>📌 የክፍያ መመሪያ:</b><br>
-                በተሰጠው የ <span id="dep-method-name" style="color:var(--gold);">TELE BIRR</span> አካውንት ገንዘብ ከላኩ በኋላ የግብይቱን <b>Transaction ID</b> እና የላኩትን መጠን በመሙላት ማረጋገጫ ያስገቡ።<br><br>
+                በተሰጠው የ <span id="dep-method-name" style="color:var(--gold);">TELE BIRR</span> አካውንት ገንዘብ ከላኩ በኋላ የግብይቱን <b>Transaction ID</b> እና የላኩትን መጠን በመሙላት ማረጋገጫ ያስገቡ。<br><br>
                 <b>አካውንት: <span style="color:var(--gold);" onclick="copyNum('0945880474')">0945880474 (ኮፒ ለማድረግ ይጫኑ)</span></b>
             </div>
             
@@ -428,6 +445,7 @@
         let latestDrawnBallsGlobal = []; 
         let globalMyCardsData = []; 
         let selectedDepositMethodName = "";
+        let selectedWithdrawMethodName = ""; 
 
         window.onload = function() {
             let telegramChatId = "";
@@ -696,7 +714,7 @@
                                     <span>ጨዋታዉ ተጀምሯል! እባክዎ ይህ ዙር እስኪጠናቀቅ በትግስት ይጠብቁ</span>
                                     <div class="waiting-box-btns">
                                         <button class="btn-main btn-deposit" onclick="openDepositSelection()">📥 DEPOSIT</button>
-                                        <button class="btn-main btn-withdraw" onclick="openM('with-m')">📤 WITHDRAW</button>
+                                        <button class="btn-main btn-withdraw" onclick="openWithdrawSelection()">📤 WITHDRAW</button>
                                     </div>
                                 </div>`;
                         }
@@ -777,7 +795,7 @@
         function openM(id) { document.getElementById(id).style.display='flex'; }
         function closeM(id) { document.getElementById(id).style.display='none'; }
         
-        // 🌟 አዲስ የዲፖዚት ፍሰት መቆጣጠሪያ ተግባራት
+        // ዲፖዚት ፍሰት መቆጣጠሪያ ተግባራት
         function openDepositSelection() {
             document.getElementById('dep-selection-m').style.display = 'flex';
         }
@@ -793,6 +811,23 @@
             document.getElementById('dep-form-m').style.display = 'none';
             document.getElementById('da').value = '';
             document.getElementById('di').value = '';
+        }
+
+        // 🌟 ዊድሮው ፍሰት መቆጣጠሪያ ተግባራት
+        function openWithdrawSelection() {
+            document.getElementById('withdraw-selection-m').style.display = 'flex';
+        }
+
+        function selectWithdrawMethod(methodName) {
+            selectedWithdrawMethodName = methodName;
+            document.getElementById('withdraw-selection-m').style.display = 'none';
+            document.getElementById('withdraw-method-name').innerText = methodName;
+            document.getElementById('withdraw-form-m').style.display = 'flex';
+        }
+
+        function closeWithdrawForm() {
+            document.getElementById('withdraw-form-m').style.display = 'none';
+            document.getElementById('wa').value = '';
         }
 
         function copyNum(n) { navigator.clipboard.writeText(n); alert("Copied: " + n); }
@@ -965,12 +1000,12 @@
             fetch('/request_withdrawal', {
                 method: 'POST', 
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ phone: phone, amount: amt })
+                body: JSON.stringify({ phone: phone, amount: amt, method: selectedWithdrawMethodName })
             })
             .then(r => r.json())
             .then(res => { 
-                closeM('with-m'); 
-                alert(res.msg || "ጥያቄዎ ተልኳል!"); 
+                closeWithdrawForm(); 
+                alert(res.msg || "የማውጣት ጥያቄዎ ተልኳል!"); 
                 if(res.success && res.balance !== undefined) {
                     clientBalance = parseFloat(res.balance);
                     document.getElementById('balance').innerText = clientBalance.toFixed(0) + " ETB";
