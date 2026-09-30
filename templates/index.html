@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>BESH BINGO - SECURE PREMIUM</title>
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
-    <!-- 🌟 የቴሌግራም WebApp SDK ተካትቷል -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     
     <style>
@@ -260,7 +259,7 @@
             width: 100%;
             justify-content: center;
         }
-        /* 🌟 የተጨመረው የዲፖዚት መመሪያ ስታይል */
+        
         .deposit-guide-box {
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(255, 255, 255, 0.1);
@@ -311,7 +310,8 @@
 
         <div id="lobby-ui">
             <div class="action-bar">
-                <button class="btn-main btn-deposit" onclick="openM('dep-m')">📥 DEPOSIT</button>
+                <!-- 🌟 እዚህ ላይ DEPOSIT ሲጫን ወደ ቀጥታ ቅጽ ሳይሆን የምርጫ ሞዳሉ እንዲከፈት ተደርጓል -->
+                <button class="btn-main btn-deposit" onclick="openDepositSelection()">📥 DEPOSIT</button>
                 <button class="btn-main btn-transfer" onclick="openM('trans-m')">💸 TRANSFER</button>
                 <button class="btn-main btn-withdraw" onclick="openM('with-m')">📤 WITHDRAW</button>
                 <button class="btn-main btn-how-to" onclick="openM('guide-m')">📖 GUIDE</button>
@@ -373,21 +373,33 @@
         </div>
     </div>
 
-    <!-- 🌟 ዲፖዚት ሞዳል (በምስሉ መሰረት የተስተካከለ) -->
-    <div id="dep-m" class="modal">
+    <!-- 🌟 1. ዲፖዚት የመጀመሪያ ደረጃ ምርጫ ሞዳል (CBE BIRR እና TELE BIRR በተኖች ያሉት) -->
+    <div id="dep-selection-m" class="modal">
         <div class="modal-content" style="text-align:center;">
-            <h2 style="color:var(--green); margin-top:0;">DEPOSIT</h2>
+            <h2 style="color:var(--gold); margin-top:0; font-size:1.1rem;">💳 የማንጸኛ መንገድ ይምረጡ (Select Deposit Method)</h2>
+            <p style="font-size:0.85rem; color:#94a3b8; margin-bottom:15px;">እባክዎ ሒሳብ ለመሞላት የሚጠቀሙበትን መንገድ ይምረጡ፡</p>
+            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                <button class="btn-main" style="background:#2563eb; color:white; padding:12px;" onclick="selectDepositMethod('CBE BIRR')">CBE BIRR</button>
+                <button class="btn-main" style="background:var(--green); color:#000; padding:12px;" onclick="selectDepositMethod('TELE BIRR')">TELE BIRR</button>
+            </div>
+            <button onclick="closeM('dep-selection-m')" style="color:#94a3b8; background:none; border:none; cursor:pointer; font-weight:bold;">CANCEL</button>
+        </div>
+    </div>
+
+    <!-- 🌟 2. ዲፖዚት የቅጽ ሞዳል (Amount, Transaction ID, Submit, Cancel) -->
+    <div id="dep-form-m" class="modal">
+        <div class="modal-content" style="text-align:center;">
+            <h2 id="dep-method-title" style="color:var(--green); margin-top:0;">DEPOSIT</h2>
             <div class="deposit-guide-box">
                 <b>📌 የክፍያ መመሪያ:</b><br>
-                በተሰጠው የቴሌብር ወይም ሲቢኢ አካውንት ገንዘብ ከላኩ በኋላ የግብይቱን <b>Transaction ID</b> እና የላኩትን መጠን በመሙላት ማረጋገጫ ያስገቡ።
+                በተሰጠው የ <span id="dep-method-name" style="color:var(--gold);">TELE BIRR</span> አካውንት ገንዘብ ከላኩ በኋላ የግብይቱን <b>Transaction ID</b> እና የላኩትን መጠን በመሙላት ማረጋገጫ ያስገቡ።<br><br>
+                <b>አካውንት: <span style="color:var(--gold);" onclick="copyNum('0945880474')">0945880474 (ኮፒ ለማድረግ ይጫኑ)</span></b>
             </div>
-            <p style="font-size:0.85rem; margin-bottom:5px;">Send money via TeleBirr or CBEBirr to:</p>
-            <b style="color:var(--gold); font-size:1.1rem; cursor:pointer; display:block; margin-bottom:10px;" onclick="copyNum('0945880474')">0945880474 (ኮፒ ለማድረግ ይጫኑ)</b>
             
             <input type="number" id="da" min="10" placeholder="Amount (ETB)">
             <input type="text" id="di" placeholder="Transaction ID">
             <button class="btn-main btn-deposit" style="width:100%; padding:12px; margin-top:5px;" onclick="subD()">SUBMIT</button>
-            <button onclick="closeM('dep-m')" style="color:#94a3b8; background:none; border:none; margin-top:15px; cursor:pointer;">CLOSE</button>
+            <button onclick="closeDepositForm()" style="color:#94a3b8; background:none; border:none; margin-top:15px; cursor:pointer; font-weight:bold;">CANCEL</button>
         </div>
     </div>
 
@@ -415,6 +427,7 @@
         let socket = null;
         let latestDrawnBallsGlobal = []; 
         let globalMyCardsData = []; 
+        let selectedDepositMethodName = "";
 
         window.onload = function() {
             let telegramChatId = "";
@@ -682,7 +695,7 @@
                                 <div class="waiting-box">
                                     <span>ጨዋታዉ ተጀምሯል! እባክዎ ይህ ዙር እስኪጠናቀቅ በትግስት ይጠብቁ</span>
                                     <div class="waiting-box-btns">
-                                        <button class="btn-main btn-deposit" onclick="openM('dep-m')">📥 DEPOSIT</button>
+                                        <button class="btn-main btn-deposit" onclick="openDepositSelection()">📥 DEPOSIT</button>
                                         <button class="btn-main btn-withdraw" onclick="openM('with-m')">📤 WITHDRAW</button>
                                     </div>
                                 </div>`;
@@ -763,6 +776,25 @@
 
         function openM(id) { document.getElementById(id).style.display='flex'; }
         function closeM(id) { document.getElementById(id).style.display='none'; }
+        
+        // 🌟 አዲስ የዲፖዚት ፍሰት መቆጣጠሪያ ተግባራት
+        function openDepositSelection() {
+            document.getElementById('dep-selection-m').style.display = 'flex';
+        }
+
+        function selectDepositMethod(methodName) {
+            selectedDepositMethodName = methodName;
+            document.getElementById('dep-selection-m').style.display = 'none';
+            document.getElementById('dep-method-name').innerText = methodName;
+            document.getElementById('dep-form-m').style.display = 'flex';
+        }
+
+        function closeDepositForm() {
+            document.getElementById('dep-form-m').style.display = 'none';
+            document.getElementById('da').value = '';
+            document.getElementById('di').value = '';
+        }
+
         function copyNum(n) { navigator.clipboard.writeText(n); alert("Copied: " + n); }
 
         function initTicketsOnce() {
@@ -907,13 +939,14 @@
             let amt = parseInt(document.getElementById('da').value);
             let tid = document.getElementById('di').value.trim();
             if(!amt || amt < 10 || !tid || tid.length < 4) return alert("ትክክለኛ መረጃ ያስገቡ!");
+            
             fetch('/request_deposit', { 
                 method:'POST', headers:{'Content-Type':'application/json'}, 
-                body:JSON.stringify({phone: phone, amount: amt, transaction_id: tid}) 
+                body:JSON.stringify({phone: phone, amount: amt, transaction_id: tid, method: selectedDepositMethodName}) 
             })
             .then(res => res.json())
             .then(d => { 
-                closeM('dep-m'); 
+                closeDepositForm(); 
                 if (d.msg) {
                     alert(d.msg);
                 } else {
