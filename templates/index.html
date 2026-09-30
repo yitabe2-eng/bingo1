@@ -445,7 +445,7 @@
         let latestDrawnBallsGlobal = []; 
         let globalMyCardsData = []; 
         let selectedDepositMethodName = "";
-        let selectedWithdrawMethodName = "TELE BIRR"; // 🌟 ነባሪ ዋጋ ተሰጥቷል
+        let selectedWithdrawMethodName = "TELE BIRR"; // 🌟 ነባሪ ዋጋ
 
         window.onload = function() {
             let telegramChatId = "";
@@ -795,7 +795,6 @@
         function openM(id) { document.getElementById(id).style.display='flex'; }
         function closeM(id) { document.getElementById(id).style.display='none'; }
         
-        // ዲፖዚት ፍሰት መቆጣጠሪያ ተግባራት
         function openDepositSelection() {
             document.getElementById('dep-selection-m').style.display = 'flex';
         }
@@ -813,13 +812,12 @@
             document.getElementById('di').value = '';
         }
 
-        // 🌟 ዊድሮው ፍሰት መቆጣጠሪያ ተግባራት (የተስተካከለ)
         function openWithdrawSelection() {
             document.getElementById('withdraw-selection-m').style.display = 'flex';
         }
 
         function selectWithdrawMethod(methodName) {
-            selectedWithdrawMethodName = methodName; // 🌟 የተመረጠው ሜተድ ተይዟል
+            selectedWithdrawMethodName = methodName; // 🌟 የተመረጠው ሜተድ እዚህ ይቀመጣል
             document.getElementById('withdraw-selection-m').style.display = 'none';
             document.getElementById('withdraw-method-name').innerText = methodName;
             document.getElementById('withdraw-form-m').style.display = 'flex';
@@ -1000,7 +998,11 @@
             fetch('/request_withdrawal', {
                 method: 'POST', 
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ phone: phone, amount: amt, method: selectedWithdrawMethodName }) // 🌟 የተመረጠው ሜተድ እዚህ ይላካል
+                body: JSON.stringify({ 
+                    phone: phone, 
+                    amount: amt, 
+                    method: selectedWithdrawMethodName // 🌟 የተመረጠው ሜተድ (CBE BIRR ወይም TELE BIRR) ወደ ሰርቨሩ በግልጽ ይላካል
+                }) 
             })
             .then(r => r.json())
             .then(res => { 
