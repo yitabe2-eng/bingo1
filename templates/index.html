@@ -129,23 +129,6 @@
             justify-content: flex-start;
         }
 
-        /* 🌟 የኳስ ቆጣሪ ማሳያ ብቻ (BALANCE እና PLAYERS ተወግደዋል) */
-        .game-ui-header {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background: rgba(255, 255, 255, 0.05);
-            padding: 6px;
-            margin: 0 0 5px 0;
-            border-radius: 8px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            font-size: 0.9rem;
-        }
-        .game-ui-header span, .game-ui-header b {
-            color: var(--gold);
-            font-weight: bold;
-        }
-
         .ball-section-wrapper { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; margin-bottom: 5px; }
         .ball-row { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; }
         #ball-circle { width: 55px; height: 55px; background: radial-gradient(circle, #fff, var(--gold)); color: #000; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; font-weight: 900; border: 3px solid #1e293b; box-sizing: border-box; flex-shrink: 0; }
@@ -319,8 +302,10 @@
             <button class="btn-top-refresh" onclick="forceRecoveryRefresh()">🔄 Refresh</button>
         </div>
         
+        <!-- 🌟 BALL: 0/75 እዚህ ከ BALANCE እና PLAYERS መሀል ገብቷል -->
         <div class="stats" id="lobby-stats">
             <div>BALANCE<b id="balance">0 ETB</b></div>
+            <div>BALL<b id="ball-count">0/75</b></div>
             <div>PLAYERS<b id="p-count">0</b></div>
             <div>በሽ-ደራሽ<b id="prize">0 ETB</b></div>
         </div>
@@ -342,13 +327,6 @@
         </div>
 
         <div id="game-ui" style="display:none;">
-            <!-- 🌟 ድግግሞሾቹ ተወግደዋል፣ አሁን BALL: 0/75 ብቻ በመሃል ይታያል -->
-            <div class="game-ui-header">
-                <div class="ball-counter-container" style="font-weight: bold;">
-                    <span>BALL: </span><span id="ball-count">0/75</span>
-                </div>
-            </div>
-
             <div class="ball-section-wrapper">
                 <div id="start-alert-msg" class="game-start-alert" style="display:none;">🔴 ጨዋታው ሊጀምር ነው...</div>
                 <div class="ball-row">
