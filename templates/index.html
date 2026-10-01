@@ -302,9 +302,9 @@
             <button class="btn-top-refresh" onclick="forceRecoveryRefresh()">🔄 Refresh</button>
         </div>
         
-        <div class="stats">
+        <!-- 💡 ከዚህ በታች ያለው የሎቢ ስታቲስቲክስ (BALL 0/75) ተወግዷል -->
+        <div class="stats" id="lobby-stats">
             <div>BALANCE<b id="balance">0 ETB</b></div>
-            <div>BALL<b id="ball-count">0/75</b></div>
             <div>PLAYERS<b id="p-count">0</b></div>
             <div>በሽ-ደራሽ<b id="prize">0 ETB</b></div>
         </div>
@@ -326,6 +326,11 @@
         </div>
 
         <div id="game-ui" style="display:none;">
+            <!-- 💡 BALL 0/75 እዚህ Game UI ላይ ብቻ እንዲታይ ተደርጓል -->
+            <div style="margin-bottom: 4px; font-size: 0.8rem; color: var(--gold); font-weight: bold;">
+                BALL: <span id="ball-count">0/75</span>
+            </div>
+
             <div class="ball-section-wrapper">
                 <div id="start-alert-msg" class="game-start-alert" style="display:none;">🔴 ጨዋታው ሊጀምር ነው...</div>
                 <div class="ball-row">
