@@ -631,7 +631,6 @@
                 document.getElementById('balance').innerText = clientBalance.toFixed(0) + " ETB";
             }
 
-            // የኳስ ብዛት ማዘመኛ (ወደ ሄደር የተጨመረውን ኤለመንት ማሻሻል)
             let drawnBallsCount = d.drawn_balls ? d.drawn_balls.length : 0;
             let headerBallEl = document.getElementById('header-ball-count');
             if(headerBallEl) {
@@ -648,7 +647,7 @@
                 document.getElementById('ball-prep-countdown').style.display = 'none';
                 document.getElementById('start-alert-msg').style.display = 'none';
                 document.getElementById("recent-balls-container").innerHTML = ""; 
-                if(headerBallEl) headerBallEl.innerText = "0"; // በሎቢ ጊዜ 0 ማድረግ
+                if(headerBallEl) headerBallEl.innerText = "0";
                 if (announced) { announced = false; }
                 const bBtn = document.getElementById('bingo-btn'); if(bBtn) bBtn.disabled = false;
                 lastBall = "--";
