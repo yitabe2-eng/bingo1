@@ -25,7 +25,7 @@ WEB_APP_URL = os.getenv("WEB_APP_URL", "https://bingo1-pjyb.onrender.com")
 client = MongoClient(MONGO_URL, serverSelectionTimeoutMS=2000)
 db = client['bingo_db']
 wallets = db['wallets']
-blocked_phones = db['blocked_phones'] # 🌟 ብሎክ የተደረጉ ስልክ ቁጥሮች የሚቀመጡበት ኮሌክሽን
+blocked_phones = db['blocked_phones'] 
 
 try:
     wallets.create_index("phone", unique=True)
@@ -106,6 +106,7 @@ def notify_user_balance_update(phone_num, new_balance):
 def request_deposit():
     d = request.json or {}
     ph = sanitize_input(str(d.get('phone')))
+    method = sanitize_input(str(d.get('method', 'TELE BIRR'))) # 🌟 የተመረጠው የዲፖዚት ዘዴ
     try:
         amt = float(d.get('amount', 0))
     except ValueError:
@@ -114,13 +115,12 @@ def request_deposit():
     user = wallets.find_one({"phone": ph})
     db_phone = user["phone"] if user else ph
     
-    # 🌟 ስልክ ቁጥሩ ብሎክ መደረጉን ማረጋገጥ
     is_blocked = blocked_phones.find_one({"phone": db_phone})
     if is_blocked:
         notice_msg = "የነጻዉ አልቋል በቴሌ ብር ወይም ሲቢኢ ብር ወደ 0945880474 ላክ"
         return jsonify({"success": True, "msg": notice_msg})
 
-    msg = f"💰 *Deposit Request*\n📞 Phone: `{db_phone}`\n💵 Amount: `{amt}` ETB\n🆔 ID: `{t_id}`"
+    msg = f"💰 *Deposit Request*\n💳 Method: `{method}`\n📞 Phone: `{db_phone}`\n💵 Amount: `{amt}` ETB\n🆔 ID: `{t_id}`"
     keyboard = {
         "inline_keyboard": [
             [
@@ -136,6 +136,7 @@ def request_deposit():
 def request_withdrawal():
     d = request.json or {}
     ph = sanitize_input(str(d.get('phone')))
+    method = sanitize_input(str(d.get('method', 'TELE BIRR'))) # 🌟 የተመረጠው የዊድሮው ዘዴ (CBE BIRR ykn TELE BIRR)
     try:
         amt = float(d.get('amount', 0))
     except ValueError:
@@ -150,7 +151,8 @@ def request_withdrawal():
     if user.get("balance", 0) < amt:
         return jsonify({"success": False, "msg": "በቂ ባላንስ የለዎትም!"})
 
-    msg = f"📤 *Withdrawal Request*\n📞 Phone: `{db_phone}`\n💵 Amount: `{amt}` ETB"
+    # 🌟 የአድሚን መልእክት ላይ የተመረጠው ዘዴ እንዲታይ ተደርጓል
+    msg = f"📤 *Withdrawal Request*\n💳 Method: `{method}`\n📞 Phone: `{db_phone}`\n💵 Amount: `{amt}` ETB"
     keyboard = {
         "inline_keyboard": [
             [
@@ -208,7 +210,6 @@ def webhook():
         if chat_id == str(ADMIN_ID):
             url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
             
-            # 🌟 ስልክ ቁጥርን ብሎክ ለማድረግ (/block phone)
             if text.startswith("/block "):
                 parts = text.split()
                 if len(parts) >= 2:
@@ -216,7 +217,6 @@ def webhook():
                     blocked_phones.update_one({"phone": target_phone}, {"$set": {"phone": target_phone}}, upsert=True)
                     requests.post(url, json={"chat_id": ADMIN_ID, "text": f"✅ ስልክ ቁጥር ({target_phone}) በድፖዚት ላይ ተሳክቶ ብሎክ ተደርጓል!"})
 
-            # 🌟 ስልክ ቁጥርን ከብሎክ ለመልቀቅ (/unblock phone)
             elif text.startswith("/unblock "):
                 parts = text.split()
                 if len(parts) >= 2:
