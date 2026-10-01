@@ -206,23 +206,24 @@ def webhook():
         if chat_id != str(ADMIN_ID):
             wallets.update_one({"chat_id": chat_id}, {"$set": {"chat_id": chat_id}}, upsert=False)
         
-        # --- የተስተካከለው የ /play ትእዛዝ ክፍል ---
+        # --- የ /play ትእዛዝ ሲጠየቅ የሚሰጠው ምላሽ ---
         if text.lower() == "/play":
             url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
             
             keyboard = {
                 "inline_keyboard": [
-                    [{"text": "Beshbingo | 10 ብር", "url": "https://t.me/beshbingo1bot"}], 
+                    [{"text": "🎮 PLAY | 10 ብር", "url": "https://t.me/beshbingo1bot"}], 
                     [{"text": "SuperbeshBingo | 50 ብር", "url": "http://t.me/superbeshbingobot"}], 
-                    [{"text": "BeshBingo Bonus", "callback_data": "Besh_bingo_bonus"}]
+                    [{"text": "⚽ BeshBingo Bonus", "callback_data": "Besh_bingo_bonus"}]
                 ]
             }
             
-            message_text = "PLAY IN: Choose a room to join the game:"
+            message_text = "🕹 *PLAY IN:*\nChoose a room to join the game:"
             
             payload = {
                 "chat_id": chat_id,
                 "text": message_text,
+                "parse_mode": "Markdown",
                 "reply_markup": keyboard
             }
             
@@ -351,7 +352,6 @@ def webhook():
         chat_id = str(cq["message"]["chat"]["id"])
         data_str = cq.get("data", "")
         
-        # የቦነስ (Callback) ምላሽ ማስተናገጃ እዚህ ጋር ሊጨመር ይችላል
         if data_str == "Besh_bingo_bonus":
             answer_url = f"https://api.telegram.org/bot{BOT_TOKEN}/answerCallbackQuery"
             requests.post(answer_url, json={"callback_query_id": cq_id, "text": "የቦነስ ፕሮግራም በቅርቡ ይጀመራል!", "show_alert": True})
