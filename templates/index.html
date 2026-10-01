@@ -129,20 +129,17 @@
             justify-content: flex-start;
         }
 
-        /* 🌟 የጨዋታው ዩአይ ሄደር (Balance, BALL, Players) */
+        /* 🌟 የኳስ ቆጣሪ ማሳያ ብቻ (BALANCE እና PLAYERS ተወግደዋል) */
         .game-ui-header {
             display: flex;
-            justify-content: space-around;
+            justify-content: center;
             align-items: center;
             background: rgba(255, 255, 255, 0.05);
             padding: 6px;
             margin: 0 0 5px 0;
             border-radius: 8px;
             border: 1px solid rgba(255, 255, 255, 0.1);
-            font-size: 0.8rem;
-        }
-        .game-ui-header div {
-            color: #94a3b8;
+            font-size: 0.9rem;
         }
         .game-ui-header span, .game-ui-header b {
             color: var(--gold);
@@ -345,16 +342,10 @@
         </div>
 
         <div id="game-ui" style="display:none;">
-            <!-- 🌟 እዚህ ጋር Balance, BALL እና Players በመሃከል እንዲሆን ተደርጓል -->
+            <!-- 🌟 ድግግሞሾቹ ተወግደዋል፣ አሁን BALL: 0/75 ብቻ በመሃል ይታያል -->
             <div class="game-ui-header">
-                <div class="balance-container">
-                    <span>Balance: </span><span id="game-balance">0.00</span>
-                </div>
                 <div class="ball-counter-container" style="font-weight: bold;">
                     <span>BALL: </span><span id="ball-count">0/75</span>
-                </div>
-                <div class="players-container">
-                    <span>Players: </span><span id="game-player-count">1</span>
                 </div>
             </div>
 
@@ -592,7 +583,6 @@
                 if (d.balance !== undefined && d.balance !== null) {
                     clientBalance = parseFloat(d.balance) || 0;
                     document.getElementById('balance').innerText = clientBalance.toFixed(0) + " ETB";
-                    document.getElementById('game-balance').innerText = clientBalance.toFixed(0) + " ETB";
                 }
             }).catch(() => {});
         }
@@ -641,7 +631,6 @@
                 if (data && phoneMatches(data.phone, phone)) {
                     clientBalance = parseFloat(data.balance) || 0;
                     document.getElementById('balance').innerText = clientBalance.toFixed(0) + " ETB";
-                    document.getElementById('game-balance').innerText = clientBalance.toFixed(0) + " ETB";
                 }
             });
 
@@ -655,13 +644,11 @@
             let finalPrize = Math.floor((parseFloat(d.pot) || 0) * 0.8);
             document.getElementById('prize').innerText = finalPrize + " ETB";
             document.getElementById('p-count').innerText = parseInt(d.active_players) || 0;
-            document.getElementById('game-player-count').innerText = parseInt(d.active_players) || 0;
             document.getElementById('timer').innerText = d.timer;
             
             if (d.balance !== undefined && d.balance !== null) {
                 clientBalance = parseFloat(d.balance) || 0;
                 document.getElementById('balance').innerText = clientBalance.toFixed(0) + " ETB";
-                document.getElementById('game-balance').innerText = clientBalance.toFixed(0) + " ETB";
             }
 
             let drawnCount = (d.drawn_balls && Array.isArray(d.drawn_balls)) ? d.drawn_balls.length : 0;
@@ -910,7 +897,6 @@
                 if (d.success && d.balance !== undefined) {
                     clientBalance = parseFloat(d.balance);
                     document.getElementById('balance').innerText = clientBalance.toFixed(0) + " ETB";
-                    document.getElementById('game-balance').innerText = clientBalance.toFixed(0) + " ETB";
                 }
                 silentBackgroundSync();
             })
@@ -1049,7 +1035,6 @@
                 if(res.success && res.balance !== undefined) {
                     clientBalance = parseFloat(res.balance);
                     document.getElementById('balance').innerText = clientBalance.toFixed(0) + " ETB";
-                    document.getElementById('game-balance').innerText = clientBalance.toFixed(0) + " ETB";
                 }
                 fetchBalanceOnly(); 
             })
@@ -1073,7 +1058,6 @@
                 if(res.success && res.balance !== undefined) {
                     clientBalance = parseFloat(res.balance) || 0;
                     document.getElementById('balance').innerText = clientBalance.toFixed(0) + " ETB";
-                    document.getElementById('game-balance').innerText = clientBalance.toFixed(0) + " ETB";
                 }
             })
             .catch(() => { alert("የማስተላለፍ ስህተት አጋጥሟል!"); });
