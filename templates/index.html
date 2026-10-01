@@ -129,6 +129,26 @@
             justify-content: flex-start;
         }
 
+        /* 🌟 የጨዋታው ዩአይ ሄደር (Balance, BALL, Players) */
+        .game-ui-header {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 6px;
+            margin: 0 0 5px 0;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 0.8rem;
+        }
+        .game-ui-header div {
+            color: #94a3b8;
+        }
+        .game-ui-header span, .game-ui-header b {
+            color: var(--gold);
+            font-weight: bold;
+        }
+
         .ball-section-wrapper { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; margin-bottom: 5px; }
         .ball-row { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; }
         #ball-circle { width: 55px; height: 55px; background: radial-gradient(circle, #fff, var(--gold)); color: #000; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; font-weight: 900; border: 3px solid #1e293b; box-sizing: border-box; flex-shrink: 0; }
@@ -302,9 +322,9 @@
             <button class="btn-top-refresh" onclick="forceRecoveryRefresh()">🔄 Refresh</button>
         </div>
         
-        <!-- 💡 የሎቢ ስታቲስቲክስ (BALL 0/75 ተወግዷል፣ አሁን Balance እና Players ብቻ አሉት) -->
         <div class="stats" id="lobby-stats">
             <div>BALANCE<b id="balance">0 ETB</b></div>
+            <div>PLAYERS<b id="p-count">0</b></div>
             <div>በሽ-ደራሽ<b id="prize">0 ETB</b></div>
         </div>
 
@@ -325,11 +345,17 @@
         </div>
 
         <div id="game-ui" style="display:none;">
-            <!-- 💡 BALL 0/75 እዚህ Balance እና Players መካከል እንዲታይ ተደርጓል -->
-            <div class="stats">
-                <div>BALANCE<b id="balance-game">0 ETB</b></div>
-                <div>BALL<b id="ball-count">0/75</b></div>
-                <div>PLAYERS<b id="p-count-game">0</b></div>
+            <!-- 🌟 እዚህ ጋር Balance, BALL እና Players በመሃከል እንዲሆን ተደርጓል -->
+            <div class="game-ui-header">
+                <div class="balance-container">
+                    <span>Balance: </span><span id="game-balance">0.00</span>
+                </div>
+                <div class="ball-counter-container" style="font-weight: bold;">
+                    <span>BALL: </span><span id="ball-count">0/75</span>
+                </div>
+                <div class="players-container">
+                    <span>Players: </span><span id="game-player-count">1</span>
+                </div>
             </div>
 
             <div class="ball-section-wrapper">
@@ -558,21 +584,15 @@
             initWebSocket();
         }
 
-        function updateAllBalances(val) {
-            clientBalance = parseFloat(val) || 0;
-            let formatted = clientBalance.toFixed(0) + " ETB";
-            document.getElementById('balance').innerText = formatted;
-            let gameBalance = document.getElementById('balance-game');
-            if (gameBalance) gameBalance.innerText = formatted;
-        }
-
         function fetchBalanceOnly() {
             if (!phone) return;
             fetch(`/get_status?phone=${encodeURIComponent(phone)}`)
             .then(r => r.json())
             .then(d => {
                 if (d.balance !== undefined && d.balance !== null) {
-                    updateAllBalances(d.balance);
+                    clientBalance = parseFloat(d.balance) || 0;
+                    document.getElementById('balance').innerText = clientBalance.toFixed(0) + " ETB";
+                    document.getElementById('game-balance').innerText = clientBalance.toFixed(0) + " ETB";
                 }
             }).catch(() => {});
         }
@@ -619,7 +639,9 @@
 
             socket.on('balance_update', function(data) {
                 if (data && phoneMatches(data.phone, phone)) {
-                    updateAllBalances(data.balance);
+                    clientBalance = parseFloat(data.balance) || 0;
+                    document.getElementById('balance').innerText = clientBalance.toFixed(0) + " ETB";
+                    document.getElementById('game-balance').innerText = clientBalance.toFixed(0) + " ETB";
                 }
             });
 
@@ -632,16 +654,14 @@
             if (!d) return;
             let finalPrize = Math.floor((parseFloat(d.pot) || 0) * 0.8);
             document.getElementById('prize').innerText = finalPrize + " ETB";
-            
-            let playerCount = parseInt(d.active_players) || 0;
-            document.getElementById('p-count').innerText = playerCount;
-            let pCountGame = document.getElementById('p-count-game');
-            if (pCountGame) pCountGame.innerText = playerCount;
-
+            document.getElementById('p-count').innerText = parseInt(d.active_players) || 0;
+            document.getElementById('game-player-count').innerText = parseInt(d.active_players) || 0;
             document.getElementById('timer').innerText = d.timer;
             
             if (d.balance !== undefined && d.balance !== null) {
-                updateAllBalances(d.balance);
+                clientBalance = parseFloat(d.balance) || 0;
+                document.getElementById('balance').innerText = clientBalance.toFixed(0) + " ETB";
+                document.getElementById('game-balance').innerText = clientBalance.toFixed(0) + " ETB";
             }
 
             let drawnCount = (d.drawn_balls && Array.isArray(d.drawn_balls)) ? d.drawn_balls.length : 0;
@@ -888,7 +908,9 @@
             .then(d => { 
                 isProcessingBuy = false; 
                 if (d.success && d.balance !== undefined) {
-                    updateAllBalances(d.balance);
+                    clientBalance = parseFloat(d.balance);
+                    document.getElementById('balance').innerText = clientBalance.toFixed(0) + " ETB";
+                    document.getElementById('game-balance').innerText = clientBalance.toFixed(0) + " ETB";
                 }
                 silentBackgroundSync();
             })
@@ -1025,7 +1047,9 @@
                 closeWithdrawForm(); 
                 alert(res.msg || "የማውጣት ጥያቄዎ ተልኳል!"); 
                 if(res.success && res.balance !== undefined) {
-                    updateAllBalances(res.balance);
+                    clientBalance = parseFloat(res.balance);
+                    document.getElementById('balance').innerText = clientBalance.toFixed(0) + " ETB";
+                    document.getElementById('game-balance').innerText = clientBalance.toFixed(0) + " ETB";
                 }
                 fetchBalanceOnly(); 
             })
@@ -1047,7 +1071,9 @@
                 closeM('trans-m');
                 alert(res.msg || "ተከናውኗል!");
                 if(res.success && res.balance !== undefined) {
-                    updateAllBalances(res.balance);
+                    clientBalance = parseFloat(res.balance) || 0;
+                    document.getElementById('balance').innerText = clientBalance.toFixed(0) + " ETB";
+                    document.getElementById('game-balance').innerText = clientBalance.toFixed(0) + " ETB";
                 }
             })
             .catch(() => { alert("የማስተላለፍ ስህተት አጋጥሟል!"); });
