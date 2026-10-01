@@ -212,7 +212,7 @@ def webhook():
             
             keyboard = {
                 "inline_keyboard": [
-                    [{"text": "Beshbingo | 10 ብር", "url": "https://bingo1-pjyb.onrender.com/"}], 
+                    [{"text": "Beshbingo | 10 ብር", "url": "https://t.me/beshbingo1bot"}], 
                     [{"text": "SuperbeshBingo | 50 ብር", "url": "http://t.me/superbeshbingobot"}], 
                     [{"text": "BeshBingo Bonus", "callback_data": "Besh_bingo_bonus"}]
                 ]
