@@ -106,7 +106,7 @@ def notify_user_balance_update(phone_num, new_balance):
 def request_deposit():
     d = request.json or {}
     ph = sanitize_input(str(d.get('phone')))
-    method = sanitize_input(str(d.get('method', 'TELE BIRR'))) # 🌟 የተመረጠው የዲፖዚት ዘዴ
+    method = sanitize_input(str(d.get('method', 'TELE BIRR'))) 
     try:
         amt = float(d.get('amount', 0))
     except ValueError:
@@ -136,7 +136,7 @@ def request_deposit():
 def request_withdrawal():
     d = request.json or {}
     ph = sanitize_input(str(d.get('phone')))
-    method = sanitize_input(str(d.get('method', 'TELE BIRR'))) # 🌟 የተመረጠው የዊድሮው ዘዴ (CBE BIRR ykn TELE BIRR)
+    method = sanitize_input(str(d.get('method', 'TELE BIRR'))) 
     try:
         amt = float(d.get('amount', 0))
     except ValueError:
@@ -151,7 +151,6 @@ def request_withdrawal():
     if user.get("balance", 0) < amt:
         return jsonify({"success": False, "msg": "በቂ ባላንስ የለዎትም!"})
 
-    # 🌟 የአድሚን መልእክት ላይ የተመረጠው ዘዴ እንዲታይ ተደርጓል
     msg = f"📤 *Withdrawal Request*\n💳 Method: `{method}`\n📞 Phone: `{db_phone}`\n💵 Amount: `{amt}` ETB"
     keyboard = {
         "inline_keyboard": [
