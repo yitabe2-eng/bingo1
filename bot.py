@@ -206,6 +206,34 @@ def webhook():
         if chat_id != str(ADMIN_ID):
             wallets.update_one({"chat_id": chat_id}, {"$set": {"chat_id": chat_id}}, upsert=False)
         
+        # --- የተስተካከለው የ /play ትእዛዝ ክፍል ---
+        if text.lower() == "/play":
+            url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
+            
+            keyboard = {
+                "inline_keyboard": [
+                    [{"text": "Beshbingo | 10 ብር", "url": "https://t.me/beshbingo1bot"}], 
+                    [{"text": "SuperbeshBingo | 50 ብር", "url": "http://t.me/superbeshbingobot"}], 
+                    [{"text": "BeshBingo Bonus", "callback_data": "Besh_bingo_bonus"}]
+                ]
+            }
+            
+            message_text = "PLAY IN: Choose a room to join the game:"
+            
+            payload = {
+                "chat_id": chat_id,
+                "text": message_text,
+                "reply_markup": keyboard
+            }
+            
+            try:
+                requests.post(url, json=payload, timeout=2)
+            except Exception as e:
+                print(f"Telegram Error sending /play menu: {e}")
+                
+            return "OK", 200
+        # ----------------------------------------
+        
         if chat_id == str(ADMIN_ID):
             url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
             
@@ -322,6 +350,12 @@ def webhook():
         cq_id = cq["id"]
         chat_id = str(cq["message"]["chat"]["id"])
         data_str = cq.get("data", "")
+        
+        # የቦነስ (Callback) ምላሽ ማስተናገጃ እዚህ ጋር ሊጨመር ይችላል
+        if data_str == "Besh_bingo_bonus":
+            answer_url = f"https://api.telegram.org/bot{BOT_TOKEN}/answerCallbackQuery"
+            requests.post(answer_url, json={"callback_query_id": cq_id, "text": "የቦነስ ፕሮግራም በቅርቡ ይጀመራል!", "show_alert": True})
+
         if chat_id == str(ADMIN_ID):
             answer_url = f"https://api.telegram.org/bot{BOT_TOKEN}/answerCallbackQuery"
             edit_url = f"https://api.telegram.org/bot{BOT_TOKEN}/editMessageText"
