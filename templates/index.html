@@ -302,10 +302,9 @@
             <button class="btn-top-refresh" onclick="forceRecoveryRefresh()">🔄 Refresh</button>
         </div>
         
-        <!-- 🌟 BALL: 0/75 እዚህ ከ BALANCE እና PLAYERS መሀል ገብቷል -->
+        <!-- 🌟 BALL: 0/75 ተወግዷል -->
         <div class="stats" id="lobby-stats">
             <div>BALANCE<b id="balance">0 ETB</b></div>
-            <div>BALL<b id="ball-count">0/75</b></div>
             <div>PLAYERS<b id="p-count">0</b></div>
             <div>በሽ-ደራሽ<b id="prize">0 ETB</b></div>
         </div>
@@ -629,9 +628,6 @@
                 document.getElementById('balance').innerText = clientBalance.toFixed(0) + " ETB";
             }
 
-            let drawnCount = (d.drawn_balls && Array.isArray(d.drawn_balls)) ? d.drawn_balls.length : 0;
-            document.getElementById('ball-count').innerText = `${drawnCount}/75`;
-
             if(d.status === "lobby") {
                 document.getElementById('lobby-ui').style.display='flex'; 
                 document.getElementById('game-ui').style.display='none'; 
@@ -642,7 +638,6 @@
                 document.getElementById('ball-prep-countdown').style.display = 'none';
                 document.getElementById('start-alert-msg').style.display = 'none';
                 document.getElementById("recent-balls-container").innerHTML = ""; 
-                document.getElementById('ball-count').innerText = "0/75";
                 if (announced) { announced = false; }
                 const bBtn = document.getElementById('bingo-btn'); if(bBtn) bBtn.disabled = false;
                 lastBall = "--";
