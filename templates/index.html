@@ -299,10 +299,13 @@
         
         <div class="header-banner">
             <h1>BESH BINGO</h1>
+            <!-- 🌟 BALL: 0/75 ጨዋታ በይነገጽ ወደ ሄደር ተጨመረ -->
+            <div style="font-size: 0.9rem; font-weight: 900; color: var(--gold); background: rgba(255, 204, 0, 0.1); padding: 4px 10px; border-radius: 6px; border: 1px solid var(--gold);">
+                BALL: <span id="header-ball-count">0</span>/75
+            </div>
             <button class="btn-top-refresh" onclick="forceRecoveryRefresh()">🔄 Refresh</button>
         </div>
         
-        <!-- 🌟 BALL: 0/75 ተወግዷል -->
         <div class="stats" id="lobby-stats">
             <div>BALANCE<b id="balance">0 ETB</b></div>
             <div>PLAYERS<b id="p-count">0</b></div>
@@ -628,6 +631,13 @@
                 document.getElementById('balance').innerText = clientBalance.toFixed(0) + " ETB";
             }
 
+            // የኳስ ብዛት ማዘመኛ (ወደ ሄደር የተጨመረውን ኤለመንት ማሻሻል)
+            let drawnBallsCount = d.drawn_balls ? d.drawn_balls.length : 0;
+            let headerBallEl = document.getElementById('header-ball-count');
+            if(headerBallEl) {
+                headerBallEl.innerText = drawnBallsCount;
+            }
+
             if(d.status === "lobby") {
                 document.getElementById('lobby-ui').style.display='flex'; 
                 document.getElementById('game-ui').style.display='none'; 
@@ -638,6 +648,7 @@
                 document.getElementById('ball-prep-countdown').style.display = 'none';
                 document.getElementById('start-alert-msg').style.display = 'none';
                 document.getElementById("recent-balls-container").innerHTML = ""; 
+                if(headerBallEl) headerBallEl.innerText = "0"; // በሎቢ ጊዜ 0 ማድረግ
                 if (announced) { announced = false; }
                 const bBtn = document.getElementById('bingo-btn'); if(bBtn) bBtn.disabled = false;
                 lastBall = "--";
