@@ -129,6 +129,23 @@
             justify-content: flex-start;
         }
 
+        /* 🌟 የኳስ ቆጣሪ ማሳያ ብቻ (BALANCE እና PLAYERS ተወግደዋል) */
+        .game-ui-header {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 6px;
+            margin: 0 0 5px 0;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 0.9rem;
+        }
+        .game-ui-header span, .game-ui-header b {
+            color: var(--gold);
+            font-weight: bold;
+        }
+
         .ball-section-wrapper { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; margin-bottom: 5px; }
         .ball-row { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; }
         #ball-circle { width: 55px; height: 55px; background: radial-gradient(circle, #fff, var(--gold)); color: #000; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; font-weight: 900; border: 3px solid #1e293b; box-sizing: border-box; flex-shrink: 0; }
@@ -299,10 +316,6 @@
         
         <div class="header-banner">
             <h1>BESH BINGO</h1>
-            <!-- 🌟 BALL: 0/75 ጨዋታ በይነገጽ ወደ ሄደር ተጨመረ -->
-            <div style="font-size: 0.9rem; font-weight: 900; color: var(--gold); background: rgba(255, 204, 0, 0.1); padding: 4px 10px; border-radius: 6px; border: 1px solid var(--gold);">
-                BALL: <span id="header-ball-count">0</span>/75
-            </div>
             <button class="btn-top-refresh" onclick="forceRecoveryRefresh()">🔄 Refresh</button>
         </div>
         
@@ -329,6 +342,13 @@
         </div>
 
         <div id="game-ui" style="display:none;">
+            <!-- 🌟 ድግግሞሾቹ ተወግደዋል፣ አሁን BALL: 0/75 ብቻ በመሃል ይታያል -->
+            <div class="game-ui-header">
+                <div class="ball-counter-container" style="font-weight: bold;">
+                    <span>BALL: </span><span id="ball-count">0/75</span>
+                </div>
+            </div>
+
             <div class="ball-section-wrapper">
                 <div id="start-alert-msg" class="game-start-alert" style="display:none;">🔴 ጨዋታው ሊጀምር ነው...</div>
                 <div class="ball-row">
@@ -631,11 +651,8 @@
                 document.getElementById('balance').innerText = clientBalance.toFixed(0) + " ETB";
             }
 
-            let drawnBallsCount = d.drawn_balls ? d.drawn_balls.length : 0;
-            let headerBallEl = document.getElementById('header-ball-count');
-            if(headerBallEl) {
-                headerBallEl.innerText = drawnBallsCount;
-            }
+            let drawnCount = (d.drawn_balls && Array.isArray(d.drawn_balls)) ? d.drawn_balls.length : 0;
+            document.getElementById('ball-count').innerText = `${drawnCount}/75`;
 
             if(d.status === "lobby") {
                 document.getElementById('lobby-ui').style.display='flex'; 
@@ -647,7 +664,7 @@
                 document.getElementById('ball-prep-countdown').style.display = 'none';
                 document.getElementById('start-alert-msg').style.display = 'none';
                 document.getElementById("recent-balls-container").innerHTML = ""; 
-                if(headerBallEl) headerBallEl.innerText = "0";
+                document.getElementById('ball-count').innerText = "0/75";
                 if (announced) { announced = false; }
                 const bBtn = document.getElementById('bingo-btn'); if(bBtn) bBtn.disabled = false;
                 lastBall = "--";
