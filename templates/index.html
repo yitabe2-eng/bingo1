@@ -114,11 +114,66 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 20px;
+            padding: 15px 20px;
             box-sizing: border-box;
-            gap: 15px;
+            gap: 12px;
             overflow-y: auto;
         }
+
+        /* --- አዲስ የተጨመረ ፕሮፌሽናል የሰላምታ እና መመሪያ ካርድ (Welcome Card) --- */
+        .welcome-hero-card {
+            width: 100%;
+            max-width: 360px;
+            background: linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.95));
+            border: 1px solid rgba(255, 204, 0, 0.4);
+            border-radius: 16px;
+            padding: 18px 15px;
+            box-sizing: border-box;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+            position: relative;
+            overflow: hidden;
+            text-align: center;
+        }
+        .welcome-hero-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--gold), var(--orange), var(--green));
+        }
+        .welcome-badge {
+            display: inline-block;
+            background: rgba(255, 204, 0, 0.15);
+            color: var(--gold);
+            font-size: 0.7rem;
+            font-weight: 800;
+            padding: 3px 10px;
+            border-radius: 20px;
+            margin-bottom: 8px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            border: 1px solid rgba(255, 204, 0, 0.3);
+        }
+        .welcome-hero-card h3 {
+            margin: 0 0 6px 0;
+            font-size: 1.15rem;
+            color: #ffffff;
+            font-weight: 900;
+            letter-spacing: 0.5px;
+        }
+        .welcome-hero-card h3 span {
+            color: var(--gold);
+        }
+        .welcome-hero-card p {
+            margin: 0;
+            font-size: 0.82rem;
+            color: #94a3b8;
+            line-height: 1.4;
+        }
+        .welcome-hero-card p b {
+            color: var(--green);
+        }
+
         .dashboard-menu {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -164,20 +219,6 @@
             transition: 0.2s;
         }
         .btn-play-gigantic:active { transform: scale(0.97); }
-
-        .game-status-alert-box {
-            background: rgba(255, 62, 62, 0.15);
-            border: 2px dashed var(--red);
-            padding: 12px;
-            border-radius: 10px;
-            width: 100%;
-            max-width: 360px;
-            box-sizing: border-box;
-            color: var(--red);
-            font-weight: bold;
-            font-size: 0.9rem;
-            display: none;
-        }
 
         #lobby-ui { 
             flex: 1; 
@@ -384,8 +425,11 @@
         </div>
 
         <div id="user-interface">
-            <div id="game-status-alert" class="game-status-alert-box">
-                ⚠️ ጨዋታው በአሁኑ ሰዓት በሂደት ላይ ነው! እባክዎ ጨዋታው እስኪያልቅ ይጠብቁ ወይም «Play»ን ነክተው ጨዋታውን ይከታተሉ።
+            <!-- [አዲስ የተጨመረ ፕሮፌሽናል የሰላምታ ክፍል] -->
+            <div class="welcome-hero-card">
+                <div class="welcome-badge">✨ እንኳን ደህና መጡ</div>
+                <h3>እንኳን ወደ <span>በሽ ቢንጎ</span> በሰላም መጣችሁ!</h3>
+                <p>በደስታ ተጫውተው ይሸለሙ! ወደ ጨዋታው ለመግባት ከታች የሚገኘውን <b>PLAY</b> የሚለውን ይጫኑ።</p>
             </div>
 
             <button class="btn-play-gigantic" onclick="handlePlayButtonPress()">🎮 PLAY</button>
@@ -437,7 +481,7 @@
         </div>
     </div>
 
-    <div id="guide-m" class="modal"><div class="modal-content"><h2 style="color:var(--gold); text-align:center; margin-top:0;">📖 መመሪያ</h2><p style="color:#fff; line-height: 1.6; font-size:0.9rem;">1. ጨዋታው እንዲጀምር ቢያንስ 2 ተጫዋቾች ሊኖሩ ይገባል。<br>2. ካርቴላ ለመግዛት ሎቢ ላይ ያሉትን ቁጥሮች ይጫኑ (ማክሲመም 2 መግዛት ይቻላል)。<br>3. ጨዋታው ሲጀምር ኳሶች በየጊዜው ይጣላሉ。<br>4. መስመር ሲሞላ ፈጥነው BINGO የሚለውን ይጫኑ!</p><button class="btn-main" style="width:100%; background:var(--red); color:white; margin-top:15px; padding:12px; font-weight:bold; border:none; border-radius:8px; cursor:pointer;" onclick="closeM('guide-m')">እሺ</button></div></div>
+    <div id="guide-m" class="modal"><div class="modal-content"><h2 style="color:var(--gold); text-align:center; margin-top:0;">📖 መመሪያ</h2><p style="color:#fff; line-height: 1.6; font-size:0.9rem;">1. ጨዋታው እንዲጀምር ቢያንስ 2 ተጨዋቾች ሊኖሩ ይገባል。<br>2. ካርቴላ ለመግዛት ሎቢ ላይ ያሉትን ቁጥሮች ይጫኑ (ማክሲመም 2 መግዛት ይቻላል)。<br>3. ጨዋታው ሲጀምር ኳሶች በየጊዜው ይጣላሉ。<br>4. መስመር ሲሞላ ፈጥነው BINGO የሚለውን ይጫኑ!</p><button class="btn-main" style="width:100%; background:var(--red); color:white; margin-top:15px; padding:12px; font-weight:bold; border:none; border-radius:8px; cursor:pointer;" onclick="closeM('guide-m')">እሺ</button></div></div>
     
     <div id="withdraw-selection-m" class="modal">
         <div class="modal-content" style="text-align:center;">
@@ -517,7 +561,7 @@
                 <div class="winner-grid-modern" id="w-grid-cells"></div>
             </div>
         </div>
-        <div class="next-round-bar">Next Round: <span id="w-next-timer">10s</span></div>
+        <button class="next-round-bar" onclick="goBackToUserInterface()">⬅️ Back to Lobby / Dashboard</button>
     </div>
 
     <script>
@@ -675,6 +719,7 @@
         }
 
         function goBackToUserInterface() {
+            document.getElementById('result-ui').style.display = 'none';
             showUserInterfaceView();
         }
 
@@ -759,16 +804,6 @@
             let drawnCount = (d.drawn_balls && Array.isArray(d.drawn_balls)) ? d.drawn_balls.length : 0;
             document.getElementById('ball-count').innerText = `${drawnCount}/75`;
 
-            const alertBox = document.getElementById('game-status-alert');
-            if (alertBox) {
-                if (currentServerStatus === "playing") {
-                    alertBox.style.display = 'block';
-                } else {
-                    alertBox.style.display = 'none';
-                }
-            }
-
-            // [ማስተካከያ] ታይሙ 0 ሆኖ ሰርቨሩ ወደ playing ሲቀየር አውቶማቲክ ወደ ጌም ዩአይ እንዲገባ ተደረገ
             if (currentServerStatus === "lobby") {
                 document.getElementById('result-ui').style.display='none';
                 document.getElementById('main-board').innerHTML=""; 
@@ -787,11 +822,6 @@
                 if (!isProcessingBuy) { renderTickets(d.sold_tickets || {}); }
             } 
             else if (currentServerStatus === "playing") {
-                // በሂደት ላይ በሚሆንበት ጊዜ ተጠቃሚው በdashboard ወይም lobby ላይ ከሆነ ወደ game-ui እንወስደዋለን
-                if (document.getElementById('game-ui').style.display !== 'flex') {
-                    showGameInterfaceView();
-                }
-
                 const prepCountdownEl = document.getElementById('ball-prep-countdown');
                 const startAlertEl = document.getElementById('start-alert-msg');
                 let ballTimerVal = parseInt(d.ball_timer);
@@ -841,7 +871,6 @@
                 const cardArea = document.getElementById('card-area');
                 if (cardArea) {
                     if (myCards.length > 0) {
-                        // ካርቶቹ ገና ካልተጫኑ ወይም የ «ካርቴላ አልገዙም» የሚለው መልእክት ከነበረ እናጸዳለን
                         if (cardArea.children.length === 0 || cardArea.querySelector('.waiting-box') || cardArea.innerText.includes("አልገዙም")) {
                             cardArea.innerHTML = "";
                             myCards.forEach((cObj) => { renderCard(cObj.matrix); }); 
@@ -857,8 +886,8 @@
                 }
             } 
             else if (currentServerStatus === "result") {
-                if (document.getElementById('game-ui').style.display === 'flex') {
-                    showUserInterfaceView();
+                if (document.getElementById('game-ui').style.display === 'flex' || document.getElementById('user-interface').style.display === 'flex') {
+                    showLobbyInterfaceView();
                 }
 
                 document.getElementById('result-ui').style.display='flex';
@@ -873,9 +902,6 @@
                 let ticketNum = d.winning_ticket_num ? String(d.winning_ticket_num) : "100";
                 document.getElementById('w-card-number').innerText = `CARD #${ticketNum}`;
                 document.getElementById('w-card-owner').innerText = winnerName;
-                
-                let timerVal = parseInt(d.timer);
-                document.getElementById('w-next-timer').innerText = isNaN(timerVal) ? "10s" : timerVal + "s";
 
                 let patternNameEl = document.getElementById('w-pattern-name');
                 if (patternNameEl) {
