@@ -80,14 +80,19 @@
         }
         .header-banner h1 { margin: 0; font-size: 1.3rem; color: var(--gold); letter-spacing: 2px; }
         
-        .btn-top-refresh {
+        .header-btns {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        .btn-top-refresh, .btn-top-back {
             background: var(--gold);
             color: #000;
             border: 1px solid white;
             border-radius: 6px;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             font-weight: bold;
-            padding: 6px 12px;
+            padding: 6px 10px;
             cursor: pointer;
             display: flex;
             align-items: center;
@@ -96,21 +101,79 @@
             transition: 0.2s;
             flex-shrink: 0;
         }
-        .btn-top-refresh:active { transform: scale(0.9); }
+        .btn-top-back { background: #3b82f6; color: white; border-color: #60a5fa; }
+        .btn-top-refresh:active, .btn-top-back:active { transform: scale(0.9); }
 
         .stats { display: flex; justify-content: space-around; background: rgba(255,255,255,0.05); padding: 6px; margin: 5px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); }
         .stats div { font-size: 0.75rem; color: #94a3b8; }
         .stats b { display: block; font-size: 0.95rem; color: var(--gold); }
         
-        #lobby-ui { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
-        .action-bar { display: flex; justify-content: center; gap: 5px; padding: 4px 8px; flex-wrap: wrap; }
-        .btn-main { flex: 1; min-width: 70px; padding: 9px 4px; border: none; border-radius: 8px; font-weight: 900; cursor: pointer; text-transform: uppercase; font-size: 0.7rem; transition: 0.3s; }
-        .btn-deposit { background: var(--green); color: #000; }
-        .btn-withdraw { background: var(--orange); color: white; }
-        .btn-transfer { background: var(--purple); color: white; }
-        .btn-how-to { background: #3b82f6; color: white; border: 1px solid #60a5fa; }
+        #user-interface {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            box-sizing: border-box;
+            gap: 15px;
+            overflow-y: auto;
+        }
+        .dashboard-menu {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            width: 100%;
+            max-width: 360px;
+        }
+        .dashboard-btn {
+            padding: 18px 10px;
+            border: none;
+            border-radius: 12px;
+            font-weight: 900;
+            font-size: 0.9rem;
+            cursor: pointer;
+            text-transform: uppercase;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            transition: 0.2s;
+        }
+        .dashboard-btn span { font-size: 1.5rem; }
+        .db-deposit { background: var(--green); color: #000; }
+        .db-withdraw { background: var(--orange); color: white; }
+        .db-transfer { background: var(--purple); color: white; }
+        .db-guide { background: #3b82f6; color: white; }
+        
+        .btn-play-gigantic {
+            width: 100%;
+            max-width: 360px;
+            padding: 16px;
+            background: linear-gradient(135deg, var(--gold), #e6b800);
+            color: #000;
+            border: none;
+            border-radius: 14px;
+            font-size: 1.3rem;
+            font-weight: 900;
+            cursor: pointer;
+            text-transform: uppercase;
+            box-shadow: 0 6px 20px rgba(255, 204, 0, 0.4);
+            letter-spacing: 2px;
+            transition: 0.2s;
+        }
+        .btn-play-gigantic:active { transform: scale(0.97); }
 
-        .timer-container { display: flex; align-items: center; justify-content: center; gap: 15px; margin: 10px auto; width: 90%; max-width: 400px; background: rgba(255, 255, 255, 0.02); padding: 6px 12px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.05); }
+        #lobby-ui { 
+            flex: 1; 
+            overflow-y: auto; 
+            display: flex; 
+            flex-direction: column; 
+            display: none; 
+        }
+
+        .timer-container { display: flex; align-items: center; justify-content: center; gap: 15px; margin: 15px auto 10px auto; width: 90%; max-width: 400px; background: rgba(255, 255, 255, 0.02); padding: 8px 12px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.05); }
         #timer { font-size: 2rem; font-weight: 900; color: var(--gold); text-align: center; line-height: 1; }
         .buy-notice { font-size: 0.95rem; font-weight: 900; color: var(--green); background: rgba(0, 255, 136, 0.1); padding: 8px 12px; border-radius: 8px; border: 2px dashed var(--green); text-align: center; min-width: 140px; box-sizing: border-box; }
 
@@ -127,9 +190,9 @@
             padding: 5px;
             box-sizing: border-box;
             justify-content: flex-start;
+            display: none;
         }
 
-        /* 🌟 የኳስ ቆጣሪ ማሳያ ብቻ (BALANCE እና PLAYERS ተወግደዋል) */
         .game-ui-header {
             display: flex;
             justify-content: center;
@@ -255,28 +318,6 @@
         .w-cell-modern.free { background: var(--gold); color: #1e293b; font-size: 1rem; border-color: var(--gold); }
         .next-round-bar { background: var(--gold); color: #000; font-weight: 900; padding: 12px; width: 92%; max-width: 360px; margin-top: 10px; border-radius: 15px; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
 
-        .waiting-box {
-            color: var(--gold);
-            font-weight: bold;
-            font-size: 0.9rem;
-            padding: 15px 10px;
-            text-align: center;
-            border: 2px dashed var(--gold);
-            border-radius: 12px;
-            background: rgba(255, 204, 0, 0.05);
-            margin-top: 10px;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            align-items: center;
-        }
-        .waiting-box-btns {
-            display: flex;
-            gap: 10px;
-            width: 100%;
-            justify-content: center;
-        }
-        
         .deposit-guide-box {
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(255, 255, 255, 0.1);
@@ -316,7 +357,10 @@
         
         <div class="header-banner">
             <h1>BESH BINGO</h1>
-            <button class="btn-top-refresh" onclick="forceRecoveryRefresh()">🔄 Refresh</button>
+            <div class="header-btns">
+                <button id="btn-back-lobby" class="btn-top-back" style="display:none;" onclick="goBackToUserInterface()">⬅️ Back</button>
+                <button class="btn-top-refresh" onclick="forceRecoveryRefresh()">🔄 Refresh</button>
+            </div>
         </div>
         
         <div class="stats" id="lobby-stats">
@@ -325,14 +369,18 @@
             <div>በሽ-ደራሽ<b id="prize">0 ETB</b></div>
         </div>
 
-        <div id="lobby-ui">
-            <div class="action-bar">
-                <button class="btn-main btn-deposit" onclick="openDepositSelection()">📥 DEPOSIT</button>
-                <button class="btn-main btn-transfer" onclick="openM('trans-m')">💸 TRANSFER</button>
-                <button class="btn-main btn-withdraw" onclick="openWithdrawSelection()">📤 WITHDRAW</button>
-                <button class="btn-main btn-how-to" onclick="openM('guide-m')">📖 GUIDE</button>
+        <div id="user-interface">
+            <button class="btn-play-gigantic" onclick="handlePlayButtonPress()">🎮 PLAY</button>
+
+            <div class="dashboard-menu">
+                <button class="dashboard-btn db-deposit" onclick="openDepositSelection()"><span>📥</span> Deposit</button>
+                <button class="dashboard-btn db-withdraw" onclick="openWithdrawSelection()"><span>📤</span> Withdraw</button>
+                <button class="dashboard-btn db-transfer" onclick="openM('trans-m')"><span>💸</span> Transfer</button>
+                <button class="dashboard-btn db-guide" onclick="openM('guide-m')"><span>📖</span> Guide</button>
             </div>
-            
+        </div>
+
+        <div id="lobby-ui">
             <div class="timer-container">
                 <div id="timer">30</div>
                 <div class="buy-notice">🎟️ ካርቴላ ይግዙ (10 ETB)</div>
@@ -341,8 +389,7 @@
             <div class="grid-500" id="ticket-area"></div>
         </div>
 
-        <div id="game-ui" style="display:none;">
-            <!-- 🌟 ድግግሞሾቹ ተወግደዋል፣ አሁን BALL: 0/75 ብቻ በመሃል ይታያል -->
+        <div id="game-ui">
             <div class="game-ui-header">
                 <div class="ball-counter-container" style="font-weight: bold;">
                     <span>BALL: </span><span id="ball-count">0/75</span>
@@ -372,16 +419,15 @@
         </div>
     </div>
 
-    <!-- ሞዳሎች -->
-    <div id="guide-m" class="modal"><div class="modal-content"><h2 style="color:var(--gold); text-align:center; margin-top:0;">📖 መመሪያ</h2><p style="color:#fff; line-height: 1.6; font-size:0.9rem;">1. ጨዋታው እንዲጀምር ቢያንስ 2 ተጫዋቾች ሊኖሩ ይገባል。<br>2. ካርቴላ ለመግዛት ሎቢ ላይ ያሉትን ቁጥሮች ይጫኑ (ማክሲመም 2 መግዛት ይቻላል)。<br>3. ጨዋታው ሲጀምር ኳሶች በየጊዜው ይጣላሉ。<br>4. መስመር ሲሞላ ፈጥነው BINGO የሚለውን ይጫኑ!</p><button class="btn-main" style="width:100%; background:var(--red); color:white; margin-top:15px;" onclick="closeM('guide-m')">እሺ</button></div></div>
+    <div id="guide-m" class="modal"><div class="modal-content"><h2 style="color:var(--gold); text-align:center; margin-top:0;">📖 መመሪያ</h2><p style="color:#fff; line-height: 1.6; font-size:0.9rem;">1. ጨዋታው እንዲጀምር ቢያንስ 2 ተጨዋቾች ሊኖሩ ይገባል。<br>2. ካርቴላ ለመግዛት ሎቢ ላይ ያሉትን ቁጥሮች ይጫኑ (ማክሲመም 2 መግዛት ይቻላል)。<br>3. ጨዋታው ሲጀምር ኳሶች በየጊዜው ይጣላሉ。<br>4. መስመር ሲሞላ ፈጥነው BINGO የሚለውን ይጫኑ!</p><button class="btn-main" style="width:100%; background:var(--red); color:white; margin-top:15px; padding:12px; font-weight:bold; border:none; border-radius:8px; cursor:pointer;" onclick="closeM('guide-m')">እሺ</button></div></div>
     
     <div id="withdraw-selection-m" class="modal">
         <div class="modal-content" style="text-align:center;">
-            <h2 style="color:var(--orange); margin-top:0; font-size:1.1rem;">💳 የገንዘብ ማወጫ መንገድ ይምረጡ (Select Withdraw Method)</h2>
+            <h2 style="color:var(--orange); margin-top:0; font-size:1.1rem;">💳 የገንዘብ ማወጫ መንገድ ይምረጡ</h2>
             <p style="font-size:0.85rem; color:#94a3b8; margin-bottom:15px;">እባክዎ ገንዘብ የሚቀበሉበትን አካውንት ዓይነት ይምረጡ፡</p>
             <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-                <button class="btn-main" style="background:#2563eb; color:white; padding:12px;" onclick="selectWithdrawMethod('CBE BIRR')">CBE BIRR</button>
-                <button class="btn-main" style="background:var(--green); color:#000; padding:12px;" onclick="selectWithdrawMethod('TELE BIRR')">TELE BIRR</button>
+                <button style="flex:1; background:#2563eb; color:white; padding:12px; border:none; border-radius:8px; font-weight:bold; cursor:pointer;" onclick="selectWithdrawMethod('CBE BIRR')">CBE BIRR</button>
+                <button style="flex:1; background:var(--green); color:#000; padding:12px; border:none; border-radius:8px; font-weight:bold; cursor:pointer;" onclick="selectWithdrawMethod('TELE BIRR')">TELE BIRR</button>
             </div>
             <button onclick="closeM('withdraw-selection-m')" style="color:#94a3b8; background:none; border:none; cursor:pointer; font-weight:bold;">CANCEL</button>
         </div>
@@ -392,11 +438,11 @@
             <h2 id="withdraw-method-title" style="color:var(--orange); margin-top:0;">WITHDRAW</h2>
             <div class="deposit-guide-box">
                 <b>📌 ማሳሰቢያ:</b><br>
-                በመረጡት የ <span id="withdraw-method-name" style="color:var(--gold);">TELE BIRR</span> አካውንት (በተመዘገቡበት ስልክ ቁጥር) ገንዘብዎ ይላካል።
+                በመረጡት የ <span id="withdraw-method-name" style="color:var(--gold);">TELE BIRR</span> አካውንት ገንዘብዎ ይላካል።
             </div>
             <p style="font-size:0.85rem; color:#94a3b8;">የሚያወጡትን የብር መጠን ያስገቡ (ዝቅተኛው 51 ETB)</p>
             <input type="number" id="wa" min="51" placeholder="Amount (ETB)">
-            <button class="btn-main btn-withdraw" style="width:100%; padding:12px;" onclick="subW()">CONFIRM</button>
+            <button style="width:100%; padding:12px; background:var(--orange); color:white; border:none; border-radius:8px; font-weight:bold; cursor:pointer; text-transform:uppercase;" onclick="subW()">CONFIRM</button>
             <button onclick="closeWithdrawForm()" style="color:#94a3b8; background:none; border:none; margin-top:15px; cursor:pointer; font-weight:bold;">CLOSE</button>
         </div>
     </div>
@@ -407,18 +453,18 @@
             <p style="font-size: 0.85rem; color:#94a3b8;">የተቀባዩን ስልክ ቁጥር እና የሚላከውን የብር መጠን ያስገቡ</p>
             <input type="tel" id="trans-phone" placeholder="የተቀባይ ስልክ (ምሳሌ: 09...)">
             <input type="number" id="trans-amount" min="1" placeholder="የብር መጠን (ETB)">
-            <button class="btn-main btn-transfer" style="width:100%; padding:12px;" onclick="subTransfer()">SEND</button>
+            <button style="width:100%; padding:12px; background:var(--purple); color:white; border:none; border-radius:8px; font-weight:bold; cursor:pointer; text-transform:uppercase;" onclick="subTransfer()">SEND</button>
             <button onclick="closeM('trans-m')" style="color:#94a3b8; background:none; border:none; margin-top:15px; cursor:pointer;">CLOSE</button>
         </div>
     </div>
 
     <div id="dep-selection-m" class="modal">
         <div class="modal-content" style="text-align:center;">
-            <h2 style="color:var(--gold); margin-top:0; font-size:1.1rem;">💳 የማንጸኛ መንገድ ይምረጡ (Select Deposit Method)</h2>
+            <h2 style="color:var(--gold); margin-top:0; font-size:1.1rem;">💳 የማንጸኛ መንገድ ይምረጡ</h2>
             <p style="font-size:0.85rem; color:#94a3b8; margin-bottom:15px;">እባክዎ ሒሳብ ለመሞላት የሚጠቀሙበትን መንገድ ይምረጡ፡</p>
             <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-                <button class="btn-main" style="background:#2563eb; color:white; padding:12px;" onclick="selectDepositMethod('CBE BIRR')">CBE BIRR</button>
-                <button class="btn-main" style="background:var(--green); color:#000; padding:12px;" onclick="selectDepositMethod('TELE BIRR')">TELE BIRR</button>
+                <button style="flex:1; background:#2563eb; color:white; padding:12px; border:none; border-radius:8px; font-weight:bold; cursor:pointer;" onclick="selectDepositMethod('CBE BIRR')">CBE BIRR</button>
+                <button style="flex:1; background:var(--green); color:#000; padding:12px; border:none; border-radius:8px; font-weight:bold; cursor:pointer;" onclick="selectDepositMethod('TELE BIRR')">TELE BIRR</button>
             </div>
             <button onclick="closeM('dep-selection-m')" style="color:#94a3b8; background:none; border:none; cursor:pointer; font-weight:bold;">CANCEL</button>
         </div>
@@ -429,13 +475,13 @@
             <h2 id="dep-method-title" style="color:var(--green); margin-top:0;">DEPOSIT</h2>
             <div class="deposit-guide-box">
                 <b>📌 የክፍያ መመሪያ:</b><br>
-                በተሰጠው የ <span id="dep-method-name" style="color:var(--gold);">TELE BIRR</span> አካውንት ገንዘብ ከላኩ በኋላ የግብይቱን <b>Transaction ID</b> እና የላኩትን መጠን በመሙላት ማረጋገጫ ያስገቡ。<br><br>
+                በተሰጠው የ <span id="dep-method-name" style="color:var(--gold);">TELE BIRR</span> አካውንት ገንዘብ ከላኩ በኋላ የግብይቱን <b>Transaction ID</b> እና መጠን ያስገቡ。<br><br>
                 <b>አካውንት: <span style="color:var(--gold);" onclick="copyNum('0945880474')">0945880474 (ኮፒ ለማድረግ ይጫኑ)</span></b>
             </div>
             
             <input type="number" id="da" min="10" placeholder="Amount (ETB)">
             <input type="text" id="di" placeholder="Transaction ID">
-            <button class="btn-main btn-deposit" style="width:100%; padding:12px; margin-top:5px;" onclick="subD()">SUBMIT</button>
+            <button style="width:100%; padding:12px; margin-top:5px; background:var(--green); color:#000; border:none; border-radius:8px; font-weight:bold; cursor:pointer; text-transform:uppercase;" onclick="subD()">SUBMIT</button>
             <button onclick="closeDepositForm()" style="color:#94a3b8; background:none; border:none; margin-top:15px; cursor:pointer; font-weight:bold;">CANCEL</button>
         </div>
     </div>
@@ -453,7 +499,8 @@
                 <div class="winner-grid-modern" id="w-grid-cells"></div>
             </div>
         </div>
-        <div class="next-round-bar">Next Round: <span id="w-next-timer">10s</span></div>
+        <!-- [ማስተካከያ 1]  አሸናፊው ሲታወቅ በቀጥታ ወደ ሎቢ ዩአይ እንዲመለስ ተደርጓል -->
+        <button class="next-round-bar" onclick="goBackToUserInterface()">⬅️ Back to Lobby / Dashboard</button>
     </div>
 
     <script>
@@ -466,6 +513,7 @@
         let globalMyCardsData = []; 
         let selectedDepositMethodName = "";
         let selectedWithdrawMethodName = "TELE BIRR";
+        let currentServerStatus = "lobby"; 
 
         window.onload = function() {
             let telegramChatId = "";
@@ -486,7 +534,7 @@
                 .then(res => res.json())
                 .then(d => {
                     if (d.success) {
-                        showGameUI();
+                        showMainApp();
                     } else {
                         localStorage.removeItem('phone');
                         localStorage.removeItem('username');
@@ -494,7 +542,7 @@
                     }
                 })
                 .catch(() => {
-                    showGameUI();
+                    showMainApp();
                 });
             } else {
                 showAuthUI();
@@ -553,7 +601,7 @@
                     localStorage.setItem('username', inputName);
                     phone = cleanPhone;
                     username = inputName;
-                    showGameUI();
+                    showMainApp();
                 } else {
                     alert(data.msg || "የምዝገባ ስህተት አጋጥሟል!");
                     if(submitBtn) submitBtn.disabled = false;
@@ -564,15 +612,56 @@
                 localStorage.setItem('username', inputName);
                 phone = cleanPhone;
                 username = inputName;
-                showGameUI();
+                showMainApp();
             });
         }
 
-        function showGameUI() {
+        function showMainApp() {
             document.getElementById('auth-ui').style.display = 'none';
             document.getElementById('main-app-content').style.display = 'flex'; 
             fetchBalanceOnly();
             initWebSocket();
+            showUserInterfaceView();
+        }
+
+        function showUserInterfaceView() {
+            document.getElementById('user-interface').style.display = 'flex';
+            document.getElementById('lobby-ui').style.display = 'none';
+            document.getElementById('game-ui').style.display = 'none';
+            document.getElementById('result-ui').style.display = 'none';
+            document.getElementById('btn-back-lobby').style.display = 'none';
+        }
+
+        function showLobbyInterfaceView() {
+            document.getElementById('user-interface').style.display = 'none';
+            document.getElementById('lobby-ui').style.display = 'flex';
+            document.getElementById('game-ui').style.display = 'none';
+            document.getElementById('result-ui').style.display = 'none';
+            document.getElementById('btn-back-lobby').style.display = 'flex';
+        }
+
+        function showGameInterfaceView() {
+            document.getElementById('user-interface').style.display = 'none';
+            document.getElementById('lobby-ui').style.display = 'none';
+            document.getElementById('game-ui').style.display = 'flex';
+            document.getElementById('result-ui').style.display = 'none';
+            document.getElementById('btn-back-lobby').style.display = 'flex';
+        }
+
+        // [ማስተካከያ 2 እና 3] PLAY በተን ሲጫኑ፡ ጨዋታው በሂደት ላይ (playing) ከሆነ ወደ Game UI፣ ካልሆነ ደግሞ ወደ Lobby UI ይወስዳል
+        function handlePlayButtonPress() {
+            if (currentServerStatus === "playing") {
+                showGameInterfaceView();
+            } else {
+                showLobbyInterfaceView();
+                initTicketsOnce();
+            }
+        }
+
+        // [ማስተካከያ 1] ከሎቢ ወይም ከጨዋታ ውጤት ዳሽቦርድ (User Interface) ለመመለስ
+        function goBackToUserInterface() {
+            document.getElementById('result-ui').style.display = 'none';
+            showUserInterfaceView();
         }
 
         function fetchBalanceOnly() {
@@ -641,6 +730,8 @@
 
         function applyGameStateData(d) {
             if (!d) return;
+            currentServerStatus = d.status || "lobby";
+            
             let finalPrize = Math.floor((parseFloat(d.pot) || 0) * 0.8);
             document.getElementById('prize').innerText = finalPrize + " ETB";
             document.getElementById('p-count').innerText = parseInt(d.active_players) || 0;
@@ -654,9 +745,7 @@
             let drawnCount = (d.drawn_balls && Array.isArray(d.drawn_balls)) ? d.drawn_balls.length : 0;
             document.getElementById('ball-count').innerText = `${drawnCount}/75`;
 
-            if(d.status === "lobby") {
-                document.getElementById('lobby-ui').style.display='flex'; 
-                document.getElementById('game-ui').style.display='none'; 
+            if (currentServerStatus === "lobby") {
                 document.getElementById('result-ui').style.display='none';
                 document.getElementById('main-board').innerHTML=""; 
                 document.getElementById('card-area').innerHTML="";
@@ -673,11 +762,7 @@
                 initTicketsOnce(); 
                 if (!isProcessingBuy) { renderTickets(d.sold_tickets || {}); }
             } 
-            else if(d.status === "playing") {
-                document.getElementById('lobby-ui').style.display='none'; 
-                document.getElementById('game-ui').style.display='flex'; 
-                document.getElementById('result-ui').style.display='none';
-                
+            else if (currentServerStatus === "playing") {
                 const prepCountdownEl = document.getElementById('ball-prep-countdown');
                 const startAlertEl = document.getElementById('start-alert-msg');
                 let ballTimerVal = parseInt(d.ball_timer);
@@ -712,11 +797,11 @@
                 }
 
                 let myCards = [];
-                if (d.sold_tickets) {
+                if (d.sold_tickets && d.all_cards) {
                     for (let ticketId in d.sold_tickets) {
                         if (phoneMatches(d.sold_tickets[ticketId], phone)) {
                             let tNumStr = String(ticketId);
-                            if (d.all_cards && d.all_cards[tNumStr]) {
+                            if (d.all_cards[tNumStr]) {
                                 myCards.push({ id: tNumStr, matrix: d.all_cards[tNumStr] });
                             }
                         }
@@ -727,25 +812,24 @@
                 const cardArea = document.getElementById('card-area');
                 if (cardArea) {
                     if (myCards.length > 0) {
-                        if (cardArea.children.length === 0 || cardArea.querySelector('.waiting-box')) {
+                        if (cardArea.children.length === 0 || cardArea.querySelector('.waiting-box') || cardArea.innerText.includes("አልገዙም")) {
                             cardArea.innerHTML = "";
-                            myCards.forEach((cObj, i) => { renderCard(cObj.matrix, i); }); 
+                            myCards.forEach((cObj) => { renderCard(cObj.matrix); }); 
                         }
                     } else {
-                        if (!cardArea.querySelector('.waiting-box')) {
+                        if (!cardArea.querySelector('.waiting-box') && !cardArea.innerText.includes("አልገዙም")) {
                             cardArea.innerHTML = `
-                                <div class="waiting-box">
-                                    <span>ጨዋታዉ ተጀምሯል! እባክዎ ይህ ዙር እስኪጠናቀቅ በትግስት ይጠብቁ</span>
-                                    <div class="waiting-box-btns">
-                                        <button class="btn-main btn-deposit" onclick="openDepositSelection()">📥 DEPOSIT</button>
-                                        <button class="btn-main btn-withdraw" onclick="openWithdrawSelection()">📤 WITHDRAW</button>
-                                    </div>
+                                <div class="waiting-box" style="color: var(--gold); font-weight: bold; font-size: 0.85rem; padding: 15px; text-align: center; border: 2px dashed var(--gold); border-radius: 10px; background: rgba(255,204,0,0.05);">
+                                    <span>በዚህ ዙር ካርቴላ አልገዙም</span>
                                 </div>`;
                         }
                     }
                 }
             } 
-            else if(d.status === "result") {
+            else if (currentServerStatus === "result") {
+                // [ማስተካከያ 1] ጫወታው አሸናፊ ሲወጣ (result ሁነታ ላይ ሲሆን) ተጫዋቹ በቀጥታ ወደ ሎቢ እንዲመለስ ይደረጋል
+                showLobbyInterfaceView();
+
                 document.getElementById('result-ui').style.display='flex';
                 let winnerName = d.winner;
                 if (!winnerName || winnerName === "Player" || winnerName.includes("No Winner")) {
@@ -758,9 +842,6 @@
                 let ticketNum = d.winning_ticket_num ? String(d.winning_ticket_num) : "100";
                 document.getElementById('w-card-number').innerText = `CARD #${ticketNum}`;
                 document.getElementById('w-card-owner').innerText = winnerName;
-                
-                let timerVal = parseInt(d.timer);
-                document.getElementById('w-next-timer').innerText = isNaN(timerVal) ? "10s" : timerVal + "s";
 
                 let patternNameEl = document.getElementById('w-pattern-name');
                 if (patternNameEl) {
