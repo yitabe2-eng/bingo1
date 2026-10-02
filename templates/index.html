@@ -104,7 +104,7 @@
         .btn-top-back { background: #3b82f6; color: white; border-color: #60a5fa; }
         .btn-top-refresh:active, .btn-top-back:active { transform: scale(0.9); }
 
-        .stats { display: flex; justify-content: space-around; background: rgba(255,255,255,0.05); padding: 6px; margin: 5px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); }
+        .stats { display: flex; justify-content: space-around; background: rgba(255,255,255,0.05); padding: 5px 6px; margin: 3px 8px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); }
         .stats div { font-size: 0.75rem; color: #94a3b8; }
         .stats b { display: block; font-size: 0.95rem; color: var(--gold); }
         
@@ -113,10 +113,10 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            padding: 15px 20px;
+            justify-content: flex-start;
+            padding: 8px 20px 15px 20px;
             box-sizing: border-box;
-            gap: 12px;
+            gap: 10px;
             overflow-y: auto;
         }
 
@@ -127,7 +127,7 @@
             background: linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.95));
             border: 1px solid rgba(255, 204, 0, 0.4);
             border-radius: 16px;
-            padding: 18px 15px;
+            padding: 14px 15px;
             box-sizing: border-box;
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
             position: relative;
@@ -149,13 +149,13 @@
             font-weight: 800;
             padding: 3px 10px;
             border-radius: 20px;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
             letter-spacing: 1px;
             text-transform: uppercase;
             border: 1px solid rgba(255, 204, 0, 0.3);
         }
         .welcome-hero-card h3 {
-            margin: 0 0 6px 0;
+            margin: 0 0 4px 0;
             font-size: 1.15rem;
             color: #ffffff;
             font-weight: 900;
@@ -177,12 +177,12 @@
         .dashboard-menu {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 12px;
+            gap: 10px;
             width: 100%;
             max-width: 360px;
         }
         .dashboard-btn {
-            padding: 18px 10px;
+            padding: 14px 10px;
             border: none;
             border-radius: 12px;
             font-weight: 900;
@@ -193,10 +193,10 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 5px;
+            gap: 4px;
             transition: 0.2s;
         }
-        .dashboard-btn span { font-size: 1.5rem; }
+        .dashboard-btn span { font-size: 1.4rem; }
         .db-deposit { background: var(--green); color: #000; }
         .db-withdraw { background: var(--orange); color: white; }
         .db-transfer { background: var(--purple); color: white; }
@@ -205,7 +205,7 @@
         .btn-play-gigantic {
             width: 100%;
             max-width: 360px;
-            padding: 16px;
+            padding: 14px;
             background: linear-gradient(135deg, var(--gold), #e6b800);
             color: #000;
             border: none;
@@ -561,7 +561,7 @@
                 <div class="winner-grid-modern" id="w-grid-cells"></div>
             </div>
         </div>
-        <button class="next-round-bar" onclick="goBackToUserInterface()">⬅️ Back to Lobby / Dashboard</button>
+        <button class="next-round-bar" onclick="goBackToUserInterface()">⬅️️ Back to Lobby / Dashboard</button>
     </div>
 
     <script>
