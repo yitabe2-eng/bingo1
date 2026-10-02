@@ -3,287 +3,47 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>BESH BINGO - SECURE PREMIUM</title>
-    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    
+    <title>BESH BINGO - PREMIUM</title>
     <style>
-        :root { 
-            --gold: #ffcc00; 
-            --bg: #050a18; 
-            --red: #ff3e3e; 
-            --green: #00ff88; 
-            --orange: #ff8800; 
-            --purple: #a855f7;
-        }
-        body { 
-            background: var(--bg); 
-            color: white; 
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
-            text-align: center; 
-            margin: 0; 
-            padding: 0; 
-            overflow: hidden; 
-            width: 100vw; 
-            height: 100vh; 
-        }
+        :root { --gold: #ffcc00; --bg: #050a18; --red: #ff3e3e; --green: #00ff88; --orange: #ff8800; }
+        body { background: var(--bg); color: white; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; text-align: center; margin: 0; padding: 0; overflow-x: hidden; width: 100vw; }
         
-        #auth-ui {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            padding: 20px;
-            box-sizing: border-box;
-            background: radial-gradient(circle at center, #1e293b, #050a18);
-        }
-        .auth-card {
-            background: rgba(255, 255, 255, 0.03);
-            border: 2px solid var(--gold);
-            border-radius: 20px;
-            padding: 30px 20px;
-            width: 100%;
-            max-width: 360px;
-            box-sizing: border-box;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
-        }
-        .auth-card h2 { color: var(--gold); margin-top: 0; font-size: 1.6rem; letter-spacing: 1px; }
-        .auth-card p { color: #94a3b8; font-size: 0.9rem; margin-bottom: 20px; }
-        .input-group { width: 100%; text-align: left; margin-bottom: 15px; }
-        .input-group label { display: block; font-size: 0.85rem; color: var(--gold); margin-bottom: 5px; font-weight: bold; }
-        .auth-input { padding: 14px; width: 100%; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2); box-sizing: border-box; font-size: 1rem; background: #fff; color: #000; font-weight: bold; }
-        .auth-input:focus { border-color: var(--gold); outline: none; }
-        .btn-login { width: 100%; padding: 14px; background: linear-gradient(135deg, var(--green), #00cc6a); color: #000; border: none; border-radius: 10px; font-weight: 900; font-size: 1.1rem; cursor: pointer; text-transform: uppercase; margin-top: 10px; box-shadow: 0 4px 15px rgba(0, 255, 136, 0.3); transition: 0.2s; }
-        .btn-login:disabled { background: #555; cursor: not-allowed; opacity: 0.6; box-shadow: none; }
-        .btn-login:active { transform: scale(0.98); }
-
-        /* Main App Views */
-        #main-app-content {
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            width: 100vw;
-            box-sizing: border-box;
-            overflow: hidden;
-        }
-
-        .header-banner { 
-            background: linear-gradient(145deg, #1e293b, #050a18); 
-            padding: 8px 15px; 
-            border-bottom: 2px solid var(--gold); 
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 15px;
-            position: relative;
-            z-index: 100;
-        }
-        .header-banner h1 { margin: 0; font-size: 1.3rem; color: var(--gold); letter-spacing: 2px; }
+        .header-banner { background: linear-gradient(145deg, #1e293b, #050a18); padding: 15px 0; border-bottom: 3px solid var(--gold); position: sticky; top: 0; z-index: 100; }
+        .header-banner h1 { margin: 0; font-size: 1.8rem; color: var(--gold); letter-spacing: 3px; }
         
-        .header-btns {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-        }
-        .btn-top-refresh, .btn-top-back {
-            background: var(--gold);
-            color: #000;
-            border: 1px solid white;
-            border-radius: 6px;
-            font-size: 0.8rem;
-            font-weight: bold;
-            padding: 6px 10px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.4);
-            transition: 0.2s;
-            flex-shrink: 0;
-        }
-        .btn-top-back { background: #3b82f6; color: white; border-color: #60a5fa; }
-        .btn-top-refresh:active, .btn-top-back:active { transform: scale(0.9); }
-
-        .stats { display: flex; justify-content: space-around; background: rgba(255,255,255,0.05); padding: 6px; margin: 5px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); }
-        .stats div { font-size: 0.75rem; color: #94a3b8; }
-        .stats b { display: block; font-size: 0.95rem; color: var(--gold); }
+        .stats { display: flex; justify-content: space-around; background: rgba(255,255,255,0.05); padding: 10px; margin: 10px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); }
+        .stats b { display: block; font-size: 1.1rem; color: var(--gold); }
         
-        /* 1. User Interface (Dashboard) */
-        #user-interface {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
+        .action-bar { display: flex; justify-content: center; gap: 6px; padding: 5px 10px; }
+        .btn-main { flex: 1; padding: 12px 5px; border: none; border-radius: 10px; font-weight: 900; cursor: pointer; text-transform: uppercase; font-size: 0.7rem; transition: 0.3s; }
+        .btn-deposit { background: var(--green); color: #000; }
+        .btn-withdraw { background: var(--orange); color: white; }
+        .btn-how-to { background: #3b82f6; color: white; border: 1px solid #60a5fa; }
+
+        #ball-circle { 
+            width: 75px; height: 75px; 
+            background: radial-gradient(circle, #fff, var(--gold)); 
+            color: #000; border-radius: 50%; 
+            display: flex; align-items: center; justify-content: center; 
+            font-size: 1.8rem; font-weight: 900; 
+            margin: 15px auto; border: 4px solid #1e293b;
             box-sizing: border-box;
-            gap: 15px;
-            overflow-y: auto;
-        }
-        .dashboard-menu {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            width: 100%;
-            max-width: 360px;
-        }
-        .dashboard-btn {
-            padding: 18px 10px;
-            border: none;
-            border-radius: 12px;
-            font-weight: 900;
-            font-size: 0.9rem;
-            cursor: pointer;
-            text-transform: uppercase;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 5px;
-            transition: 0.2s;
-        }
-        .dashboard-btn span { font-size: 1.5rem; }
-        .db-deposit { background: var(--green); color: #000; }
-        .db-withdraw { background: var(--orange); color: white; }
-        .db-transfer { background: var(--purple); color: white; }
-        .db-guide { background: #3b82f6; color: white; }
-        
-        .btn-play-gigantic {
-            width: 100%;
-            max-width: 360px;
-            padding: 16px;
-            background: linear-gradient(135deg, var(--gold), #e6b800);
-            color: #000;
-            border: none;
-            border-radius: 14px;
-            font-size: 1.3rem;
-            font-weight: 900;
-            cursor: pointer;
-            text-transform: uppercase;
-            box-shadow: 0 6px 20px rgba(255, 204, 0, 0.4);
-            letter-spacing: 2px;
-            transition: 0.2s;
-        }
-        .btn-play-gigantic:active { transform: scale(0.97); }
-
-        .game-status-alert-box {
-            background: rgba(255, 62, 62, 0.15);
-            border: 2px dashed var(--red);
-            padding: 12px;
-            border-radius: 10px;
-            width: 100%;
-            max-width: 360px;
-            box-sizing: border-box;
-            color: var(--red);
-            font-weight: bold;
-            font-size: 0.9rem;
-            display: none;
         }
 
-        /* 2. Lobby Interface */
-        #lobby-ui { 
-            flex: 1; 
-            overflow-y: auto; 
-            display: flex; 
-            flex-direction: column; 
-            display: none; 
-        }
-
-        .timer-container { display: flex; align-items: center; justify-content: center; gap: 15px; margin: 15px auto 10px auto; width: 90%; max-width: 400px; background: rgba(255, 255, 255, 0.02); padding: 8px 12px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.05); }
-        #timer { font-size: 2rem; font-weight: 900; color: var(--gold); text-align: center; line-height: 1; }
-        .buy-notice { font-size: 0.95rem; font-weight: 900; color: var(--green); background: rgba(0, 255, 136, 0.1); padding: 8px 12px; border-radius: 8px; border: 2px dashed var(--green); text-align: center; min-width: 140px; box-sizing: border-box; }
-
-        .grid-500 { display: grid; grid-template-columns: repeat(10, 1fr); gap: 4px; flex: 1; overflow-y: auto; background: #000; padding: 10px; margin: 5px 10px 10px 10px; border-radius: 10px; box-sizing: border-box; }
-        .t-box { background: #fff; color: #000; font-size: 0.75rem; padding: 8px 0; font-weight: bold; border-radius: 4px; cursor: pointer; box-sizing: border-box; border: 1px solid transparent; }
-        .t-box.mine { background: var(--gold) !important; color: #000 !important; box-shadow: inset 0 0 0 2px #ffffff; }
+        .grid-500 { display: grid; grid-template-columns: repeat(10, 1fr); gap: 4px; max-height: 160px; overflow-y: auto; background: #000; padding: 10px; margin: 10px; border-radius: 10px; }
+        .t-box { background: #fff; color: #000; font-size: 0.75rem; padding: 8px 0; font-weight: bold; border-radius: 4px; cursor: pointer; }
+        .t-box.mine { background: var(--gold); border: 2px solid white; animation: pulse 1.5s infinite; }
         .t-box.sold { background: #333; color: #666; cursor: not-allowed; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
 
-        /* 3. Game UI */
-        #game-ui {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            padding: 5px;
-            box-sizing: border-box;
-            justify-content: flex-start;
-            display: none;
-        }
-
-        .game-ui-header {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background: rgba(255, 255, 255, 0.05);
-            padding: 6px;
-            margin: 0 0 5px 0;
-            border-radius: 8px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            font-size: 0.9rem;
-        }
-        .game-ui-header span, .game-ui-header b {
-            color: var(--gold);
-            font-weight: bold;
-        }
-
-        .ball-section-wrapper { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; margin-bottom: 5px; }
-        .ball-row { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; }
-        #ball-circle { width: 55px; height: 55px; background: radial-gradient(circle, #fff, var(--gold)); color: #000; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; font-weight: 900; border: 3px solid #1e293b; box-sizing: border-box; flex-shrink: 0; }
-        #ball-prep-countdown { font-size: 0.9rem; font-weight: 900; color: var(--orange); background: rgba(255, 136, 0, 0.15); padding: 6px 12px; border-radius: 8px; border: 2px dashed var(--orange); text-align: center; }
-        .game-start-alert { font-size: 0.85rem; font-weight: bold; color: var(--gold); background: rgba(255, 204, 0, 0.1); padding: 4px 15px; border-radius: 15px; border: 1px solid var(--gold); letter-spacing: 1px; }
-
-        #recent-balls-container { display: flex; gap: 5px; align-items: center; }
-        .recent-ball { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: bold; color: #000; background: radial-gradient(circle, #fff, #cbd5e1); border: 2px solid #475569; box-shadow: 0 2px 4px rgba(0,0,0,0.3); }
-        .opacity-50-ball { opacity: 0.50; }
-
-        .game-layout {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 6px;
-            flex: 1;
-            overflow: hidden;
-            width: 100%;
-            box-sizing: border-box;
-            padding: 4px;
-        }
+        .game-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 5px; box-sizing: border-box; }
         
-        .board-container { 
-            border: 1px solid #333; 
-            background: rgba(0,0,0,0.8); 
-            border-radius: 8px; 
-            padding: 3px; 
-            display: flex; 
-            flex-direction: column; 
-            overflow: hidden;
-            height: 100%;
-            box-sizing: border-box;
-            position: relative;
-        }
-        .board-header { display: grid; grid-template-columns: repeat(5, 1fr); background: var(--gold); color: #000; font-weight: 900; font-size: 0.7rem; padding: 2px 0; border-radius: 4px; margin-bottom: 2px; }
-        .main-board { display: grid; grid-template-columns: repeat(5, 1fr); gap: 1px; flex: 1; overflow: hidden; }
-        .board-column { display: flex; flex-direction: column; gap: 1px; height: 100%; justify-content: space-between; }
-        
-        .ball-dot { font-size: 0.65rem; background: #111; padding: 2px 0; color: #444; border-radius: 2px; text-align: center; font-weight: bold; flex: 1; display: flex; align-items: center; justify-content: center; }
+        .board-container { border: 1px solid #333; background: rgba(0,0,0,0.8); border-radius: 10px; padding: 4px; display: flex; flex-direction: column; }
+        .board-header { display: grid; grid-template-columns: repeat(5, 1fr); background: var(--gold); color: #000; font-weight: 900; font-size: 0.85rem; padding: 4px 0; border-radius: 5px; margin-bottom: 4px; }
+        .main-board { display: grid; grid-template-columns: repeat(5, 1fr); gap: 2px; flex: 1; }
+        .board-column { display: flex; flex-direction: column; gap: 2px; }
+        .ball-dot { font-size: 0.65rem; background: #111; padding: 3px 0; color: #444; border-radius: 2px; text-align: center; font-weight: bold; }
         .ball-dot.active { background: var(--gold); color: #000; font-weight: bold; box-shadow: 0 0 3px var(--gold); }
-
-        .player-side-area { 
-            display: flex; 
-            flex-direction: column; 
-            justify-content: space-between; 
-            height: 100%; 
-            overflow: hidden;
-            box-sizing: border-box;
-        }
-        #card-area { 
-            flex: 1; 
-            display: flex; 
-            flex-direction: column; 
-            gap: 6px; 
-            overflow-y: auto; 
-            padding-right: 2px;
-            min-height: 190px;
-        }
         
         .bingo-card { 
             display: grid; 
@@ -292,800 +52,360 @@
             background: #444; 
             padding: 4px; 
             border-radius: 0 0 5px 5px; 
-            width: 100%; 
-            box-sizing: border-box;
+            max-width: 300px;  
+            margin: 0 auto;    
         }
-        .cell { 
-            background: #fff; 
-            color: #000; 
-            height: 33px; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            font-weight: 800; 
-            font-size: 0.85rem; 
-            cursor: pointer; 
-            border-radius: 3px;
-        }
-        .cell.selected { background: var(--gold) !important; color: #000 !important; }
-        .cell.free { background: var(--red) !important; color: white; font-size: 0.65rem; }
+        .cell { background: #fff; color: #000; height: 30px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.8rem; cursor: pointer; }
+        .cell.selected { background: var(--gold) !important; border: 0px solid #b45309; }
+        .cell.free { background: var(--red) !important; color: white; font-size: 0.6rem; }
         
-        #bingo-btn { width: 100%; padding: 12px 0; background: var(--red); color: white; font-size: 1.1rem; font-weight: 900; border-radius: 10px; border: 1px solid white; cursor: pointer; text-transform: uppercase; margin-top: 5px; box-shadow: 0 4px 10px rgba(255, 62, 62, 0.3); }
-        #bingo-btn:disabled { background: #555 !important; border-color: #888 !important; color: #aaa !important; cursor: not-allowed; box-shadow: none; }
+        #bingo-btn { width: 90%; padding: 12px; background: var(--red); color: white; font-size: 1.2rem; font-weight: 900; border-radius: 15px; border: 2px solid white; margin: 10px auto; display: block; cursor: pointer; transition: 0.2s; }
+        #bingo-btn:disabled { background: #555 !important; border-color: #888 !important; color: #aaa !important; cursor: not-allowed; }
         
         .modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index:2000; flex-direction:column; align-items:center; justify-content:center; padding: 20px; }
         .modal-content { background: #1e293b; padding: 20px; border-radius: 15px; width: 92%; max-width: 360px; text-align: left; max-height: 85vh; overflow-y: auto; }
         input { padding: 12px; margin: 10px 0; width: 100%; border-radius: 8px; border: none; box-sizing: border-box; font-size: 1rem; color: #000; }
+        #timer { font-size: 2.5rem; font-weight: 900; color: var(--gold); text-align: center; }
 
-        .winner-modal { display: none; position: fixed; inset: 0; background: linear-gradient(180deg, rgba(5,10,24,0.98), rgba(30,41,59,0.98)); z-index: 3000; flex-direction: column; align-items: center; justify-content: center; padding: 15px; }
-        .winner-box { background: #ffffff; color: #1e293b; width: 92%; max-width: 360px; border-radius: 28px; padding: 20px 15px; box-sizing: border-box; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); border: 4px solid var(--gold); text-align: center; }
-        .trophy-icon { font-size: 2.5rem; margin-bottom: 5px; animation: bounce 1s infinite alternate; }
-        @keyframes bounce { from { transform: translateY(0); } to { transform: translateY(-10px); } }
-        .winner-name-text { font-size: 1.2rem; font-weight: 900; margin: 5px 0; color: #10b981; word-break: break-word; }
-        .prize-pool-card { background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 15px; padding: 8px 12px; margin: 10px auto; width: 85%; }
-        .prize-pool-card span { display: block; font-weight: 800; color: #64748b; letter-spacing: 1px; text-transform: uppercase; font-size: 0.8rem; border-bottom: 1px dashed rgba(255,255,255,0.2); padding-bottom: 2px; }
-        .prize-pool-card b { font-size: 1.5rem; font-weight: 900; color: #10b981; }
-        .winner-card-section { background: #ffffff; border: 2px solid #f1f5f9; border-radius: 20px; padding: 10px; margin-top: 10px; }
-        .winner-card-info-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-weight: 800; font-size: 0.85rem; }
-        .winner-card-num-lbl { color: #2563eb; font-style: italic; font-size: 1rem; }
-        .winner-card-owner-lbl { color: #10b981; font-style: italic; }
-        .winner-grid-modern { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; background: #f8fafc; padding: 6px; border-radius: 12px; border: 1px solid #e2e8f0; }
-        .w-cell-modern { background: #ffffff; color: #a0aec0; height: 28px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.8rem; border-radius: 8px; border: 1px solid #e2e8f0; }
-        .w-cell-modern.drawn { background: #cbd5e1; color: #475569; border-color: #cbd5e1; }
-        .w-cell-modern.hit { background: #ef4444 !important; color: #ffffff !important; border-color: #ef4444; font-weight: 900; box-shadow: 0 0 12px #ef4444; }
-        .w-cell-modern.free { background: var(--gold); color: #1e293b; font-size: 1rem; border-color: var(--gold); }
-        .next-round-bar { background: var(--gold); color: #000; font-weight: 900; padding: 12px; width: 92%; max-width: 360px; margin-top: 10px; border-radius: 15px; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        .guide-list { padding-left: 15px; margin: 10px 0; font-size: 0.85rem; line-height: 1.6; color: #cbd5e1; }
+        .guide-list li { margin-bottom: 12px; }
+        .guide-section-title { font-weight: bold; color: var(--gold); margin-top: 10px; display: block; text-transform: uppercase; font-size: 0.9rem; border-bottom: 1px dashed rgba(255,255,255,0.2); padding-bottom: 2px; }
 
-        .deposit-guide-box {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
-            padding: 10px;
-            margin-bottom: 12px;
-            font-size: 0.85rem;
-            line-height: 1.5;
-            color: #e2e8f0;
-            text-align: left;
-        }
+        .winner-card-title { display: grid; grid-template-columns: repeat(5, 1fr); background: var(--orange); font-weight: 900; padding: 5px; font-size: 0.8rem; border-radius: 5px 5px 0 0; max-width: 200px; margin: 15px auto 0 auto; text-align: center; }
+        .winner-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 2px; background: #444; padding: 4px; border-radius: 0 0 5px 5px; max-width: 200px; margin: 0 auto; }
+        .winner-cell { background: #fff; color: #000; height: 25px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.75rem; text-align: center; }
+        .winner-cell.hit { background: var(--gold) !important; color: #000 !important; font-weight: 900; border: 2px solid white; }
+        .winner-cell.free { background: var(--red); color: white; font-size: 0.55rem; }
     </style>
 </head>
 <body>
-
-    <!-- የምዝገባ ገጽ -->
-    <div id="auth-ui">
-        <div class="auth-card">
-            <h2>ተመዝገብ</h2>
-            <p>ወደ ጨዋታው ለመግባት መረጃዎን ያስገቡ</p>
-            
-            <div class="input-group">
-                <label>የተጫዋች ስም</label>
-                <input type="text" id="reg-username" class="auth-input" placeholder="ስምዎን ያስገቡ...">
-            </div>
-
-            <div class="input-group">
-                <label>የስልክ ቁጥር</label>
-                <input type="tel" id="reg-phone" class="auth-input" placeholder="09... ወይም 07...">
-            </div>
-
-            <button id="auth-submit-btn" class="btn-login" onclick="registerUser()">🚀 ወደ ጨዋታው ግባ</button>
-        </div>
-    </div>
-
-    <!-- ዋናው መተግበሪያ -->
-    <div id="main-app-content" style="display: none;">
-        <audio id="win-horn" src="https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3" preload="auto"></audio>
-        
-        <div class="header-banner">
-            <h1>BESH BINGO</h1>
-            <div class="header-btns">
-                <button id="btn-back-lobby" class="btn-top-back" style="display:none;" onclick="goBackToUserInterface()">⬅️ Back</button>
-                <button class="btn-top-refresh" onclick="forceRecoveryRefresh()">🔄 Refresh</button>
-            </div>
-        </div>
-        
-        <div class="stats" id="lobby-stats">
-            <div>BALANCE<b id="balance">0 ETB</b></div>
-            <div>PLAYERS<b id="p-count">0</b></div>
-            <div>በሽ-ደራሽ<b id="prize">0 ETB</b></div>
-        </div>
-
-        <!-- 1. User Interface (Dashboard) -->
-        <div id="user-interface">
-            <div id="game-status-alert" class="game-status-alert-box">
-                ⚠️ ጨዋታው በአሁኑ ሰዓት በሂደት ላይ ነው! እባክዎ ጨዋታው እስኪያልቅ ይጠብቁ ወይም «Play»ን ነክተው ጨዋታውን ይከታተሉ።
-            </div>
-
-            <button class="btn-play-gigantic" onclick="handlePlayButtonPress()">🎮 PLAY</button>
-
-            <div class="dashboard-menu">
-                <button class="dashboard-btn db-deposit" onclick="openDepositSelection()"><span>📥</span> Deposit</button>
-                <button class="dashboard-btn db-withdraw" onclick="openWithdrawSelection()"><span>📤</span> Withdraw</button>
-                <button class="dashboard-btn db-transfer" onclick="openM('trans-m')"><span>💸</span> Transfer</button>
-                <button class="dashboard-btn db-guide" onclick="openM('guide-m')"><span>📖</span> Guide</button>
-            </div>
-        </div>
-
-        <!-- 2. Lobby Interface (ያለ ተጨማሪ አዝራሮች) -->
-        <div id="lobby-ui">
-            <div class="timer-container">
-                <div id="timer">30</div>
-                <div class="buy-notice">🎟️ ካርቴላ ይግዙ (10 ETB)</div>
-            </div>
-
-            <div class="grid-500" id="ticket-area"></div>
-        </div>
-
-        <!-- 3. Game UI (ጨዋታው በሂደት ላይ ሲሆን የሚታይ) -->
-        <div id="game-ui">
-            <div class="game-ui-header">
-                <div class="ball-counter-container" style="font-weight: bold;">
-                    <span>BALL: </span><span id="ball-count">0/75</span>
-                </div>
-            </div>
-
-            <div class="ball-section-wrapper">
-                <div id="start-alert-msg" class="game-start-alert" style="display:none;">🔴 ጨዋታው ሊጀምር ነው...</div>
-                <div class="ball-row">
-                    <div id="recent-balls-container"></div>
-                    <div id="ball-circle">--</div>
-                    <div id="ball-prep-countdown" style="display:none;">ዝግጅት፦ 3</div>
-                </div>
-            </div>
-
-            <div class="game-layout">
-                <div class="board-container">
-                    <div class="board-header"><div>B</div><div>I</div><div>N</div><div>G</div><div>O</div></div>
-                    <div class="main-board" id="main-board"></div>
-                </div>
-
-                <div class="player-side-area">
-                    <div id="card-area"></div>
-                    <button id="bingo-btn" onclick="claim()">BINGO!</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- ሞዳሎች -->
-    <div id="guide-m" class="modal"><div class="modal-content"><h2 style="color:var(--gold); text-align:center; margin-top:0;">📖 መመሪያ</h2><p style="color:#fff; line-height: 1.6; font-size:0.9rem;">1. ጨዋታው እንዲጀምር ቢያንስ 2 ተጫዋቾች ሊኖሩ ይገባል。<br>2. ካርቴላ ለመግዛት ሎቢ ላይ ያሉትን ቁጥሮች ይጫኑ (ማክሲመም 2 መግዛት ይቻላል)。<br>3. ጨዋታው ሲጀምር ኳሶች በየጊዜው ይጣላሉ。<br>4. መስመር ሲሞላ ፈጥነው BINGO የሚለውን ይጫኑ!</p><button class="btn-main" style="width:100%; background:var(--red); color:white; margin-top:15px; padding:12px; font-weight:bold; border:none; border-radius:8px; cursor:pointer;" onclick="closeM('guide-m')">እሺ</button></div></div>
+    <audio id="win-horn" src="https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3" preload="auto"></audio>
+    <div class="header-banner"><h1>BESH BINGO</h1></div>
     
-    <div id="withdraw-selection-m" class="modal">
-        <div class="modal-content" style="text-align:center;">
-            <h2 style="color:var(--orange); margin-top:0; font-size:1.1rem;">💳 የገንዘብ ማወጫ መንገድ ይምረጡ</h2>
-            <p style="font-size:0.85rem; color:#94a3b8; margin-bottom:15px;">እባክዎ ገንዘብ የሚቀበሉበትን አካውንት ዓይነት ይምረጡ፡</p>
-            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-                <button style="flex:1; background:#2563eb; color:white; padding:12px; border:none; border-radius:8px; font-weight:bold; cursor:pointer;" onclick="selectWithdrawMethod('CBE BIRR')">CBE BIRR</button>
-                <button style="flex:1; background:var(--green); color:#000; padding:12px; border:none; border-radius:8px; font-weight:bold; cursor:pointer;" onclick="selectWithdrawMethod('TELE BIRR')">TELE BIRR</button>
+    <div class="stats">
+        <div>BALANCE<b id="balance">0 ETB</b></div>
+        <div>PLAYERS<b id="p-count">0</b></div>
+        <div>በሽ-ደራሽ<b id="prize">0 ETB</b></div>
+    </div>
+
+    <div id="lobby-ui">
+        <div class="action-bar">
+            <button class="btn-main btn-deposit" onclick="openM('dep-m')">📥 DEPOSIT</button>
+            <button class="btn-main btn-how-to" onclick="openM('guide-m')">📖 HOW TO PLAY</button>
+            <button class="btn-main btn-withdraw" onclick="openM('with-m')">📤 WITHDRAW</button>
+        </div>
+        <div id="timer">30</div>
+        <div class="grid-500" id="ticket-area"></div>
+    </div>
+
+    <div id="game-ui" style="display:none;">
+        <div id="ball-circle">--</div>
+        <div class="game-layout">
+            <div class="board-container">
+                <div class="board-header">
+                    <div>B</div><div>I</div><div>N</div><div>G</div><div>O</div>
+                </div>
+                <div class="main-board" id="main-board"></div>
             </div>
-            <button onclick="closeM('withdraw-selection-m')" style="color:#94a3b8; background:none; border:none; cursor:pointer; font-weight:bold;">CANCEL</button>
+            <div>
+                <div id="card-area"></div>
+                <button id="bingo-btn" onclick="claim()">BINGO!</button>
+            </div>
         </div>
     </div>
 
-    <div id="withdraw-form-m" class="modal">
-        <div class="modal-content" style="text-align:center;">
-            <h2 id="withdraw-method-title" style="color:var(--orange); margin-top:0;">WITHDRAW</h2>
-            <div class="deposit-guide-box">
-                <b>📌 ማሳሰቢያ:</b><br>
-                በመረጡት የ <span id="withdraw-method-name" style="color:var(--gold);">TELE BIRR</span> አካውንት ገንዘብዎ ይላካል።
-            </div>
-            <p style="font-size:0.85rem; color:#94a3b8;">የሚያወጡትን የብር መጠን ያስገቡ (ዝቅተኛው 51 ETB)</p>
-            <input type="number" id="wa" min="51" placeholder="Amount (ETB)">
-            <button style="width:100%; padding:12px; background:var(--orange); color:white; border:none; border-radius:8px; font-weight:bold; cursor:pointer; text-transform:uppercase;" onclick="subW()">CONFIRM</button>
-            <button onclick="closeWithdrawForm()" style="color:#94a3b8; background:none; border:none; margin-top:15px; cursor:pointer; font-weight:bold;">CLOSE</button>
-        </div>
-    </div>
-    
-    <div id="trans-m" class="modal">
-        <div class="modal-content" style="text-align:center;">
-            <h2 style="color:var(--purple);">TRANSFER MONEY</h2>
-            <p style="font-size: 0.85rem; color:#94a3b8;">የተቀባዩን ስልክ ቁጥር እና የሚላከውን የብር መጠን ያስገቡ</p>
-            <input type="tel" id="trans-phone" placeholder="የተቀባይ ስልክ (ምሳሌ: 09...)">
-            <input type="number" id="trans-amount" min="1" placeholder="የብር መጠን (ETB)">
-            <button style="width:100%; padding:12px; background:var(--purple); color:white; border:none; border-radius:8px; font-weight:bold; cursor:pointer; text-transform:uppercase;" onclick="subTransfer()">SEND</button>
-            <button onclick="closeM('trans-m')" style="color:#94a3b8; background:none; border:none; margin-top:15px; cursor:pointer;">CLOSE</button>
-        </div>
-    </div>
-
-    <div id="dep-selection-m" class="modal">
-        <div class="modal-content" style="text-align:center;">
-            <h2 style="color:var(--gold); margin-top:0; font-size:1.1rem;">💳 የማንጸኛ መንገድ ይምረጡ</h2>
-            <p style="font-size:0.85rem; color:#94a3b8; margin-bottom:15px;">እባክዎ ሒሳብ ለመሞላት የሚጠቀሙበትን መንገድ ይምረጡ፡</p>
-            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-                <button style="flex:1; background:#2563eb; color:white; padding:12px; border:none; border-radius:8px; font-weight:bold; cursor:pointer;" onclick="selectDepositMethod('CBE BIRR')">CBE BIRR</button>
-                <button style="flex:1; background:var(--green); color:#000; padding:12px; border:none; border-radius:8px; font-weight:bold; cursor:pointer;" onclick="selectDepositMethod('TELE BIRR')">TELE BIRR</button>
-            </div>
-            <button onclick="closeM('dep-selection-m')" style="color:#94a3b8; background:none; border:none; cursor:pointer; font-weight:bold;">CANCEL</button>
-        </div>
-    </div>
-
-    <div id="dep-form-m" class="modal">
-        <div class="modal-content" style="text-align:center;">
-            <h2 id="dep-method-title" style="color:var(--green); margin-top:0;">DEPOSIT</h2>
-            <div class="deposit-guide-box">
-                <b>📌 የክፍያ መመሪያ:</b><br>
-                በተሰጠው የ <span id="dep-method-name" style="color:var(--gold);">TELE BIRR</span> አካውንት ገንዘብ ከላኩ በኋላ የግብይቱን <b>Transaction ID</b> እና መጠን ያስገቡ。<br><br>
-                <b>አካውንት: <span style="color:var(--gold);" onclick="copyNum('0945880474')">0945880474 (ኮፒ ለማድረግ ይጫኑ)</span></b>
-            </div>
+    <!-- የተሟላ የአጫዋወት፣ የዲፖዚት እና ዊዝድሮው መመሪያ ሞዳል -->
+    <div id="guide-m" class="modal">
+        <div class="modal-content">
+            <h2 style="color:var(--gold); text-align:center; margin-top:0; font-size: 1.4rem;">📖 የጨዋታ ሙሉ መመሪያ</h2>
+            <hr style="border:1px solid rgba(255,255,255,0.1); margin-bottom: 15px;">
             
-            <input type="number" id="da" min="10" placeholder="Amount (ETB)">
+            <ul class="guide-list">
+                <!-- 1. ዲፖዚት አሰራር -->
+                <li>
+                    <span class="guide-section-title">1. ብር ማስገባት (DEPOSIT)</span>
+                    ጨዋታ ከመጀመርዎ በፊት በቂ ሂሳብ ሊኖርዎት ይገባል።
+                    <ul>
+                        <li><b>📥 DEPOSIT</b> የሚለውን ቁልፍ ይጫኑ።</li>
+                        <li>የቀረበውን የቴሌብር ስልክ ቁጥር ይቅዱ (Copy ያድርጉ)።</li>
+                        <li>ወደ ቴሌብር መተግበሪያዎ በመግባት በተቀዳው ቁጥር ላይ ብር ይላኩ።</li>
+                        <li>የላኩትን የገንዘብ መጠን እና ከቴሌብር የመጣሎትን <b>የማረጋገጫ ኮድ (Transaction ID)</b> በቦታው ላይ አስገብተው <b>SUBMIT REQUEST</b> ይበሉ። ሂሳብዎ በፍጥነት ይስተካከላል።</li>
+                    </ul>
+                </li>
+
+                <!-- 2. ካርቴላ መግዛት እና ጨዋታ መጀመር -->
+                <li>
+                    <span class="guide-section-title">2. ካርቴላ መግዛት እና ጨዋታ መጀመር</span>
+                    <ul>
+                        <li><b>ካርቴላ መምረጥ፦</b> በሎቢው ውስጥ ከ1 እስከ 500 ከተዘረዘሩት የቁጥር ሳጥኖች ውስጥ የፈለጉትን ይንኩ። የመረጡት ሳጥን ቢጫ ይሆናል። በአንድ ጨዋታ እስከ 2 ካርቴላ መግዛት ይችላሉ።</li>
+                        <li><b>ጨዋታው ሲጀምር፦</b> የሎቢው ሰዓት ቆጣሪ (Timer) <b>0</b> ሲደርስ ጨዋታው ወዲያውኑ በራሱ ይጀምራል እና ወደ መጫወቻው ሰሌዳ ይወስድዎታል።</li>
+                    </ul>
+                </li>
+
+                <!-- 3. አጫዋወት እና ማሸነፍ -->
+                <li>
+                    <span class="guide-section-title">3. አጫዋወት እና ማሸነፍ</span>
+                    <ul>
+                        <li><b>ቁጥር መምረጥ፦</b> በዕጣ የሚወጡት ኳሶች (ቁጥሮች) በእርስዎ ካርቴላ ላይ ካሉ ሳጥኑን በመንካት ያብሩት (Select ያድርጉት)።</li>
+                        <li><b>FREE ሴል፦</b> በካርቴላው መሀል ላይ ያለችው የ "FREE" ሳጥን ሁልጊዜ የበራች የነፃ ዕድል ሳጥን ናት።</li>
+                        <li><b>የማሸነፊያ መንገዶች፦</b> ማናቸውም 5 አግድም ቁጥሮች (Row)፣ 5 ቀጥታ ቁጥሮች (Column)፣ 5 የሰያፍ ቁጥሮች (Diagonal) ወይም 4ቱ የካርቴላው ማዕዘናት (4 Corners) ሲሞሉልዎት በፍጥነት <b>BINGO!</b> የሚለውን ቀይ ቁልፍ ይጫኑ። ቀድሞ የነካ ተጫዋች አሸናፊ ይሆናል።</li>
+                    </ul>
+                </li>
+
+                <!-- 4. ዊዝድሮው አሰራር -->
+                <li>
+                    <span class="guide-section-title">4. ገንዘብ ማውጣት (WITHDRAW)</span>
+                    ያሸነፉትን ገንዘብ በቀጥታ ወደ ቴሌብርዎ ማውጣት ይችላሉ።
+                    <ul>
+                        <li><b>📤 WITHDRAW</b> የሚለውን ቁልፍ ይጫኑ።</li>
+                        <li>ማውጣት የሚፈልጉትን የገንዘብ መጠን (ቢያንስ 20 ብር) ያስገቡ።</li>
+                        <li><b>CONFIRM WITHDRAW</b> የሚለውን ሲጫኑ ጥያቄዎ ወዲያውኑ ይመዘገባል፣ ብሩም ወደ ስልክዎ ይላካል።</li>
+                    </ul>
+                </li>
+            </ul>
+            <button class="btn-main" style="width:100%; background:var(--red); color:white; margin-top:15px; padding: 12px; font-size:0.9rem;" onclick="closeM('guide-m')">እሺ ተረድቻለሁ</button>
+        </div>
+    </div>
+
+    <div id="with-m" class="modal">
+        <div class="modal-content" style="text-align:center;">
+            <h2 style="color:var(--orange);">WITHDRAW</h2>
+            <p style="font-size: 0.8rem; color: #888;">ቢያንስ 20 ብር ማውጣት ይችላሉ</p>
+            <input type="number" id="wa" placeholder="Amount (ETB)">
+            <button class="btn-main btn-withdraw" style="width:100%" onclick="subW()">CONFIRM WITHDRAW</button>
+            <button onclick="closeM('with-m')" style="color:#94a3b8; background:none; border:none; margin-top:15px; cursor:pointer;">CLOSE</button>
+        </div>
+    </div>
+
+    <div id="dep-m" class="modal">
+        <div class="modal-content" style="text-align:center;">
+            <h2 style="color:var(--green);">DEPOSIT</h2>
+            <p>Send Telebirr to: <br><b style="color:var(--gold); font-size:1.2rem;" onclick="copyNum('0945880474')">0945880474</b></p>
+            <input type="number" id="da" placeholder="Amount (ETB)">
             <input type="text" id="di" placeholder="Transaction ID">
-            <button style="width:100%; padding:12px; margin-top:5px; background:var(--green); color:#000; border:none; border-radius:8px; font-weight:bold; cursor:pointer; text-transform:uppercase;" onclick="subD()">SUBMIT</button>
-            <button onclick="closeDepositForm()" style="color:#94a3b8; background:none; border:none; margin-top:15px; cursor:pointer; font-weight:bold;">CANCEL</button>
+            <button class="btn-main btn-deposit" style="width:100%" onclick="subD()">SUBMIT REQUEST</button>
+            <button onclick="closeM('dep-m')" style="color:#94a3b8; background:none; border:none; margin-top:15px; cursor:pointer;">CLOSE</button>
         </div>
     </div>
 
-    <div id="result-ui" class="winner-modal">
-        <div class="winner-box">
-            <div class="trophy-icon">🏆</div><div class="winner-name-text" id="w-player-name"></div>
-            <div class="prize-pool-card"><span>Total Prize Pool</span><b id="w-prize-pool">0 ETB</b></div>
-            <div class="winner-card-section">
-                <div class="winner-card-info-row">
-                    <div class="winner-card-num-lbl" id="w-card-number">CARD #0</div>
-                    <div class="winner-card-owner-lbl" id="w-card-owner">Player</div>
-                </div>
-                <div id="w-pattern-name" style="font-weight: 900; color: #dc2626; margin-bottom: 8px; font-size: 1rem; text-transform: uppercase;"></div>
-                <div class="winner-grid-modern" id="w-grid-cells"></div>
-            </div>
-        </div>
-        <div class="next-round-bar">Next Round: <span id="w-next-timer">10s</span></div>
+    <div id="result-ui" class="modal">
+        <h1 style="color:var(--gold); font-size:3rem; margin-bottom:5px;">BINGO!</h1>
+        <div id="winner-info" style="font-size:1.5rem; font-weight:bold; color:white;"></div>
+        <div style="margin-top:10px; font-size:0.9rem; color:#aaa;">ያሸነፈበት መስመር/ቁጥር ብቻ፦</div>
+        <div id="winning-card-area"></div>
     </div>
 
     <script>
-        let phone = localStorage.getItem('phone');
-        let username = localStorage.getItem('username');
-        let announced = false, lastBall = "--", clientBalance = 0;
-        let isProcessingBuy = false;
-        let socket = null;
-        let latestDrawnBallsGlobal = []; 
-        let globalMyCardsData = []; 
-        let selectedDepositMethodName = "";
-        let selectedWithdrawMethodName = "TELE BIRR";
-        let currentServerStatus = "lobby"; 
+        let phone = localStorage.getItem('phone') || prompt("ስልክ ቁጥር ያስገቡ:");
+        let username = localStorage.getItem('username') || prompt("የተጫዋች ስም ያስገቡ:");
+        if(!phone || !username) location.reload();
+        localStorage.setItem('phone', phone); localStorage.setItem('username', username);
 
-        window.onload = function() {
-            let telegramChatId = "";
-            if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe) {
-                telegramChatId = window.Telegram.WebApp.initDataUnsafe.user?.id || "";
-            }
-
-            if (phone && phone.trim() !== "") {
-                fetch(`/register_or_login`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        phone: phone, 
-                        username: localStorage.getItem('username') || "User",
-                        chat_id: telegramChatId 
-                    })
-                })
-                .then(res => res.json())
-                .then(d => {
-                    if (d.success) {
-                        showMainApp();
-                    } else {
-                        localStorage.removeItem('phone');
-                        localStorage.removeItem('username');
-                        showAuthUI();
-                    }
-                })
-                .catch(() => {
-                    showMainApp();
-                });
-            } else {
-                showAuthUI();
-            }
-        }
-
-        function showAuthUI() {
-            document.getElementById('auth-ui').style.display = 'flex';
-            document.getElementById('main-app-content').style.display = 'none';
-        }
-
-        document.addEventListener("visibilitychange", function() {
-            if (document.visibilityState === "visible") {
-                forceRecoveryRefresh();
-            }
-        });
-
-        setInterval(() => {
-            if (phone && document.getElementById('main-app-content').style.display !== 'none') {
-                silentBackgroundSync();
-            }
-        }, 2000);
-
-        function phoneMatches(p1, p2) {
-            if (!p1 || !p2) return false;
-            let clean1 = String(p1).replace(/[^0-9]/g, '').slice(-9);
-            let clean2 = String(p2).replace(/[^0-9]/g, '').slice(-9);
-            return clean1 === clean2 && clean1.length > 0;
-        }
-
-        function registerUser() {
-            let inputName = document.getElementById('reg-username').value.trim();
-            let inputPhone = document.getElementById('reg-phone').value.trim();
-            let submitBtn = document.getElementById('auth-submit-btn');
-
-            if (inputName.length < 2) return alert("እባክዎ ትክክለኛ ስም ያስገቡ!");
-            const cleanPhone = inputPhone.replace(/[^0-9+]/g, '');
-            if (cleanPhone.length < 9 || cleanPhone.length > 13) return alert("እባክዎ ትክክለኛ ስልክ ቁጥር ያስገቡ!");
-
-            if(submitBtn) submitBtn.disabled = true;
-
-            let telegramChatId = "";
-            if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe) {
-                telegramChatId = window.Telegram.WebApp.initDataUnsafe.user?.id || "";
-            }
-
-            fetch('/register_or_login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ phone: cleanPhone, username: inputName, chat_id: telegramChatId })
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    localStorage.setItem('phone', cleanPhone);
-                    localStorage.setItem('username', inputName);
-                    phone = cleanPhone;
-                    username = inputName;
-                    showMainApp();
-                } else {
-                    alert(data.msg || "የምዝገባ ስህተት አጋጥሟል!");
-                    if(submitBtn) submitBtn.disabled = false;
-                }
-            })
-            .catch(() => {
-                localStorage.setItem('phone', cleanPhone);
-                localStorage.setItem('username', inputName);
-                phone = cleanPhone;
-                username = inputName;
-                showMainApp();
-            });
-        }
-
-        function showMainApp() {
-            document.getElementById('auth-ui').style.display = 'none';
-            document.getElementById('main-app-content').style.display = 'flex'; 
-            fetchBalanceOnly();
-            initWebSocket();
-            showUserInterfaceView();
-        }
-
-        function showUserInterfaceView() {
-            document.getElementById('user-interface').style.display = 'flex';
-            document.getElementById('lobby-ui').style.display = 'none';
-            document.getElementById('game-ui').style.display = 'none';
-            document.getElementById('result-ui').style.display = 'none';
-            document.getElementById('btn-back-lobby').style.display = 'none';
-        }
-
-        function showLobbyInterfaceView() {
-            document.getElementById('user-interface').style.display = 'none';
-            document.getElementById('lobby-ui').style.display = 'flex';
-            document.getElementById('game-ui').style.display = 'none';
-            document.getElementById('result-ui').style.display = 'none';
-            document.getElementById('btn-back-lobby').style.display = 'flex';
-        }
-
-        function showGameInterfaceView() {
-            document.getElementById('user-interface').style.display = 'none';
-            document.getElementById('lobby-ui').style.display = 'none';
-            document.getElementById('game-ui').style.display = 'flex';
-            document.getElementById('result-ui').style.display = 'none';
-            document.getElementById('btn-back-lobby').style.display = 'flex';
-        }
-
-        function handlePlayButtonPress() {
-            if (currentServerStatus === "playing") {
-                showGameInterfaceView();
-            } else {
-                showLobbyInterfaceView();
-                initTicketsOnce();
-            }
-        }
-
-        function goBackToUserInterface() {
-            showUserInterfaceView();
-        }
-
-        function fetchBalanceOnly() {
-            if (!phone) return;
-            fetch(`/get_status?phone=${encodeURIComponent(phone)}`)
-            .then(r => r.json())
-            .then(d => {
-                if (d.balance !== undefined && d.balance !== null) {
-                    clientBalance = parseFloat(d.balance) || 0;
-                    document.getElementById('balance').innerText = clientBalance.toFixed(0) + " ETB";
-                }
-            }).catch(() => {});
-        }
-
-        function silentBackgroundSync() {
-            if (!phone) return;
-            fetch(`/get_status?phone=${encodeURIComponent(phone)}`)
-            .then(r => r.json())
-            .then(d => {
-                applyGameStateData(d);
-            }).catch(() => {});
-        }
-
-        function forceRecoveryRefresh() {
-            if (!phone) return;
-            if(socket) {
-                try {
-                    socket.disconnect();
-                    socket.connect();
-                } catch(e){}
-            } else {
-                initWebSocket();
-            }
-            fetch(`/get_status?phone=${encodeURIComponent(phone)}`)
-            .then(r => r.json())
-            .then(d => {
-                applyGameStateData(d);
-            }).catch(() => {});
-        }
-
-        function initWebSocket() {
-            socket = io({
-                reconnection: true,
-                reconnectionAttempts: Infinity,
-                reconnectionDelay: 500,
-                reconnectionDelayMax: 2000,
-                timeout: 10000
-            });
-
-            socket.on('connect', function() {
-                fetchBalanceOnly();
-                forceRecoveryRefresh();
-            });
-
-            socket.on('balance_update', function(data) {
-                if (data && phoneMatches(data.phone, phone)) {
-                    clientBalance = parseFloat(data.balance) || 0;
-                    document.getElementById('balance').innerText = clientBalance.toFixed(0) + " ETB";
-                }
-            });
-
-            socket.on('game_update', function(d) {
-                applyGameStateData(d);
-            });
-        }
-
-        function applyGameStateData(d) {
-            if (!d) return;
-            currentServerStatus = d.status || "lobby";
-            
-            let finalPrize = Math.floor((parseFloat(d.pot) || 0) * 0.8);
-            document.getElementById('prize').innerText = finalPrize + " ETB";
-            document.getElementById('p-count').innerText = parseInt(d.active_players) || 0;
-            document.getElementById('timer').innerText = d.timer;
-            
-            if (d.balance !== undefined && d.balance !== null) {
-                clientBalance = parseFloat(d.balance) || 0;
-                document.getElementById('balance').innerText = clientBalance.toFixed(0) + " ETB";
-            }
-
-            let drawnCount = (d.drawn_balls && Array.isArray(d.drawn_balls)) ? d.drawn_balls.length : 0;
-            document.getElementById('ball-count').innerText = `${drawnCount}/75`;
-
-            const alertBox = document.getElementById('game-status-alert');
-            if (alertBox) {
-                if (currentServerStatus === "playing") {
-                    alertBox.style.display = 'block';
-                } else {
-                    alertBox.style.display = 'none';
-                }
-            }
-
-            if(currentServerStatus === "lobby") {
-                if (document.getElementById('game-ui').style.display === 'flex') {
-                    showUserInterfaceView();
-                }
-                
-                document.getElementById('result-ui').style.display='none';
-                document.getElementById('main-board').innerHTML=""; 
-                document.getElementById('card-area').innerHTML="";
-                document.getElementById('w-grid-cells').innerHTML = ""; 
-                document.getElementById('ball-prep-countdown').style.display = 'none';
-                document.getElementById('start-alert-msg').style.display = 'none';
-                document.getElementById("recent-balls-container").innerHTML = ""; 
-                document.getElementById('ball-count').innerText = "0/75";
-                if (announced) { announced = false; }
-                const bBtn = document.getElementById('bingo-btn'); if(bBtn) bBtn.disabled = false;
-                lastBall = "--";
-                latestDrawnBallsGlobal = [];
-                globalMyCardsData = [];
-                initTicketsOnce(); 
-                if (!isProcessingBuy) { renderTickets(d.sold_tickets || {}); }
-            } 
-            else if(currentServerStatus === "playing") {
-                const prepCountdownEl = document.getElementById('ball-prep-countdown');
-                const startAlertEl = document.getElementById('start-alert-msg');
-                let ballTimerVal = parseInt(d.ball_timer);
-                if (!isNaN(ballTimerVal) && ballTimerVal > 0) {
-                    prepCountdownEl.style.display = 'block'; startAlertEl.style.display = 'block'; 
-                    prepCountdownEl.innerText = `⏳ ዝግጅት፦ ${ballTimerVal}`;
-                    document.getElementById('ball-circle').style.opacity = '0.4'; 
-                } else {
-                    prepCountdownEl.style.display = 'none'; startAlertEl.style.display = 'none'; 
-                    document.getElementById('ball-circle').style.opacity = '1';  
-                }
-                let secureBall = d.current_ball;
-                document.getElementById('ball-circle').innerText = secureBall;
-                if (secureBall !== lastBall && secureBall !== "--") { lastBall = secureBall; }
-                
-                latestDrawnBallsGlobal = d.drawn_balls || [];
-                renderMainBoard(latestDrawnBallsGlobal);
-                
-                const recentContainer = document.getElementById("recent-balls-container");
-                recentContainer.innerHTML = "";
-                if(latestDrawnBallsGlobal.length > 1) {
-                    const historyBalls = latestDrawnBallsGlobal.slice(0, -1).reverse().slice(0, 3).reverse();
-                    historyBalls.forEach((b, idx) => {
-                        const ballDiv = document.createElement("div");
-                        ballDiv.className = "recent-ball";
-                        ballDiv.innerText = b;
-                        if(historyBalls.length === 3 && idx === 0) {
-                            ballDiv.classList.add("opacity-50-ball");
-                        }
-                        recentContainer.appendChild(ballDiv);
-                    });
-                }
-
-                let myCards = [];
-                if (d.sold_tickets) {
-                    for (let ticketId in d.sold_tickets) {
-                        if (phoneMatches(d.sold_tickets[ticketId], phone)) {
-                            let tNumStr = String(ticketId);
-                            if (d.all_cards && d.all_cards[tNumStr]) {
-                                myCards.push({ id: tNumStr, matrix: d.all_cards[tNumStr] });
-                            }
-                        }
-                    }
-                }
-                globalMyCardsData = myCards;
-
-                const cardArea = document.getElementById('card-area');
-                if (cardArea) {
-                    if (myCards.length > 0) {
-                        if (cardArea.children.length === 0 || cardArea.querySelector('.waiting-box')) {
-                            cardArea.innerHTML = "";
-                            myCards.forEach((cObj, i) => { renderCard(cObj.matrix, i); }); 
-                        }
-                    } else {
-                        if (!cardArea.querySelector('.waiting-box')) {
-                            cardArea.innerHTML = `
-                                <div style="color: var(--gold); font-weight: bold; font-size: 0.85rem; padding: 15px; text-align: center; border: 2px dashed var(--gold); border-radius: 10px; background: rgba(255,204,0,0.05);">
-                                    <span>በዚህ ዙር ካርቴላ አልገዙም</span>
-                                </div>`;
-                        }
-                    }
-                }
-            } 
-            else if(currentServerStatus === "result") {
-                if (document.getElementById('game-ui').style.display === 'flex') {
-                    showUserInterfaceView();
-                }
-
-                document.getElementById('result-ui').style.display='flex';
-                let winnerName = d.winner;
-                if (!winnerName || winnerName === "Player" || winnerName.includes("No Winner")) {
-                    winnerName = "ተጫዋች አሸንፏል";
-                }
-                
-                document.getElementById('w-player-name').innerText = winnerName;
-                document.getElementById('w-prize-pool').innerText = finalPrize + " ETB";
-                
-                let ticketNum = d.winning_ticket_num ? String(d.winning_ticket_num) : "100";
-                document.getElementById('w-card-number').innerText = `CARD #${ticketNum}`;
-                document.getElementById('w-card-owner').innerText = winnerName;
-                
-                let timerVal = parseInt(d.timer);
-                document.getElementById('w-next-timer').innerText = isNaN(timerVal) ? "10s" : timerVal + "s";
-
-                let patternNameEl = document.getElementById('w-pattern-name');
-                if (patternNameEl) {
-                    patternNameEl.innerText = d.winning_line_name ? `🎉 ያሸነፈበት መስመር፦ ${d.winning_line_name}` : "🎉 BINGO!";
-                }
-
-                const gridCells = document.getElementById('w-grid-cells');
-                gridCells.innerHTML = ""; 
-
-                let winCard = d.winning_card;
-                if (!winCard && d.all_cards && d.all_cards[ticketNum]) {
-                    winCard = d.all_cards[ticketNum];
-                }
-
-                if (Array.isArray(winCard)) {
-                    let drawnSet = new Set();
-                    if (d.drawn_balls && Array.isArray(d.drawn_balls)) { 
-                        d.drawn_balls.forEach(b => { 
-                            let numOnly = String(b).replace(/[^0-9]/g, ''); 
-                            if(numOnly) drawnSet.add(parseInt(numOnly)); 
-                        }); 
-                    }
-                    
-                    let winIdxs = new Set();
-                    if (d.winning_indices && Array.isArray(d.winning_indices)) {
-                        d.winning_indices.forEach(idx => winIdxs.add(idx));
-                    }
-
-                    winCard.forEach((n, idx) => {
-                        let cell = document.createElement('div'); 
-                        let cleanNum = n;
-                        
-                        if(idx === 12 || cleanNum === "FREE" || cleanNum === "★" || parseInt(cleanNum) === 0) {
-                            cell.className = "w-cell-modern free"; 
-                            cell.innerText = "★";
-                            if(winIdxs.has(idx)) cell.className += " hit";
-                        } else {
-                            let numVal = parseInt(cleanNum); 
-                            cell.innerText = cleanNum;
-                            
-                            if (winIdxs.has(idx)) { 
-                                cell.className = "w-cell-modern hit"; 
-                            } else if (drawnSet.has(numVal)) { 
-                                cell.className = "w-cell-modern drawn"; 
-                            } else { 
-                                cell.className = "w-cell-modern"; 
-                            }
-                        }
-                        gridCells.appendChild(cell);
-                    });
-                }
-                if(!announced) { try { document.getElementById('win-horn').play(); } catch(e){} announced = true; }
-            }
-        }
+        let currentCardData = null, announced = false, lastBall = "--";
 
         function openM(id) { document.getElementById(id).style.display='flex'; }
         function closeM(id) { document.getElementById(id).style.display='none'; }
-        
-        function openDepositSelection() {
-            document.getElementById('dep-selection-m').style.display = 'flex';
-        }
-
-        function selectDepositMethod(methodName) {
-            selectedDepositMethodName = methodName;
-            document.getElementById('dep-selection-m').style.display = 'none';
-            document.getElementById('dep-method-name').innerText = methodName;
-            document.getElementById('dep-form-m').style.display = 'flex';
-        }
-
-        function closeDepositForm() {
-            document.getElementById('dep-form-m').style.display = 'none';
-            document.getElementById('da').value = '';
-            document.getElementById('di').value = '';
-        }
-
-        function openWithdrawSelection() {
-            document.getElementById('withdraw-selection-m').style.display = 'flex';
-        }
-
-        function selectWithdrawMethod(methodName) {
-            selectedWithdrawMethodName = methodName;
-            document.getElementById('withdraw-selection-m').style.display = 'none';
-            document.getElementById('withdraw-method-name').innerText = methodName;
-            document.getElementById('withdraw-form-m').style.display = 'flex';
-        }
-
-        function closeWithdrawForm() {
-            document.getElementById('withdraw-form-m').style.display = 'none';
-            document.getElementById('wa').value = '';
-        }
-
         function copyNum(n) { navigator.clipboard.writeText(n); alert("Copied: " + n); }
 
-        function initTicketsOnce() {
-            const area = document.getElementById('ticket-area');
-            if(area && area.children.length === 0) { 
-                const fragment = document.createDocumentFragment();
-                for(let i=1; i<=500; i++) { 
-                    let div=document.createElement('div'); div.className='t-box'; div.innerText=i; div.id='t-'+i; fragment.appendChild(div); 
-                } 
-                area.appendChild(fragment);
+        function trackCell(cardId, cellVal) {
+            let key = `marked_${cardId}`;
+            let list = JSON.parse(localStorage.getItem(key) || "[]");
+            let idx = list.indexOf(cellVal);
+            if(idx > -1) { list.splice(idx, 1); } else { list.push(cellVal); }
+            localStorage.setItem(key, JSON.stringify(list));
+        }
+
+        function getWinningIndices(card, drawnSet) {
+            const isHit = (idx) => {
+                if (idx === 12 || card[idx] === "FREE") return true;
+                let val = parseInt(card[idx]);
+                return !isNaN(val) && drawnSet.has(val);
+            };
+
+            let diag1 = [0, 6, 12, 18, 24];
+            if (diag1.every(idx => isHit(idx))) return new Set(diag1);
+            
+            let diag2 = [4, 8, 12, 16, 20];
+            if (diag2.every(idx => isHit(idx))) return new Set(diag2);
+
+            let corners = [0, 4, 20, 24];
+            if (corners.every(idx => isHit(idx))) return new Set(corners);
+
+            for (let j = 0; j < 5; j++) {
+                let colIdxs = [j, j+5, j+10, j+15, j+20];
+                if (colIdxs.every(idx => isHit(idx))) return new Set(colIdxs);
             }
+
+            for (let i = 0; i < 5; i++) {
+                let rowIdxs = [i*5, i*5+1, i*5+2, i*5+3, i*5+4];
+                if (rowIdxs.every(idx => isHit(idx))) return new Set(rowIdxs);
+            }
+
+            return new Set();
+        }
+
+        function update() {
+            fetch(`/get_status?phone=${phone}`).then(r=>r.json()).then(d=>{
+                document.getElementById('balance').innerText = d.balance.toFixed(0) + " ETB";
+                document.getElementById('prize').innerText = Math.floor(d.pot * 0.8) + " ETB";
+                document.getElementById('p-count').innerText = d.active_players;
+                document.getElementById('timer').innerText = d.timer;
+                
+                if(d.status === "lobby") {
+                    document.getElementById('lobby-ui').style.display='block'; document.getElementById('game-ui').style.display='none'; document.getElementById('result-ui').style.display='none';
+                    document.getElementById('main-board').innerHTML=""; document.getElementById('card-area').innerHTML="";
+                    document.getElementById('winning-card-area').innerHTML=""; 
+                    
+                    localStorage.removeItem('marked_0'); localStorage.removeItem('marked_1');
+                    
+                    const bBtn = document.getElementById('bingo-btn');
+                    if(bBtn) bBtn.disabled = false;
+                    
+                    currentCardData = null; announced = false; lastBall = "--";
+                    renderTickets(d.sold_tickets);
+                } else if(d.status === "playing") {
+                    document.getElementById('lobby-ui').style.display='none'; document.getElementById('game-ui').style.display='block'; document.getElementById('result-ui').style.display='none';
+                    document.getElementById('ball-circle').innerText = d.current_ball;
+                    if (d.current_ball !== lastBall && d.current_ball !== "--") { 
+                        lastBall = d.current_ball; 
+                    }
+                    renderMainBoard(d.drawn_balls);
+                    if(d.my_cards.length > 0 && !currentCardData) { 
+                        currentCardData = d.my_cards; 
+                        document.getElementById('card-area').innerHTML = "";
+                        d.my_cards.forEach((c, i) => renderCard(c, i)); 
+                    }
+                } else if(d.status === "result") {
+                    document.getElementById('result-ui').style.display='flex';
+                    document.getElementById('winner-info').innerText = d.winner + " 🏆";
+                    
+                    const wArea = document.getElementById('winning-card-area');
+                    if(wArea && wArea.children.length === 0 && d.winning_card) {
+                        wArea.innerHTML = `
+                            <div class="winner-card-title"><div>B</div><div>I</div><div>N</div><div>G</div><div>O</div></div>
+                            <div class="winner-grid" id="w-grid-cells"></div>
+                        `;
+                        const gridCells = document.getElementById('w-grid-cells');
+                        
+                        let drawnSet = new Set();
+                        if (d.drawn_balls && Array.isArray(d.drawn_balls)) {
+                            d.drawn_balls.forEach(b => {
+                                if (typeof b === 'string') {
+                                    let numOnly = b.replace(/[^0-9]/g, '');
+                                    if(numOnly) drawnSet.add(parseInt(numOnly));
+                                } else if (typeof b === 'number') {
+                                    drawnSet.add(b);
+                                }
+                            });
+                        }
+                        
+                        let winIdxs = getWinningIndices(d.winning_card, drawnSet);
+
+                        d.winning_card.forEach((n, idx) => {
+                            let cell = document.createElement('div');
+                            if(idx === 12 || n === "FREE") {
+                                cell.className = "winner-cell free"; cell.innerText = "FREE";
+                                if(winIdxs.has(idx)) cell.className += " hit";
+                            } else {
+                                cell.className = winIdxs.has(idx) ? "winner-cell hit" : "winner-cell";
+                                cell.innerText = n;
+                            }
+                            gridCells.appendChild(cell);
+                        });
+                    }
+
+                    if(!announced) { 
+                        try { document.getElementById('win-horn').play(); } catch(e){}
+                        announced = true; 
+                    }
+                }
+            }).catch(() => {});
         }
 
         function renderTickets(sold) {
+            const area = document.getElementById('ticket-area');
+            if(area.children.length === 0) { 
+                for(let i=1; i<=500; i++) { 
+                    let div=document.createElement('div'); div.className='t-box'; div.innerText=i; div.id='t-'+i; area.appendChild(div); 
+                } 
+            }
             for(let i=1; i<=500; i++) {
-                let box = document.getElementById('t-'+i); if(!box) continue;
+                let box = document.getElementById('t-'+i);
                 box.style.pointerEvents = "auto"; 
                 if(sold[i]) { 
-                    const isMine = phoneMatches(sold[i], phone);
-                    box.className = isMine ? 't-box mine' : 't-box sold'; 
-                    box.onclick = isMine ? () => refund(i) : null; 
-                } else { 
-                    box.className='t-box'; box.onclick=()=>buy(i); 
+                    box.className = (sold[i] === phone) ? 't-box mine' : 't-box sold'; 
+                    box.onclick = (sold[i] === phone) ? () => refund(i) : null; 
                 }
+                else { box.className='t-box'; box.onclick=()=>buy(i); }
             }
         }
 
         function buy(n) { 
-            if (isProcessingBuy) return;
-            const target = parseInt(n); if(isNaN(target)) return;
-            if (document.querySelectorAll('.t-box.mine').length >= 2) return alert("ከ 2 ካርተላ በላይ መግዛት አይቻልም!");
-            isProcessingBuy = true;
-            let box = document.getElementById('t-'+target);
-            if (box) { box.className = 't-box mine'; box.style.pointerEvents = 'none'; }
-            
+            const myCount = document.querySelectorAll('.t-box.mine').length;
+            if (myCount >= 2) return alert("በአንድ ጨዋታ ከ 2 ካርተላ በላይ መግዛት አይቻልም!");
+            const box = document.getElementById('t-'+n);
+            if(box) { box.style.pointerEvents = "none"; box.innerText = "..."; }
             fetch('/buy_specific_ticket', {
-                method:'POST', headers:{'Content-Type':'application/json'}, 
-                body:JSON.stringify({phone: phone, ticket_num: target, username: username})
-            })
-            .then(res => res.json())
-            .then(d => { 
-                isProcessingBuy = false; 
-                if (d.success && d.balance !== undefined) {
-                    clientBalance = parseFloat(d.balance);
-                    document.getElementById('balance').innerText = clientBalance.toFixed(0) + " ETB";
-                }
-                silentBackgroundSync();
-            })
-            .catch(() => { isProcessingBuy = false; }); 
+                method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({phone, ticket_num:n, username})
+            }).then(update).catch(()=>{ update(); }); 
         }
 
         function refund(n) { 
-            const target = parseInt(n); if(isNaN(target)) return;
             if(confirm("መልሰው 10 ብር ይውሰዱ?")) {
-                fetch('/cancel_ticket', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({phone: phone, ticket_num: target}) })
-                .then(() => { fetchBalanceOnly(); silentBackgroundSync(); }); 
+                const box = document.getElementById('t-'+n);
+                if(box) { box.style.pointerEvents = "none"; box.innerText = "..."; }
+                fetch('/cancel_ticket', {
+                    method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({phone, ticket_num:n})
+                }).then(update).catch(()=>{ update(); }); 
             }
         }
         
         function renderMainBoard(drawn) {
             const board = document.getElementById('main-board');
             if(board.children.length === 0) { 
+                board.innerHTML = "";
                 for(let col=0; col<5; col++) {
-                    let colDiv = document.createElement('div'); colDiv.className = 'board-column';
+                    let colDiv = document.createElement('div');
+                    colDiv.className = 'board-column';
                     let start = col * 15 + 1;
-                    for(let i=start; i<=start+14; i++) {
-                        let d = document.createElement('div'); d.className = 'ball-dot'; d.id = 'b-' + i; d.innerText = i;
+                    let end = start + 14;
+                    for(let i=start; i<=end; i++) {
+                        let d = document.createElement('div');
+                        d.className = 'ball-dot';
+                        d.id = 'b-' + i;
+                        d.innerText = i;
                         colDiv.appendChild(d);
                     }
                     board.appendChild(colDiv);
                 }
             }
-            drawn.forEach(b => { let num = parseInt(String(b).replace(/[^0-9]/g, '')); if(!isNaN(num)) { let el = document.getElementById('b-'+num); if(el) el.className = 'ball-dot active'; } });
-        }
-
-        function handleCellClickCrossMatch(targetNumVal, clickedCellEl) {
-            if(isNaN(targetNumVal)) return;
-            let ballFound = false;
-            if (latestDrawnBallsGlobal && latestDrawnBallsGlobal.length > 0) {
-                for (let k = 0; k < latestDrawnBallsGlobal.length; k++) {
-                    let bNum = parseInt(latestDrawnBallsGlobal[k].replace(/[^0-9]/g, ''));
-                    if (bNum === targetNumVal) {
-                        ballFound = true; break;
-                    }
+            drawn.forEach(b => { 
+                if(typeof b === 'string') {
+                    let num = b.replace(/[^0-9]/g, ''); 
+                    let el = document.getElementById('b-'+num); 
+                    if(el) el.classList.add('active'); 
                 }
-            }
-            if (!ballFound) {
-                alert("ሳይወጣ ማቅለም አይቻልም!");
-                return;
-            }
-            if (!clickedCellEl.classList.contains('selected')) {
-                clickedCellEl.classList.add('selected');
-            } else {
-                clickedCellEl.classList.remove('selected');
-            }
+            });
         }
 
-        function renderCard(card) {
-            const wrap = document.createElement('div'); wrap.style.margin="0 auto 4px auto"; wrap.style.width="100%";
-            wrap.innerHTML = `<div style="display:grid;grid-template-columns:repeat(5,1fr);background:var(--orange);font-weight:900;padding:2px;font-size:0.7rem;border-radius:4px 4px 0 0;text-align:center;"><div>B</div><div>I</div><div>N</div><div>G</div><div>O</div></div>`;
+        function renderCard(card, cardIdx) {
+            const wrap = document.createElement('div'); wrap.style.marginBottom="15px";
+            wrap.innerHTML = `<div style="display:grid;grid-template-columns:repeat(5,1fr);background:var(--orange);font-weight:900;padding:5px;font-size:0.8rem;border-radius:5px 5px 0 0;text-align:center;"><div>B</div><div>I</div><div>N</div><div>G</div><div>O</div></div>`;
             const grid = document.createElement('div'); grid.className='bingo-card';
             
+            let savedMarks = JSON.parse(localStorage.getItem(`marked_${cardIdx}`) || "[]");
+
             card.forEach((n, i) => {
-                const cell=document.createElement('div'); let cleanVal = n;
-                if(i === 12 || parseInt(cleanVal) === 0) { 
-                    cell.className="cell free selected"; 
-                    cell.innerText="FREE"; 
+                const cell=document.createElement('div');
+                if(i === 12) { 
+                    cell.className="cell free selected"; cell.innerText="FREE"; 
                 } else { 
-                    let numVal = parseInt(cleanVal); 
-                    cell.className = "cell"; 
-                    cell.innerText = cleanVal; 
-                    cell.onclick = () => { handleCellClickCrossMatch(numVal, cell); } 
+                    cell.className = savedMarks.includes(n) ? "cell selected" : "cell";
+                    cell.innerText=n; 
+                    cell.onclick = () => { 
+                        cell.classList.toggle('selected'); 
+                        trackCell(cardIdx, n);
+                    } 
                 }
                 grid.appendChild(cell);
             });
@@ -1093,97 +413,55 @@
         }
 
         function claim() { 
-            const cardArea = document.getElementById('card-area');
-            if (!cardArea || cardArea.children.length === 0) { return alert("ካርታዎ ስላልታየ BINGO ማለት አይችሉም!"); }
+            const bBtn = document.getElementById('bingo-btn');
+            if(bBtn) bBtn.disabled = true;
 
-            const bBtn = document.getElementById('bingo-btn'); if(bBtn) bBtn.disabled = true;
-            
-            fetch('/claim_bingo', { 
+            fetch('/claim_bingo', {
                 method:'POST', 
-                headers:{ 'Content-Type':'application/json' }, 
-                body: JSON.stringify({ phone: phone }) 
+                headers:{ 'Content-Type':'application/json', 'Accept': 'application/json' }, 
+                body:JSON.stringify({phone})
             })
-            .then(r => r.json())
-            .then(d => { 
-                if(!d.success) { 
-                    alert(d.msg); 
-                    if(bBtn) bBtn.disabled = false; 
-                } else {
-                    silentBackgroundSync();
-                }
-            }).catch(() => { if(bBtn) bBtn.disabled = false; }); 
+            .then(r => { if(!r.ok) throw new Error("Network error"); return r.json(); })
+            .then(d=>{ 
+                if(!d.success) { alert(d.msg); if(bBtn) bBtn.disabled = false; } 
+            }).catch(() => {
+                let altUrl = `/claim_bingo?phone=${encodeURIComponent(phone)}`;
+                fetch(altUrl, { method: 'GET' })
+                .then(r => r.json())
+                .then(d => { if(!d.success) { alert(d.msg); } if(bBtn) bBtn.disabled = false; })
+                .catch(() => { alert("የቢንጎ ጥያቄ መላክ አልተሳካም!"); if(bBtn) bBtn.disabled = false; });
+            }); 
         }
         
         function subD() {
-            let amt = parseInt(document.getElementById('da').value);
-            let tid = document.getElementById('di').value.trim();
-            if(!amt || amt < 10 || !tid || tid.length < 4) return alert("ትክክለኛ መረጃ ያስገቡ!");
-            
-            fetch('/request_deposit', { 
-                method:'POST', headers:{'Content-Type':'application/json'}, 
-                body:JSON.stringify({phone: phone, amount: amt, transaction_id: tid, method: selectedDepositMethodName}) 
-            })
-            .then(res => res.json())
-            .then(d => { 
-                closeDepositForm(); 
-                if (d.msg) {
-                    alert(d.msg);
-                } else {
-                    alert("የዲፖዚት ጥያቄዎ ተልኳል!"); 
-                }
-                fetchBalanceOnly(); 
-            })
-            .catch(() => { alert("ስህተት!"); });
+            let amt=document.getElementById('da').value, tid=document.getElementById('di').value;
+            if(!amt || !tid) return alert("መረጃ በትክክል ያስገቡ!");
+            fetch('/request_deposit', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({phone, amount:amt, transaction_id:tid})});
+            closeM('dep-m'); alert("ጥያቄዎ ተልኳል!");
         }
 
         function subW() {
-            let amt = parseFloat(document.getElementById('wa').value);
-            if(!amt || amt < 51) return alert("ቢያንስ 51 ETB ማውጣት ይችላሉ!");
-            if(amt > clientBalance) return alert("በቂ ባላንስ የለዎትም!");
-            
-            fetch('/request_withdrawal', {
-                method: 'POST', 
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    phone: phone, 
-                    amount: amt, 
-                    method: selectedWithdrawMethodName 
-                }) 
-            })
-            .then(r => r.json())
-            .then(res => { 
-                closeWithdrawForm(); 
-                alert(res.msg || "የማውጣት ጥያቄዎ ተልኳል!"); 
-                if(res.success && res.balance !== undefined) {
-                    clientBalance = parseFloat(res.balance);
-                    document.getElementById('balance').innerText = clientBalance.toFixed(0) + " ETB";
-                }
-                fetchBalanceOnly(); 
-            })
-            .catch(() => { alert("የማውጣት ጥያቄ ላይ ስህተት አጋጥሟል!"); });
+            let amtInput = document.getElementById('wa').value;
+            let amt = parseInt(amtInput);
+            let balEl = document.getElementById('balance');
+            let currentBal = parseFloat(balEl.innerText.replace(/[^0-9.]/g, '')) || 0;
+
+            if(!amtInput || amt < 20) return alert("ቢያንስ 20 ብር ማውጣት ይችላሉ!");
+            if(amt > currentBal) return alert("ሂሳብዎ በቂ አይደለም!");
+
+            let oldBalText = balEl.innerText;
+            balEl.innerText = (currentBal - amt).toFixed(0) + " ETB";
+
+            fetch('/withdraw', {
+                method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ phone: phone, amount: amt })
+            }).then(response => {
+                if(response.ok) { closeM('with-m'); alert("የክፍያ ጥያቄዎ ተልኳል!"); update(); }
+                else { balEl.innerText = oldBalText; alert("አልተሳካም!"); }
+            }).catch(() => { balEl.innerText = oldBalText; alert("ስህተት!"); });
         }
 
-        function subTransfer() {
-            let receiverPh = document.getElementById('trans-phone').value.trim();
-            let amt = parseFloat(document.getElementById('trans-amount').value);
-            if(!receiverPh || isNaN(amt) || amt <= 0) return alert("እባክዎ ትክክለኛ ስልክ ቁጥር እና የብር መጠን ያስገቡ!");
-            
-            fetch('/request_transfer', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ phone: phone, receiver_phone: receiverPh, amount: amt })
-            })
-            .then(r => r.json())
-            .then(res => {
-                closeM('trans-m');
-                alert(res.msg || "ተከናውኗል!");
-                if(res.success && res.balance !== undefined) {
-                    clientBalance = parseFloat(res.balance) || 0;
-                    document.getElementById('balance').innerText = clientBalance.toFixed(0) + " ETB";
-                }
-            })
-            .catch(() => { alert("የማስተላለፍ ስህተት አጋጥሟል!"); });
-        }
+        setInterval(update, 2000); 
+        update();
     </script>
 </body>
 </html>
