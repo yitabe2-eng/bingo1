@@ -120,7 +120,6 @@
             overflow-y: auto;
         }
 
-        /* --- አዲስ የተጨመረ ፕሮፌሽናል የሰላምታ እና መመሪያ ካርድ (Welcome Card) --- */
         .welcome-hero-card {
             width: 100%;
             max-width: 360px;
@@ -425,7 +424,6 @@
         </div>
 
         <div id="user-interface">
-            <!-- [አዲስ የተጨመረ ፕሮፌሽናል የሰላምታ ክፍል] -->
             <div class="welcome-hero-card">
                 <div class="welcome-badge">✨ እንኳን ደህና መጡ</div>
                 <h3>እንኳን ወደ <span>በሽ ቢንጎ</span> በሰላም መጣችሁ!</h3>
@@ -561,7 +559,7 @@
                 <div class="winner-grid-modern" id="w-grid-cells"></div>
             </div>
         </div>
-        <button class="next-round-bar" onclick="goBackToUserInterface()">⬅️️ Back to Lobby / Dashboard</button>
+        <button class="next-round-bar" onclick="goBackToUserInterface()">⬅ Back to Lobby / Dashboard</button>
     </div>
 
     <script>
@@ -794,8 +792,18 @@
             let finalPrize = Math.floor((parseFloat(d.pot) || 0) * 0.8);
             document.getElementById('prize').innerText = finalPrize + " ETB";
             document.getElementById('p-count').innerText = parseInt(d.active_players) || 0;
-            document.getElementById('timer').innerText = d.timer;
             
+            let timerVal = parseInt(d.timer);
+            document.getElementById('timer').innerText = !isNaN(timerVal) ? timerVal : d.timer;
+            
+            // 🛠️ እዚህጋ ሰከንዱ 0 ሲሆን አውቶማቲክ ወደ game-ui እንድንገባ ተደረገ
+            if (timerVal === 0 || currentServerStatus === "playing") {
+                currentServerStatus = "playing";
+                if (document.getElementById('lobby-ui').style.display === 'flex' || document.getElementById('user-interface').style.display === 'flex') {
+                    showGameInterfaceView();
+                }
+            }
+
             if (d.balance !== undefined && d.balance !== null) {
                 clientBalance = parseFloat(d.balance) || 0;
                 document.getElementById('balance').innerText = clientBalance.toFixed(0) + " ETB";
