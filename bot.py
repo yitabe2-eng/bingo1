@@ -102,7 +102,7 @@ def broadcast_game_state():
 def notify_user_balance_update(phone_num, new_balance):
     socketio.emit('balance_update', {"phone": phone_num, "balance": new_balance})
 
-# --- አዲስ የተጨመሩ የፔንዲንግ ዲፖዚት እና ዊዝድሮዋል ጥያቄዎችን መመለሻ ራውቶች ---
+# --- የፔንዲንግ ዲፖዚት እና ዊዝድሮዋል ጥያቄዎችን መመለሻ ራውቶች ---
 
 @app.route('/get_pending_deposits', methods=['GET'])
 def get_pending_deposits():
@@ -140,7 +140,6 @@ def request_deposit():
         notice_msg = "የነጻዉ አልቋል በቴሌ ብር ወይም ሲቢኢ ብር ወደ 0945880474 ላክ"
         return jsonify({"success": True, "msg": notice_msg})
 
-    # ዲፖዚቱን በ ዳታቤዝ 'deposits' ኮሌክሽን ውስጥ በ pending ስቴተስ መመዝገብ
     try:
         db['deposits'].insert_one({
             "phone": db_phone,
@@ -152,12 +151,21 @@ def request_deposit():
     except Exception as e:
         print(f"Deposit DB Error: {e}")
 
-    msg = f"💰 *Deposit Request*\n💳 Method: `{method}`\n📞 Phone: `{db_phone}`\n💵 Amount: `{amt}` ETB\n🆔 ID: `{t_id}`"
+    # በቴሌግራም ቴብል ቅርጸት የተዘጋጀ የዲፖዚት መልእክት
+    msg = (
+        f"💰 *Deposit Request*\n"
+        f"┌────────┬──────┬─────────┬─────────────┐\n"
+        f"│ ተጠቃሚ  │ መጠን │ ዘዴ    │ የግብይት ID  │\n"
+        f"├────────┼──────┼─────────┼─────────────┤\n"
+        f"│ `{db_phone}` │ `{amt}` │ `{method}` │ `{t_id}` │\n"
+        f"└────────┴──────┴─────────┴─────────────┘"
+    )
+    
     keyboard = {
         "inline_keyboard": [
             [
-                {"text": "✅ አረጋግጥ (Approve)", "callback_data": f"app_dep_{db_phone}_{amt}"},
-                {"text": "❌ሰርዝ (Reject)", "callback_data": f"rej_dep_{db_phone}"}
+                {"text": "✅ Approve", "callback_data": f"app_dep_{db_phone}_{amt}"},
+                {"text": "❌ Reject", "callback_data": f"rej_dep_{db_phone}"}
             ]
         ]
     }
@@ -183,7 +191,6 @@ def request_withdrawal():
     if user.get("balance", 0) < amt:
         return jsonify({"success": False, "msg": "በቂ ባላንስ የለዎትም!"})
 
-    # ዊዝድሮዋሉን በ ዳታቤዝ 'withdrawals' ኮሌክሽን ውስጥ በ pending ስቴተስ መመዝገብ
     try:
         db['withdrawals'].insert_one({
             "phone": db_phone,
@@ -194,12 +201,21 @@ def request_withdrawal():
     except Exception as e:
         print(f"Withdrawal DB Error: {e}")
 
-    msg = f"📤 *Withdrawal Request*\n💳 Method: `{method}`\n📞 Phone: `{db_phone}`\n💵 Amount: `{amt}` ETB"
+    # በቴሌግራም ቴብል ቅርጸት የተዘጋጀ የዊዝድሮዋል መልእክት
+    msg = (
+        f"📤 *Withdrawal Request*\n"
+        f"┌────────┬──────┬─────────┐\n"
+        f"│ ተጠቃሚ  │ መጠን │ ዘዴ    │\n"
+        f"├────────┼──────┼─────────┤\n"
+        f"│ `{db_phone}` │ `{amt}` │ `{method}` │\n"
+        f"└────────┴──────┴─────────┘"
+    )
+
     keyboard = {
         "inline_keyboard": [
             [
-                {"text": "✅ አረጋግጥ (Approve)", "callback_data": f"app_wit_{db_phone}_{amt}"},
-                {"text": "❌ሰርዝ (Reject)", "callback_data": f"rej_wit_{db_phone}_{amt}"}
+                {"text": "✅ Approve", "callback_data": f"app_wit_{db_phone}_{amt}"},
+                {"text": "❌ Reject", "callback_data": f"rej_wit_{db_phone}_{amt}"}
             ]
         ]
     }
@@ -402,7 +418,6 @@ def webhook():
                 amt = float(amt_str)
                 updated = wallets.find_one_and_update({"phone": phone_num}, {"$inc": {"balance": amt}}, return_document=True, upsert=True)
                 
-                # ዲፖዚቱ ሲጸድቅ በዳታቤዝ ውስጥ ያለውን ስቴተስ ወደ 'approved' መቀየር
                 db['deposits'].update_one({"phone": phone_num, "amount": amt, "status": "pending"}, {"$set": {"status": "approved"}})
 
                 new_bal = updated.get("balance", 0) if updated else 0
