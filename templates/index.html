@@ -300,7 +300,7 @@
             border-radius: 8px;
             padding: 8px;
             font-family: monospace;
-            font-size: 0.75rem;
+            font-size: 0.72rem;
             text-align: left;
             white-space: pre-wrap;
             color: #e2e8f0;
@@ -319,10 +319,10 @@
             background: rgba(255,255,255,0.1);
             border: 1px solid rgba(255,255,255,0.2);
             color: #fff;
-            padding: 2px 6px;
+            padding: 2px 5px;
             border-radius: 4px;
             cursor: pointer;
-            font-size: 0.7rem;
+            font-size: 0.65rem;
             font-weight: bold;
         }
         .admin-action-btn.approve { background: rgba(0, 255, 136, 0.2); color: var(--green); border-color: var(--green); }
@@ -481,12 +481,12 @@
         </div>
     </div>
 
-    <!-- 🛡️ አድሚን ቦርድ (Telegram-style Text Tables) -->
+    <!-- 🛡️️ አድሚን ቦርድ (Telegram-style Text Tables - Telebirr & CBE Birr) -->
     <div id="admin-panel-m" class="modal">
         <div class="modal-content" style="max-width: 440px; text-align: left;">
             <h2 style="color:var(--gold); text-align:center; margin-top:0; font-size: 1.1rem;">🛡️ ADMIN CONTROL DASHBOARD</h2>
             
-            <!-- 1. PENDING DEPOSIT REQUESTS -->
+            <!-- 1. PENDING DEPOSIT REQUESTS (Telebirr & CBE Birr Separated/Marked) -->
             <div class="tg-section-title">📥 PENDING DEPOSIT REQUESTS (የማንጠሪያ ጥያቄዎች)</div>
             <div id="admin-pending-box" class="tg-table-box">ምንም ጥያቄ የለም</div>
 
@@ -494,7 +494,7 @@
             <div class="tg-section-title">⚡ AUTOMATICALLY APPROVED DEPOSITS (በራስ ሰር የጸደቁ)</div>
             <div id="admin-auto-box" class="tg-table-box">ምንም መረጃ የለም</div>
 
-            <!-- 3. PENDING WITHDRAWAL REQUESTS -->
+            <!-- 3. PENDING WITHDRAWAL REQUESTS (Telebirr & CBE Birr Separated/Marked) -->
             <div class="tg-section-title">📤 PENDING WITHDRAWAL REQUESTS (የማውጣት ጥያቄዎች)</div>
             <div id="admin-withdraw-box" class="tg-table-box">ምንም ጥያቄ የለም</div>
 
@@ -526,7 +526,7 @@
         let socket = null;
         let latestDrawnBallsGlobal = []; 
         let globalMyCardsData = []; 
-        let selectedDepositMethodName = "";
+        let selectedDepositMethodName = "TELE BIRR";
         let selectedWithdrawMethodName = "TELE BIRR";
 
         // አስተዳዳሪ (Admin) ስልክ ቁጥር
@@ -1137,7 +1137,7 @@
             .catch(() => { alert("የማስተላለፍ ስህተት አጋጥሟል!"); });
         }
 
-        // 🛡️ አድሚን ቦርድ (Telegram-style Text Tables) መቆጣጠሪያ
+        // 🛡️ አድሚን ቦርድ (Telegram-style Text Tables with Telebirr & CBE Birr separation)
         function openAdminDashboard() {
             if (!phoneMatches(phone, ADMIN_PHONE_NUMBER)) {
                 return alert("ይህንን ቦርድ ማየት የሚችሉት አስተዳዳሪው (Admin) ብቻ ነው!");
@@ -1147,24 +1147,25 @@
         }
 
         function loadAdminTelegramTables() {
-            // 1. Pending Deposits
+            // 1. Pending Deposits (Showing Telebirr or CBE Birr)
             fetch('/admin/pending_deposits', { headers: { 'Admin-Auth-Phone': phone } })
             .then(res => res.json())
             .then(data => {
                 let items = data.items || data.deposits || [];
                 let box = document.getElementById('admin-pending-box');
                 if (items.length === 0) {
-                    box.innerText = "┌──────────┬──────┬─────────────┬──────────┐\n│ ተጠቃሚ   │ መጠን │ የግብይት ID  │ እርምጃ   │\n├──────────┼──────┼─────────────┼──────────┤\n│ (ባዶ)    │ --   │ --          │ --       │\n└──────────┴──────┴─────────────┴──────────┘";
+                    box.innerText = "┌────────┬──────┬─────────┬─────────────┬──────┐\n│ ተጠቃሚ │ መጠን │ ዘዴ    │ የግብይት ID  │ እርም.│\n├────────┼──────┼─────────┼─────────────┼──────┤\n│ (ባዶ)  │ --   │ --      │ --          │ --   │\n└────────┴──────┴─────────┴─────────────┴──────┘";
                     return;
                 }
-                let text = "┌──────────┬──────┬─────────────┬──────────┐\n│ ተጠቃሚ   │ መጠን │ የግብይት ID  │ እርምጃ   │\n├──────────┼──────┼─────────────┼──────────┤\n";
+                let text = "┌────────┬──────┬─────────┬─────────────┬──────┐\n│ ተጠቃሚ │ መጠን │ ዘዴ    │ የግብይት ID  │ እርም.│\n├────────┼──────┼─────────┼─────────────┼──────┤\n";
                 items.forEach(item => {
-                    let u = (item.username || item.phone || "User").padEnd(8).substring(0,8);
-                    let a = (item.amount + " ብር").padEnd(4).substring(0,4);
+                    let u = (item.username || item.phone || "User").padEnd(6).substring(0,6);
+                    let a = (item.amount + "ር").padEnd(4).substring(0,4);
+                    let m = (item.method === 'CBE BIRR' ? 'CBE' : 'Tele').padEnd(7).substring(0,7);
                     let t = (item.transaction_id || "").padEnd(11).substring(0,11);
-                    text += `│ @${u} │ ${a} │ ${t} │ <button class="admin-action-btn approve" onclick="adminApproveAction('${item.id}', 'deposit')">✔</button> <button class="admin-action-btn reject" onclick="adminRejectAction('${item.id}', 'deposit')">✖</button> │\n`;
+                    text += `│@${u}│${a}│${m}│${t}│<button class="admin-action-btn approve" onclick="adminApproveAction('${item.id}', 'deposit')">✔</button><button class="admin-action-btn reject" onclick="adminRejectAction('${item.id}', 'deposit')">✖</button>│\n`;
                 });
-                text += "└──────────┴──────┴─────────────┴──────────┘";
+                text += "└────────┴──────┴─────────┴─────────────┴──────┘";
                 box.innerText = text;
             }).catch(() => { document.getElementById('admin-pending-box').innerText = "መረጃ ማምጣት አልተቻለም"; });
 
@@ -1182,30 +1183,33 @@
                 items.forEach(item => {
                     let u = (item.username || "User").padEnd(8).substring(0,8);
                     let a = (item.amount + " ብር").padEnd(4).substring(0,4);
-                    text += `│ @${u} │ ${a} │ ${item.method || 'TB'} │ Auto-Pass│\n`;
+                    let mMethod = item.method === 'CBE BIRR' ? 'CBE BIRR' : 'TELE BIRR';
+                    text += `│ @${u} │ ${a} │ ${mMethod} │ Auto-Pass│\n`;
                 });
                 text += "└──────────┴──────┴─────────────┴──────────┘";
                 box.innerText = text;
             }).catch(() => { document.getElementById('admin-auto-box').innerText = "መረጃ ማምጣት አልተቻለም"; });
 
-            // 3. Pending Withdrawals
+            // 3. Pending Withdrawals (Showing Telebirr or CBE Birr and destination info)
             fetch('/admin/withdrawals', { headers: { 'Admin-Auth-Phone': phone } })
             .then(res => res.json())
             .then(data => {
                 let items = data.items || data.withdrawals || [];
                 let box = document.getElementById('admin-withdraw-box');
                 if (items.length === 0) {
-                    box.innerText = "┌──────────┬──────┬─────────────┬──────────┐\n│ ተጠቃሚ   │ መጠን │ አካውንት     │ እርምጃ   │\n├──────────┼──────┼─────────────┼──────────┤\n│ (ባዶ)    │ --   │ --          │ --       │\n└──────────┴──────┴─────────────┴──────────┘";
+                    box.innerText = "┌────────┬──────┬─────────┬─────────────┬──────┐\n│ ተጠቃሚ │ መጠን │ ዘዴ    │ አካውንት/ስልክ│ እርም.│\n├────────┼──────┼─────────┼─────────────┼──────┤\n│ (ባዶ)  │ --   │ --      │ --          │ --   │\n└────────┴──────┴─────────┴─────────────┴──────┘";
                     return;
                 }
-                let text = "┌──────────┬──────┬─────────────┬──────────┐\n│ ተጠቃሚ   │ መጠን │ አካውንት     │ እርምጃ   │\n├──────────┼──────┼─────────────┼──────────┤\n";
+                let text = "┌────────┬──────┬─────────┬─────────────┬──────┐\n│ ተጠቃሚ │ መጠን │ ዘዴ    │ አካውንት/ስልክ│ እርም.│\n├────────┼──────┼─────────┼─────────────┼──────┤\n";
                 items.forEach(item => {
-                    let u = (item.username || "User").padEnd(8).substring(0,8);
-                    let a = (item.amount + " ብር").padEnd(4).substring(0,4);
+                    let u = (item.username || "User").padEnd(6).substring(0,6);
+                    let a = (item.amount + "ር").padEnd(4).substring(0,4);
+                    let m = (item.method === 'CBE BIRR' ? 'CBE' : 'Tele').padEnd(7).substring(0,7);
                     let ph = (item.phone || "").padEnd(11).substring(0,11);
-                    text += `│ @${u} │ ${a} │ ${ph} │ <button class="admin-action-btn approve" onclick="adminApproveAction('${item.id}', 'withdrawal')">Send</button> │\n`;
+                    let sendLabel = item.method === 'CBE BIRR' ? 'Send CBE' : 'Send Tele';
+                    text += `│@${u}│${a}│${m}│${ph}│<button class="admin-action-btn approve" onclick="adminApproveAction('${item.id}', 'withdrawal')">${sendLabel}</button>│\n`;
                 });
-                text += "└──────────┴──────┴─────────────┴──────────┘";
+                text += "└────────┴──────┴─────────┴─────────────┴──────┘";
                 box.innerText = text;
             }).catch(() => { document.getElementById('admin-withdraw-box').innerText = "መረጃ ማምጣት አልተቻለም"; });
         }
