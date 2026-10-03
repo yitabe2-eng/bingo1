@@ -166,8 +166,12 @@ def request_withdrawal():
 @app.route('/request_transfer', methods=['POST'])
 def request_transfer():
     d = request.json or {}
-    sender_ph = sanitize_input(d.get('phone'))
-    receiver_ph = sanitize_input(d.get('receiver_phone'))
+    raw_sender_ph = sanitize_input(str(d.get('phone', '')))
+    raw_receiver_ph = sanitize_input(str(d.get('receiver_phone', '')))
+    
+    sender_ph = raw_sender_ph.replace("+", "").replace(" ", "")
+    receiver_ph = raw_receiver_ph.replace("+", "").replace(" ", "")
+
     try:
         amt = float(d.get('amount', 0))
     except ValueError:
@@ -176,18 +180,37 @@ def request_transfer():
     if amt <= 0:
         return jsonify({"success": False, "msg": "ትክክለኛ የገንዘብ መጠን ያስገቡ!"})
     
-    sender = wallets.find_one({"phone": sender_ph})
-    if not sender or sender.get("balance", 0) < amt:
-        return jsonify({"success": False, "msg": "በቂ ባላንስ የለዎትም!"})
+    sender = wallets.find_one({
+        "$or": [
+            {"phone": sender_ph}, 
+            {"phone": raw_sender_ph},
+            {"phone": f"+{sender_ph}"}
+        ]
+    })
+    
+    if not sender:
+        return jsonify({"success": False, "msg": "ላኪው ተጠቃሚ አልተገኘም!"})
+    
+    if sender.get("balance", 0) < amt:
+        return jsonify({"success": False, "msg": f"በቂ ባላንስ የለዎትም! (ያሎት: {sender.get('balance', 0)} ETB)"})
+    
     db_sender_phone = sender["phone"]
 
-    if db_sender_phone == receiver_ph:
-        return jsonify({"success": False, "msg": "ወደ ራስዎ ቁጥር ማስተላለፍ አይችሉም!"})
+    receiver = wallets.find_one({
+        "$or": [
+            {"phone": receiver_ph}, 
+            {"phone": raw_receiver_ph},
+            {"phone": f"+{receiver_ph}"}
+        ]
+    })
     
-    receiver = wallets.find_one({"phone": receiver_ph})
     if not receiver:
         return jsonify({"success": False, "msg": "ተቀባዩ ተጠቃሚ በሲስተሙ ውስጥ አልተገኘም!"})
+    
     db_receiver_phone = receiver["phone"]
+
+    if db_sender_phone == db_receiver_phone:
+        return jsonify({"success": False, "msg": "ወደ ራስዎ ቁጥር ማስተላለፍ አይችሉም!"})
 
     sender_updated = wallets.find_one_and_update(
         {"phone": db_sender_phone, "balance": {"$gte": amt}},
@@ -310,7 +333,7 @@ def webhook():
             elif text == "/all" or text == "/all_balances":
                 all_users = list(wallets.find({}))
                 if not all_users:
-                    requests.post(url, json={"chat_id": ADMIN_ID, "text": "📭 ምንም የተመዘገበ ተጠቃሚ የለም።"})
+                    requests.post(url, json={"chat_id": ADMIN_ID, "text": "📭 ምንም የተመዘገበ ተጠቃሚ ለም።"})
                 else:
                     msg_text = "📋 *የሁሉም ተጠቃሚዎች ባላንስ ዝርዝር:*\n\n"
                     total_sys_balance = 0
