@@ -173,27 +173,45 @@ def request_transfer():
     except ValueError:
         return jsonify({"success": False, "msg": "ትክክለኛ መጠን ያስገቡ!"})
     
+    if amt <= 0:
+        return jsonify({"success": False, "msg": "ትክክለኛ የገንዘብ መጠን ያስገቡ!"})
+    
     sender = wallets.find_one({"phone": sender_ph})
     if not sender or sender.get("balance", 0) < amt:
         return jsonify({"success": False, "msg": "በቂ ባላንስ የለዎትም!"})
     db_sender_phone = sender["phone"]
+
+    if db_sender_phone == receiver_ph:
+        return jsonify({"success": False, "msg": "ወደ ራስዎ ቁጥር ማስተላለፍ አይችሉም!"})
     
     receiver = wallets.find_one({"phone": receiver_ph})
     if not receiver:
-        return jsonify({"success": False, "msg": "ተቀባዩ አልተገኘም!"})
+        return jsonify({"success": False, "msg": "ተቀባዩ ተጠቃሚ በሲስተሙ ውስጥ አልተገኘም!"})
     db_receiver_phone = receiver["phone"]
 
-    msg = f"🔄 *Transfer Request*\n📤 From: `{db_sender_phone}`\n📥 To: `{db_receiver_phone}`\n💵 Amount: `{amt}` ETB"
-    keyboard = {
-        "inline_keyboard": [
-            [
-                {"text": "✅ አረጋግጥ (Approve)", "callback_data": f"app_trf_{db_sender_phone}_{db_receiver_phone}_{amt}"},
-                {"text": "❌ሰርዝ (Reject)", "callback_data": f"rej_trf_{db_sender_phone}_{amt}"}
-            ]
-        ]
-    }
-    send_telegram(msg, reply_markup=keyboard)
-    return jsonify({"success": True, "msg": "የገንዘብ ማስተላለፍ ጥያቄ ለአድሚን ተልኳል!"})
+    sender_updated = wallets.find_one_and_update(
+        {"phone": db_sender_phone, "balance": {"$gte": amt}},
+        {"$inc": {"balance": -amt}},
+        return_document=True
+    )
+    if not sender_updated:
+        return jsonify({"success": False, "msg": "ሂደቱ አልተሳካም፤ በቂ ባላንስ የለዎትም!"})
+
+    receiver_updated = wallets.find_one_and_update(
+        {"phone": db_receiver_phone},
+        {"$inc": {"balance": amt}},
+        return_document=True,
+        upsert=True
+    )
+
+    notify_user_balance_update(db_sender_phone, sender_updated.get("balance", 0))
+    if receiver_updated:
+        notify_user_balance_update(db_receiver_phone, receiver_updated.get("balance", 0))
+
+    msg = f"🔄 *Automatic Transfer Successful*\n📤 From: `{db_sender_phone}`\n📥 To: `{db_receiver_phone}`\n💵 Amount: `{amt}` ETB"
+    send_telegram(msg)
+
+    return jsonify({"success": True, "msg": f"ብር በအောင်မြင် ተላልፏል! {amt} ETB"})
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
@@ -206,7 +224,6 @@ def webhook():
         if chat_id != str(ADMIN_ID):
             wallets.update_one({"chat_id": chat_id}, {"$set": {"chat_id": chat_id}}, upsert=False)
         
-        # --- የ /play ትእዛዝ ሲጠየቅ የሚሰጠው ምላሽ ---
         if text.lower() == "/play":
             url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
             
@@ -236,7 +253,6 @@ def webhook():
                 print(f"Telegram Error sending /play menu: {e}")
                 
             return "OK", 200
-        # ----------------------------------------
         
         if chat_id == str(ADMIN_ID):
             url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
@@ -389,22 +405,6 @@ def webhook():
             
             elif data_str.startswith("rej_wit_"):
                 requests.post(answer_url, json={"callback_query_id": cq_id, "text": "ዊዝድሮዋል ጥያቄው ሪጀክት ተደርጓል።"})
-                requests.post(edit_url, json={"chat_id": ADMIN_ID, "message_id": cq["message"]["message_id"], "text": cq["message"]["text"] + f"\n\n❌ REJECTED", "parse_mode": "Markdown", "reply_markup": {"inline_keyboard": []}})
-
-            elif data_str.startswith("app_trf_"):
-                _, _, sender_ph, receiver_ph, amt_str = data_str.split("_", 4)
-                amt = float(amt_str)
-                sender_updated = wallets.find_one_and_update({"phone": sender_ph, "balance": {"$gte": amt}}, {"$inc": {"balance": -amt}}, return_document=True)
-                if sender_updated:
-                    receiver_updated = wallets.find_one_and_update({"phone": receiver_ph}, {"$inc": {"balance": amt}}, return_document=True, upsert=True)
-                    notify_user_balance_update(sender_ph, sender_updated.get("balance", 0))
-                    if receiver_updated:
-                        notify_user_balance_update(receiver_ph, receiver_updated.get("balance", 0))
-                    requests.post(answer_url, json={"callback_query_id": cq_id, "text": "የገንዘብ ማስተላለፍ ጥያቄ ጸድቋል!"})
-                    requests.post(edit_url, json={"chat_id": ADMIN_ID, "message_id": cq["message"]["message_id"], "text": cq["message"]["text"] + f"\n\n✅ APPROVED\n💰 የላኪ አጠቃላይ ባላንስ: {sender_updated.get('balance', 0)} ETB", "parse_mode": "Markdown", "reply_markup": {"inline_keyboard": []}})
-            
-            elif data_str.startswith("rej_trf_"):
-                requests.post(answer_url, json={"callback_query_id": cq_id, "text": "ማስተላለፍ ጥያቄው ሪጀክት ተደርጓል።"})
                 requests.post(edit_url, json={"chat_id": ADMIN_ID, "message_id": cq["message"]["message_id"], "text": cq["message"]["text"] + f"\n\n❌ REJECTED", "parse_mode": "Markdown", "reply_markup": {"inline_keyboard": []}})
 
     return "OK", 200
