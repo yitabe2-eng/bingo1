@@ -80,11 +80,6 @@
         }
         .header-banner h1 { margin: 0; font-size: 1.3rem; color: var(--gold); letter-spacing: 2px; }
         
-        .header-btns {
-            display: flex;
-            gap: 6px;
-            align-items: center;
-        }
         .btn-top-refresh {
             background: var(--gold);
             color: #000;
@@ -237,7 +232,7 @@
         #bingo-btn:disabled { background: #555 !important; border-color: #888 !important; color: #aaa !important; cursor: not-allowed; box-shadow: none; }
         
         .modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index:2000; flex-direction:column; align-items:center; justify-content:center; padding: 20px; }
-        .modal-content { background: #1e293b; padding: 20px; border-radius: 15px; width: 92%; max-width: 380px; text-align: left; max-height: 85vh; overflow-y: auto; }
+        .modal-content { background: #1e293b; padding: 20px; border-radius: 15px; width: 92%; max-width: 360px; text-align: left; max-height: 85vh; overflow-y: auto; }
         input { padding: 12px; margin: 10px 0; width: 100%; border-radius: 8px; border: none; box-sizing: border-box; font-size: 1rem; color: #000; }
 
         .winner-modal { display: none; position: fixed; inset: 0; background: linear-gradient(180deg, rgba(5,10,24,0.98), rgba(30,41,59,0.98)); z-index: 3000; flex-direction: column; align-items: center; justify-content: center; padding: 15px; }
@@ -292,40 +287,6 @@
             color: #e2e8f0;
             text-align: left;
         }
-
-        .tg-table-box {
-            background: #0f172a;
-            border: 1px solid #334155;
-            border-radius: 8px;
-            padding: 8px;
-            font-family: monospace;
-            font-size: 0.72rem;
-            text-align: left;
-            white-space: pre-wrap;
-            color: #e2e8f0;
-            margin-bottom: 10px;
-            overflow-x: auto;
-            line-height: 1.4;
-        }
-        .tg-section-title {
-            color: var(--gold);
-            font-size: 0.8rem;
-            font-weight: bold;
-            margin-bottom: 4px;
-            text-align: left;
-        }
-        .admin-action-btn {
-            background: rgba(255,255,255,0.1);
-            border: 1px solid rgba(255,255,255,0.2);
-            color: #fff;
-            padding: 2px 5px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 0.65rem;
-            font-weight: bold;
-        }
-        .admin-action-btn.approve { background: rgba(0, 255, 136, 0.2); color: var(--green); border-color: var(--green); }
-        .admin-action-btn.reject { background: rgba(255, 62, 62, 0.2); color: var(--red); border-color: var(--red); }
     </style>
 </head>
 <body>
@@ -354,10 +315,7 @@
         
         <div class="header-banner">
             <h1>BESH BINGO</h1>
-            <div class="header-btns">
-                <button class="btn-top-refresh" id="admin-panel-btn" style="background:var(--purple); color:#fff; display:none;" onclick="openAdminDashboard()">🛡️ ADMIN</button>
-                <button class="btn-top-refresh" onclick="forceRecoveryRefresh()">🔄 Refresh</button>
-            </div>
+            <button class="btn-top-refresh" onclick="forceRecoveryRefresh()">🔄 Refresh</button>
         </div>
         
         <div class="stats" id="lobby-stats">
@@ -454,7 +412,7 @@
 
     <div id="dep-selection-m" class="modal">
         <div class="modal-content" style="text-align:center;">
-            <h2 style="color:var(--gold); margin-top:0; font-size:1.1rem;">💳 የማንጸኛ መንገድ ይምረጡ (Select Deposit Method)</h2>
+            <h2 style="color:var(--gold); margin-top:0; font-size:1.1rem;">💳 የክፍያ መንገድ ይምረጡ (Select Deposit Method)</h2>
             <p style="font-size:0.85rem; color:#94a3b8; margin-bottom:15px;">እባክዎ ሒሳብ ለመሞላት የሚጠቀሙበትን መንገድ ይምረጡ፡</p>
             <div style="display: flex; gap: 10px; margin-bottom: 15px;">
                 <button class="btn-main" style="background:#2563eb; color:white; padding:12px;" onclick="selectDepositMethod('CBE BIRR')">CBE BIRR</button>
@@ -464,37 +422,19 @@
         </div>
     </div>
 
+    <!-- አውቶማቲክ ዲፖዚት ማረጋገጫ ፎርም (Automatic Deposit Form) -->
     <div id="dep-form-m" class="modal">
         <div class="modal-content" style="text-align:center;">
-            <h2 id="dep-method-title" style="color:var(--green); margin-top:0;">DEPOSIT</h2>
+            <h2 id="dep-method-title" style="color:var(--green); margin-top:0;">AUTOMATIC DEPOSIT</h2>
             <div class="deposit-guide-box">
                 <b>📌 የክፍያ መመሪያ:</b><br>
-                በተሰጠው የ <span id="dep-method-name" style="color:var(--gold);">TELE BIRR</span> አካውንት ገንዘብ ከላኩ በኋላ የግብይቱን <b>Transaction ID</b> እና የላኩትን መጠን በመሙላት ማረጋገጫ ያስገቡ。<br><br>
+                በተሰጠው የ <span id="dep-method-name" style="color:var(--gold);">TELE BIRR</span> አካውንት ገንዘብ ከላኩ በኋላ የደረሰኙን ሙሉ <b>ሊንክ (URL)</b> ወይም <b>Transaction ID</b> ከታች ባለው ሳጥን ውስጥ ያስገቡ፡<br><br>
                 <b>አካውንት: <span style="color:var(--gold);" onclick="copyNum('0945880474')">0945880474 (ኮፒ ለማድረግ ይጫኑ)</span></b>
             </div>
             
-            <input type="number" id="da" min="10" placeholder="Amount (ETB)">
-            <input type="text" id="di" placeholder="Transaction ID">
-            <button class="btn-main btn-deposit" style="width:100%; padding:12px; margin-top:5px;" onclick="subD()">SUBMIT</button>
+            <input type="text" id="auto-receipt-input" placeholder="ሊንኩን ወይም TID እዚህ ይለጥፉ (Paste)..." style="font-size: 0.9rem;">
+            <button class="btn-main btn-deposit" style="width:100%; padding:12px; margin-top:5px;" onclick="submitAutoDeposit()">VERIFY & APPROVE</button>
             <button onclick="closeDepositForm()" style="color:#94a3b8; background:none; border:none; margin-top:15px; cursor:pointer; font-weight:bold;">CANCEL</button>
-        </div>
-    </div>
-
-    <!-- 🛡 አድሚን ቦርድ -->
-    <div id="admin-panel-m" class="modal">
-        <div class="modal-content" style="max-width: 440px; text-align: left;">
-            <h2 style="color:var(--gold); text-align:center; margin-top:0; font-size: 1.1rem;">🛡️ ADMIN CONTROL DASHBOARD</h2>
-            
-            <div class="tg-section-title">📥 PENDING DEPOSIT REQUESTS (የማንጠሪያ ጥያቄዎች)</div>
-            <div id="admin-pending-box" class="tg-table-box">ምንም ጥያቄ የለም</div>
-
-            <div class="tg-section-title">⚡ AUTOMATICALLY APPROVED DEPOSITS (በራስ ሰር የጸደቁ)</div>
-            <div id="admin-auto-box" class="tg-table-box">ምንም መረጃ የለም</div>
-
-            <div class="tg-section-title">📤 PENDING WITHDRAWAL REQUESTS (የማውጣት ጥያቄዎች)</div>
-            <div id="admin-withdraw-box" class="tg-table-box">ምንም ጥያቄ የለም</div>
-
-            <button class="btn-main" style="width:100%; background:var(--red); color:white; margin-top:10px; padding:10px;" onclick="closeAdminDashboard()">CLOSE</button>
         </div>
     </div>
 
@@ -522,11 +462,8 @@
         let socket = null;
         let latestDrawnBallsGlobal = []; 
         let globalMyCardsData = []; 
-        let selectedDepositMethodName = "TELE BIRR";
+        let selectedDepositMethodName = "";
         let selectedWithdrawMethodName = "TELE BIRR";
-        let adminRefreshInterval = null; // ለአድሚን ገጽ ማደሻ (Auto-refresh)
-
-        const ADMIN_PHONE_NUMBER = "0945880474";
 
         window.onload = function() {
             let telegramChatId = "";
@@ -586,17 +523,6 @@
             return clean1 === clean2 && clean1.length > 0;
         }
 
-        function checkAdminAccess() {
-            const adminBtn = document.getElementById('admin-panel-btn');
-            if (adminBtn) {
-                if (phoneMatches(phone, ADMIN_PHONE_NUMBER)) {
-                    adminBtn.style.display = 'flex';
-                } else {
-                    adminBtn.style.display = 'none';
-                }
-            }
-        }
-
         function registerUser() {
             let inputName = document.getElementById('reg-username').value.trim();
             let inputPhone = document.getElementById('reg-phone').value.trim();
@@ -643,7 +569,6 @@
         function showGameUI() {
             document.getElementById('auth-ui').style.display = 'none';
             document.getElementById('main-app-content').style.display = 'flex'; 
-            checkAdminAccess();
             fetchBalanceOnly();
             initWebSocket();
         }
@@ -679,7 +604,6 @@
             } else {
                 initWebSocket();
             }
-            checkAdminAccess();
             fetch(`/get_status?phone=${encodeURIComponent(phone)}`)
             .then(r => r.json())
             .then(d => {
@@ -906,8 +830,7 @@
 
         function closeDepositForm() {
             document.getElementById('dep-form-m').style.display = 'none';
-            document.getElementById('da').value = '';
-            document.getElementById('di').value = '';
+            document.getElementById('auto-receipt-input').value = '';
         }
 
         function openWithdrawSelection() {
@@ -1066,22 +989,29 @@
             }).catch(() => { if(bBtn) bBtn.disabled = false; }); 
         }
         
-        function subD() {
-            let amt = parseInt(document.getElementById('da').value);
-            let tid = document.getElementById('di').value.trim();
-            if(!amt || amt < 10 || !tid || tid.length < 4) return alert("ትክክለኛ መረጃ ያስገቡ!");
+        // አውቶማቲክ ዲፖዚት ማረጋገጫ ፋንክሽን (Automatic Deposit Request Handler)
+        function submitAutoDeposit() {
+            let receiptInput = document.getElementById('auto-receipt-input').value.trim();
+            if(!receiptInput || receiptInput.length < 5) {
+                return alert("እባክዎ ትክክለኛ የክፍያ ሊንክ ወይም Transaction ID ያስገቡ!");
+            }
             
-            fetch('/request_deposit', { 
-                method:'POST', headers:{'Content-Type':'application/json'}, 
-                body:JSON.stringify({phone: phone, amount: amt, transaction_id: tid, method: selectedDepositMethodName}) 
+            fetch('/verify_auto_deposit', { 
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json' }, 
+                body: JSON.stringify({ phone: phone, receipt_input: receiptInput }) 
             })
             .then(res => res.json())
             .then(d => { 
                 closeDepositForm(); 
-                alert(d.msg || "የዲፖዚት ጥያቄዎ ተልኳል!"); 
+                alert(d.msg || "ክፍያዎ ተረጋግጧል!"); 
+                if(d.success && d.balance !== undefined) {
+                    clientBalance = parseFloat(d.balance);
+                    document.getElementById('balance').innerText = clientBalance.toFixed(0) + " ETB";
+                }
                 fetchBalanceOnly(); 
             })
-            .catch(() => { alert("ስህተት!"); });
+            .catch(() => { alert("የኔትወርክ ስህተት አጋጥሟል!"); });
         }
 
         function subW() {
@@ -1131,126 +1061,6 @@
                 }
             })
             .catch(() => { alert("የማስተላለፍ ስህተት አጋጥሟል!"); });
-        }
-
-        // 🛡️ አድሚን ቦርድ እና የ Auto-refresh ሲስተም
-        function openAdminDashboard() {
-            if (!phoneMatches(phone, ADMIN_PHONE_NUMBER)) {
-                return alert("ይህንን ቦርድ ማየት የሚችሉት አስተዳዳሪው (Admin) ብቻ ነው!");
-            }
-            openM('admin-panel-m');
-            loadAdminTelegramTables();
-            
-            // አድሚን ዳሽቦርዱ ክፍት ባለበት ሰዓት በየ 3 ሰኮንዱ ራሱን በራሱ እንዲያድስ (Auto-refresh)
-            if (adminRefreshInterval) clearInterval(adminRefreshInterval);
-            adminRefreshInterval = setInterval(loadAdminTelegramTables, 3000);
-        }
-
-        function closeAdminDashboard() {
-            closeM('admin-panel-m');
-            if (adminRefreshInterval) {
-                clearInterval(adminRefreshInterval);
-                adminRefreshInterval = null;
-            }
-        }
-
-        function loadAdminTelegramTables() {
-            if (document.getElementById('admin-panel-m').style.display !== 'flex') return;
-
-            // 1. Pending Deposits
-            fetch('/admin/pending_deposits', { headers: { 'Admin-Auth-Phone': phone } })
-            .then(res => res.json())
-            .then(data => {
-                let items = data.items || data.deposits || [];
-                let box = document.getElementById('admin-pending-box');
-                if (items.length === 0) {
-                    box.innerText = "┌────────┬──────┬─────────┬─────────────┬──────┐\n│ ተጠቃሚ │ መጠን │ ዘዴ    │ የግብይት ID  │ እርም.│\n├────────┼──────┼─────────┼─────────────┼──────┤\n│ (ባዶ)  │ --   │ --      │ --          │ --   │\n└────────┴──────┴─────────┴─────────────┴──────┘";
-                    return;
-                }
-                let text = "┌────────┬──────┬─────────┬─────────────┬──────┐\n│ ተጠቃሚ │ መጠን │ ዘዴ    │ የግብይት ID  │ እርም.│\n├────────┼──────┼─────────┼─────────────┼──────┤\n";
-                items.forEach(item => {
-                    let u = (item.username || item.phone || "User").padEnd(6).substring(0,6);
-                    let a = (item.amount + "ር").padEnd(4).substring(0,4);
-                    let m = (item.method === 'CBE BIRR' ? 'CBE' : 'Tele').padEnd(7).substring(0,7);
-                    let t = (item.transaction_id || "").padEnd(11).substring(0,11);
-                    text += `│@${u}│${a}│${m}│${t}│<button class="admin-action-btn approve" onclick="adminApproveAction('${item.id}', 'deposit')">✔</button><button class="admin-action-btn reject" onclick="adminRejectAction('${item.id}', 'deposit')">✖</button>│\n`;
-                });
-                text += "└────────┴──────┴─────────┴─────────────┴──────┘";
-                box.innerText = text;
-            }).catch(() => {});
-
-            // 2. Auto-Approved Deposits
-            fetch('/admin/approved_deposits', { headers: { 'Admin-Auth-Phone': phone } })
-            .then(res => res.json())
-            .then(data => {
-                let items = data.items || data.deposits || [];
-                let box = document.getElementById('admin-auto-box');
-                if (items.length === 0) {
-                    box.innerText = "┌──────────┬──────┬─────────────┬──────────┐\n│ ተጠቃሚ   │ መጠን │  ዘዴ        │ ሁኔታ    │\n├──────────┼──────┼─────────────┼──────────┤\n│ (ባዶ)    │ --   │ --          │ --       │\n└──────────┴──────┴─────────────┴──────────┘";
-                    return;
-                }
-                let text = "┌──────────┬──────┬─────────────┬──────────┐\n│ ተጠቃሚ   │ መጠን │  ዘዴ        │ ሁኔታ    │\n├──────────┼──────┼─────────────┼──────────┤\n";
-                items.forEach(item => {
-                    let u = (item.username || "User").padEnd(8).substring(0,8);
-                    let a = (item.amount + " ብር").padEnd(4).substring(0,4);
-                    let mMethod = item.method === 'CBE BIRR' ? 'CBE BIRR' : 'TELE BIRR';
-                    text += `│ @${u} │ ${a} │ ${mMethod} │ Auto-Pass│\n`;
-                });
-                text += "└──────────┴──────┴─────────────┴──────────┘";
-                box.innerText = text;
-            }).catch(() => {});
-
-            // 3. Pending Withdrawals
-            fetch('/admin/withdrawals', { headers: { 'Admin-Auth-Phone': phone } })
-            .then(res => res.json())
-            .then(data => {
-                let items = data.items || data.withdrawals || [];
-                let box = document.getElementById('admin-withdraw-box');
-                if (items.length === 0) {
-                    box.innerText = "┌────────┬──────┬─────────┬─────────────┬──────┐\n│ ተጠቃሚ │ መጠን │ ዘዴ    │ አካውንት/ስልክ│ እርም.│\n├────────┼──────┼─────────┼─────────────┼──────┤\n│ (ባዶ)  │ --   │ --      │ --          │ --   │\n└────────┴──────┴─────────┴─────────────┴──────┘";
-                    return;
-                }
-                let text = "┌────────┬──────┬─────────┬─────────────┬──────┐\n│ ተጠቃሚ │ መጠን │ ዘዴ    │ አካውንት/ስልክ│ እርም.│\n├────────┼──────┼─────────┼─────────────┼──────┤\n";
-                items.forEach(item => {
-                    let u = (item.username || "User").padEnd(6).substring(0,6);
-                    let a = (item.amount + "ር").padEnd(4).substring(0,4);
-                    let m = (item.method === 'CBE BIRR' ? 'CBE' : 'Tele').padEnd(7).substring(0,7);
-                    let ph = (item.phone || "").padEnd(11).substring(0,11);
-                    let sendLabel = item.method === 'CBE BIRR' ? 'Send CBE' : 'Send Tele';
-                    text += `│@${u}│${a}│${m}│${ph}│<button class="admin-action-btn approve" onclick="adminApproveAction('${item.id}', 'withdrawal')">${sendLabel}</button>│\n`;
-                });
-                text += "└────────┴──────┴─────────┴─────────────┴──────┘";
-                box.innerText = text;
-            }).catch(() => {});
-        }
-
-        function adminApproveAction(id, type) {
-            let url = type === 'deposit' ? '/admin/approve_deposit' : '/admin/approve_withdrawal';
-            fetch(url, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ admin_phone: phone, id: id })
-            })
-            .then(res => res.json())
-            .then(d => {
-                alert(d.msg || "በအောင်မြင် ተከናውኗል!");
-                loadAdminTelegramTables();
-            })
-            .catch(() => alert("ስህተት አጋጥሟል!"));
-        }
-
-        function adminRejectAction(id, type) {
-            fetch('/admin/reject_deposit', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ admin_phone: phone, id: id })
-            })
-            .then(res => res.json())
-            .then(d => {
-                alert(d.msg || "ተሰርዟል!");
-                loadAdminTelegramTables();
-            })
-            .catch(() => alert("ስህተት አጋጥሟል!"));
         }
     </script>
 </body>
