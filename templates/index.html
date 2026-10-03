@@ -293,7 +293,6 @@
             text-align: left;
         }
 
-        /* ቴሌግራም ቦት ጽሁፍ ስታይል (Telegram Table Text Box Style) */
         .tg-table-box {
             background: #0f172a;
             border: 1px solid #334155;
@@ -481,24 +480,21 @@
         </div>
     </div>
 
-    <!-- 🛡️️ አድሚን ቦርድ (Telegram-style Text Tables - Telebirr & CBE Birr) -->
+    <!-- 🛡 አድሚን ቦርድ -->
     <div id="admin-panel-m" class="modal">
         <div class="modal-content" style="max-width: 440px; text-align: left;">
             <h2 style="color:var(--gold); text-align:center; margin-top:0; font-size: 1.1rem;">🛡️ ADMIN CONTROL DASHBOARD</h2>
             
-            <!-- 1. PENDING DEPOSIT REQUESTS (Telebirr & CBE Birr Separated/Marked) -->
             <div class="tg-section-title">📥 PENDING DEPOSIT REQUESTS (የማንጠሪያ ጥያቄዎች)</div>
             <div id="admin-pending-box" class="tg-table-box">ምንም ጥያቄ የለም</div>
 
-            <!-- 2. AUTOMATICALLY APPROVED DEPOSITS -->
             <div class="tg-section-title">⚡ AUTOMATICALLY APPROVED DEPOSITS (በራስ ሰር የጸደቁ)</div>
             <div id="admin-auto-box" class="tg-table-box">ምንም መረጃ የለም</div>
 
-            <!-- 3. PENDING WITHDRAWAL REQUESTS (Telebirr & CBE Birr Separated/Marked) -->
             <div class="tg-section-title">📤 PENDING WITHDRAWAL REQUESTS (የማውጣት ጥያቄዎች)</div>
             <div id="admin-withdraw-box" class="tg-table-box">ምንም ጥያቄ የለም</div>
 
-            <button class="btn-main" style="width:100%; background:var(--red); color:white; margin-top:10px; padding:10px;" onclick="closeM('admin-panel-m')">CLOSE</button>
+            <button class="btn-main" style="width:100%; background:var(--red); color:white; margin-top:10px; padding:10px;" onclick="closeAdminDashboard()">CLOSE</button>
         </div>
     </div>
 
@@ -528,8 +524,8 @@
         let globalMyCardsData = []; 
         let selectedDepositMethodName = "TELE BIRR";
         let selectedWithdrawMethodName = "TELE BIRR";
+        let adminRefreshInterval = null; // ለአድሚን ገጽ ማደሻ (Auto-refresh)
 
-        // አስተዳዳሪ (Admin) ስልክ ቁጥር
         const ADMIN_PHONE_NUMBER = "0945880474";
 
         window.onload = function() {
@@ -1137,17 +1133,31 @@
             .catch(() => { alert("የማስተላለፍ ስህተት አጋጥሟል!"); });
         }
 
-        // 🛡️ አድሚን ቦርድ (Telegram-style Text Tables with Telebirr & CBE Birr separation)
+        // 🛡️ አድሚን ቦርድ እና የ Auto-refresh ሲስተም
         function openAdminDashboard() {
             if (!phoneMatches(phone, ADMIN_PHONE_NUMBER)) {
                 return alert("ይህንን ቦርድ ማየት የሚችሉት አስተዳዳሪው (Admin) ብቻ ነው!");
             }
             openM('admin-panel-m');
             loadAdminTelegramTables();
+            
+            // አድሚን ዳሽቦርዱ ክፍት ባለበት ሰዓት በየ 3 ሰኮንዱ ራሱን በራሱ እንዲያድስ (Auto-refresh)
+            if (adminRefreshInterval) clearInterval(adminRefreshInterval);
+            adminRefreshInterval = setInterval(loadAdminTelegramTables, 3000);
+        }
+
+        function closeAdminDashboard() {
+            closeM('admin-panel-m');
+            if (adminRefreshInterval) {
+                clearInterval(adminRefreshInterval);
+                adminRefreshInterval = null;
+            }
         }
 
         function loadAdminTelegramTables() {
-            // 1. Pending Deposits (Showing Telebirr or CBE Birr)
+            if (document.getElementById('admin-panel-m').style.display !== 'flex') return;
+
+            // 1. Pending Deposits
             fetch('/admin/pending_deposits', { headers: { 'Admin-Auth-Phone': phone } })
             .then(res => res.json())
             .then(data => {
@@ -1167,7 +1177,7 @@
                 });
                 text += "└────────┴──────┴─────────┴─────────────┴──────┘";
                 box.innerText = text;
-            }).catch(() => { document.getElementById('admin-pending-box').innerText = "መረጃ ማምጣት አልተቻለም"; });
+            }).catch(() => {});
 
             // 2. Auto-Approved Deposits
             fetch('/admin/approved_deposits', { headers: { 'Admin-Auth-Phone': phone } })
@@ -1188,9 +1198,9 @@
                 });
                 text += "└──────────┴──────┴─────────────┴──────────┘";
                 box.innerText = text;
-            }).catch(() => { document.getElementById('admin-auto-box').innerText = "መረጃ ማምጣት አልተቻለም"; });
+            }).catch(() => {});
 
-            // 3. Pending Withdrawals (Showing Telebirr or CBE Birr and destination info)
+            // 3. Pending Withdrawals
             fetch('/admin/withdrawals', { headers: { 'Admin-Auth-Phone': phone } })
             .then(res => res.json())
             .then(data => {
@@ -1211,7 +1221,7 @@
                 });
                 text += "└────────┴──────┴─────────┴─────────────┴──────┘";
                 box.innerText = text;
-            }).catch(() => { document.getElementById('admin-withdraw-box').innerText = "መረጃ ማምጣት አልተቻለም"; });
+            }).catch(() => {});
         }
 
         function adminApproveAction(id, type) {
