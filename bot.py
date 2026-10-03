@@ -105,7 +105,7 @@ def broadcast_game_state():
 def notify_user_balance_update(phone_num, new_balance):
     socketio.emit('balance_update', {"phone": phone_num, "balance": new_balance})
 
-# ── አውቶማቲክ ዲፖዚት ማረጋገጫ (Automatic Deposit Parser & Approval) ──
+# ── አውቶማቲክ ዲፖዚት ማረጋገጫ (ተለዋዋጭ የብር መጠን ማንበብ) ──
 @app.route('/verify_auto_deposit', methods=['POST'])
 def verify_auto_deposit():
     d = request.json or {}
@@ -123,21 +123,27 @@ def verify_auto_deposit():
 
     tid = ""
     detected_method = "TELE/CBE"
-    verified_amount = 50.0  # እንደ አስፈላጊነቱ ከሊንኩ ወይም ከደረሰኙ አውቶማቲክ እንዲነበብ ማድረግ ይቻላል
+    verified_amount = 0.0
 
-    # 1. የ CBE Birr ሊንክ ፓርዝ ማድረግ (ምሳሌ: https://cbepay1.cbe.com.et/aureceipt?TID=DIK21P1FS1G&PH=...)
+    # 1. የ CBE Birr ሊንክ ፓርዝ ማድረግ እና የብር መጠን መፈለግ
     if "cbe.com.et" in receipt_input.lower():
         detected_method = "CBE BIRR"
         parsed_url = urlparse(receipt_input if "http" in receipt_input else f"https://{receipt_input}")
         query_params = parse_qs(parsed_url.query)
+        
         if 'TID' in query_params:
             tid = query_params['TID'][0]
         else:
             tid_match = re.search(r'TID=([A-Za-z0-9]+)', receipt_input)
             if tid_match:
                 tid = tid_match.group(1)
+                
+        # ከሊንኩ ወይም ቴክስቱ የብር መጠንን በRegex መፈለግ
+        amt_match = re.search(r'(?:amount|amt|ETB|Br)[=:]?\s*([0-9]+(?:\.[0-9]+)?)', receipt_input, re.IGNORECASE)
+        if amt_match:
+            verified_amount = float(amt_match.group(1))
 
-    # 2. የ Telebirr ሊንክ ወይም ኤስኤምኤስ ፓርዝ ማድረግ
+    # 2. የ Telebirr ሊንክ ወይም ኤስኤምኤስ ፓርዝ ማድረግ እና የብር መጠን መፈለግ
     elif "ethiotelecom.et" in receipt_input.lower() or "telebirr" in receipt_input.lower():
         detected_method = "TELE BIRR"
         match_tele = re.search(r'receipt/([A-Za-z0-9]+)', receipt_input)
@@ -145,8 +151,19 @@ def verify_auto_deposit():
             tid = match_tele.group(1)
         else:
             tid = receipt_input
+            
+        amt_match = re.search(r'(?:ETB|Br|amount)[=:]?\s*([0-9]+(?:\.[0-9]+)?)', receipt_input, re.IGNORECASE)
+        if amt_match:
+            verified_amount = float(amt_match.group(1))
     else:
         tid = receipt_input
+
+    # ሊንኩ ላይ የብር መጠን ካልተገኘ በግቤት (Input) የተሰጠውን ወይም ነባሪ መጠን መጠቀም
+    if verified_amount <= 0:
+        try:
+            verified_amount = float(d.get('amount', 10))
+        except:
+            verified_amount = 10.0
 
     if not tid or len(tid) < 4:
         return jsonify({"success": False, "msg": "ትክክለኛ ያልሆነ የክፍያ ሊንክ ወይም Receipt ID!"})
@@ -156,7 +173,7 @@ def verify_auto_deposit():
     if existing_tx:
         return jsonify({"success": False, "msg": "ይህ የክፍያ ማረጋገጫ ቁጥር (Receipt) ከዚህ በፊት ጥቅም ላይ ውሏል!"})
 
-    # 4. ባላንስ ማስተካከል እና ማስቀመጥ
+    # 4. ትክክለኛውን የብር መጠን ብቻ ወደ ባላንስ መጨመር
     updated = wallets.find_one_and_update(
         {"phone": db_phone},
         {"$inc": {"balance": verified_amount}},
@@ -723,7 +740,7 @@ def claim_bingo():
 def handle_connect():
     global loop_started
     if not loop_started:
-        loop_started = true
+        loop_started = True
         set_webhook()
         socketio.start_background_task(game_loop)
     broadcast_game_state()
