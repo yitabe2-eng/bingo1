@@ -102,7 +102,7 @@ def broadcast_game_state():
 def notify_user_balance_update(phone_num, new_balance):
     socketio.emit('balance_update', {"phone": phone_num, "balance": new_balance})
 
-# --- የፔንዲንግ ዲፖዚት እና ዊዝድሮዋል ጥያቄዎችን መመለሻ ራውቶች ---
+# --- የፔንዲንግ ዲፖዚት እና ዊዝድሮዋል ጥያቄዎችን መመለሻ ራውቶች (ለዳሽቦርድ) ---
 
 @app.route('/get_pending_deposits', methods=['GET'])
 def get_pending_deposits():
@@ -119,6 +119,49 @@ def get_pending_withdrawals():
         return jsonify({"success": True, "withdrawals": withdrawals_list})
     except Exception as e:
         return jsonify({"success": False, "withdrawals": [], "msg": str(e)})
+
+@app.route('/admin_action_deposit', methods=['POST'])
+def admin_action_deposit():
+    d = request.json or {}
+    phone = sanitize_input(str(d.get('phone')))
+    try:
+        amt = float(d.get('amount', 0))
+    except ValueError:
+        amt = 0
+    action = sanitize_input(str(d.get('action'))) # 'approve' ወይም 'reject'
+
+    if action == 'approve':
+        updated = wallets.find_one_and_update({"phone": phone}, {"$inc": {"balance": amt}}, return_document=True, upsert=True)
+        db['deposits'].update_one({"phone": phone, "amount": amt, "status": "pending"}, {"$set": {"status": "approved"}})
+        new_bal = updated.get("balance", 0) if updated else 0
+        notify_user_balance_update(phone, new_bal)
+        return jsonify({"success": True, "msg": "ዲፖዚቱ ጸድቋል!"})
+    elif action == 'reject':
+        db['deposits'].update_one({"phone": phone, "amount": amt, "status": "pending"}, {"$set": {"status": "rejected"}})
+        return jsonify({"success": True, "msg": "ዲፖዚቱ ተሰርዟል!"})
+    return jsonify({"success": False, "msg": "ትክክለኛ ያልሆነ እርምጃ!"})
+
+@app.route('/admin_action_withdrawal', methods=['POST'])
+def admin_action_withdrawal():
+    d = request.json or {}
+    phone = sanitize_input(str(d.get('phone')))
+    try:
+        amt = float(d.get('amount', 0))
+    except ValueError:
+        amt = 0
+    action = sanitize_input(str(d.get('action'))) # 'approve' ወይም 'reject'
+
+    if action == 'approve':
+        updated = wallets.find_one_and_update({"phone": phone, "balance": {"$gte": amt}}, {"$inc": {"balance": -amt}}, return_document=True)
+        db['withdrawals'].update_one({"phone": phone, "amount": amt, "status": "pending"}, {"$set": {"status": "approved"}})
+        new_bal = updated.get("balance", 0) if updated else 0
+        if updated:
+            notify_user_balance_update(phone, new_bal)
+        return jsonify({"success": True, "msg": "ዊዝድሮዋሉ ጸድቋል!"})
+    elif action == 'reject':
+        db['withdrawals'].update_one({"phone": phone, "amount": amt, "status": "pending"}, {"$set": {"status": "rejected"}})
+        return jsonify({"success": True, "msg": "ዊዝድሮዋሉ ተሰርዟል!"})
+    return jsonify({"success": False, "msg": "ትክክለኛ ያልሆነ እርምጃ!"})
 
 # -----------------------------------------------------------------
 
@@ -151,26 +194,8 @@ def request_deposit():
     except Exception as e:
         print(f"Deposit DB Error: {e}")
 
-    # በቴሌግራም ቴብል ቅርጸት የተዘጋጀ የዲፖዚት መልእክት
-    msg = (
-        f"💰 *Deposit Request*\n"
-        f"┌────────┬──────┬─────────┬─────────────┐\n"
-        f"│ ተጠቃሚ  │ መጠን │ ዘዴ    │ የግብይት ID  │\n"
-        f"├────────┼──────┼─────────┼─────────────┤\n"
-        f"│ `{db_phone}` │ `{amt}` │ `{method}` │ `{t_id}` │\n"
-        f"└────────┴──────┴─────────┴─────────────┘"
-    )
-    
-    keyboard = {
-        "inline_keyboard": [
-            [
-                {"text": "✅ Approve", "callback_data": f"app_dep_{db_phone}_{amt}"},
-                {"text": "❌ Reject", "callback_data": f"rej_dep_{db_phone}"}
-            ]
-        ]
-    }
-    send_telegram(msg, reply_markup=keyboard)
-    return jsonify({"success": True})
+    # ወደ ቴሌግራም ቦት መላክ ቆሟል፤ ጥያቄው አሁን ዳሽቦርድ ላይ ብቻ pending ሆኖ ይመዘገባል።
+    return jsonify({"success": True, "msg": "የዲፖዚት ጥያቄዎ ወደ አድሚን ዳሽቦርድ ተልኳል!"})
 
 @app.route('/request_withdrawal', methods=['POST'])
 def request_withdrawal():
@@ -201,26 +226,8 @@ def request_withdrawal():
     except Exception as e:
         print(f"Withdrawal DB Error: {e}")
 
-    # በቴሌግራም ቴብል ቅርጸት የተዘጋጀ የዊዝድሮዋል መልእክት
-    msg = (
-        f"📤 *Withdrawal Request*\n"
-        f"┌────────┬──────┬─────────┐\n"
-        f"│ ተጠቃሚ  │ መጠን │ ዘዴ    │\n"
-        f"├────────┼──────┼─────────┤\n"
-        f"│ `{db_phone}` │ `{amt}` │ `{method}` │\n"
-        f"└────────┴──────┴─────────┘"
-    )
-
-    keyboard = {
-        "inline_keyboard": [
-            [
-                {"text": "✅ Approve", "callback_data": f"app_wit_{db_phone}_{amt}"},
-                {"text": "❌ Reject", "callback_data": f"rej_wit_{db_phone}_{amt}"}
-            ]
-        ]
-    }
-    send_telegram(msg, reply_markup=keyboard)
-    return jsonify({"success": True, "msg": "የውዝድሮዋል ጥያቄዎ ለአድሚን ተልኳል!"})
+    # ወደ ቴሌግራም ቦት መላክ ቀርቷል፤ ዳሽቦርድ ላይ ብቻ pending ሆኖ ይጠብቃል።
+    return jsonify({"success": True, "msg": "የውዝድሮዋል ጥያቄዎ ወደ አድሚን ዳሽቦርድ ተልኳል!"})
 
 @app.route('/request_transfer', methods=['POST'])
 def request_transfer():
@@ -413,46 +420,7 @@ def webhook():
             answer_url = f"https://api.telegram.org/bot{BOT_TOKEN}/answerCallbackQuery"
             edit_url = f"https://api.telegram.org/bot{BOT_TOKEN}/editMessageText"
             
-            if data_str.startswith("app_dep_"):
-                _, _, phone_num, amt_str = data_str.split("_", 3)
-                amt = float(amt_str)
-                updated = wallets.find_one_and_update({"phone": phone_num}, {"$inc": {"balance": amt}}, return_document=True, upsert=True)
-                
-                db['deposits'].update_one({"phone": phone_num, "amount": amt, "status": "pending"}, {"$set": {"status": "approved"}})
-
-                new_bal = updated.get("balance", 0) if updated else 0
-                notify_user_balance_update(phone_num, new_bal)
-                requests.post(answer_url, json={"callback_query_id": cq_id, "text": f"ተሳክቷል! {amt} ETB ገብቷል።"})
-                requests.post(edit_url, json={"chat_id": ADMIN_ID, "message_id": cq["message"]["message_id"], "text": cq["message"]["text"] + f"\n\n✅ APPROVED\n💰 አጠቃላይ ባላንስ: {new_bal} ETB", "parse_mode": "Markdown", "reply_markup": {"inline_keyboard": []}})
-            
-            elif data_str.startswith("rej_dep_"):
-                _, _, phone_num = data_str.split("_", 2)
-                db['deposits'].update_one({"phone": phone_num, "status": "pending"}, {"$set": {"status": "rejected"}})
-                
-                requests.post(answer_url, json={"callback_query_id": cq_id, "text": "ዲፖዚት ጥያቄው ሪጀክት ተደርጓል።"})
-                requests.post(edit_url, json={"chat_id": ADMIN_ID, "message_id": cq["message"]["message_id"], "text": cq["message"]["text"] + f"\n\n❌ REJECTED", "parse_mode": "Markdown", "reply_markup": {"inline_keyboard": []}})
-
-            elif data_str.startswith("app_wit_"):
-                _, _, phone_num, amt_str = data_str.split("_", 3)
-                amt = float(amt_str)
-                updated = wallets.find_one_and_update({"phone": phone_num, "balance": {"$gte": amt}}, {"$inc": {"balance": -amt}}, return_document=True)
-                
-                db['withdrawals'].update_one({"phone": phone_num, "amount": amt, "status": "pending"}, {"$set": {"status": "approved"}})
-
-                new_bal = updated.get("balance", 0) if updated else 0
-                if updated:
-                    notify_user_balance_update(phone_num, new_bal)
-                    requests.post(answer_url, json={"callback_query_id": cq_id, "text": f"ዊዝድሮዋል ጸድቋል!"})
-                requests.post(edit_url, json={"chat_id": ADMIN_ID, "message_id": cq["message"]["message_id"], "text": cq["message"]["text"] + f"\n\n✅ APPROVED\n💰 አጠቃላይ ባላንስ: {new_bal} ETB", "parse_mode": "Markdown", "reply_markup": {"inline_keyboard": []}})
-            
-            elif data_str.startswith("rej_wit_"):
-                _, _, phone_num, amt_str = data_str.split("_", 3)
-                db['withdrawals'].update_one({"phone": phone_num, "amount": float(amt_str), "status": "pending"}, {"$set": {"status": "rejected"}})
-
-                requests.post(answer_url, json={"callback_query_id": cq_id, "text": "ዊዝድሮዋል ጥያቄው ሪጀክት ተደርጓል።"})
-                requests.post(edit_url, json={"chat_id": ADMIN_ID, "message_id": cq["message"]["message_id"], "text": cq["message"]["text"] + f"\n\n❌ REJECTED", "parse_mode": "Markdown", "reply_markup": {"inline_keyboard": []}})
-
-            elif data_str.startswith("app_trf_"):
+            if data_str.startswith("app_trf_"):
                 _, _, sender_ph, receiver_ph, amt_str = data_str.split("_", 4)
                 amt = float(amt_str)
                 sender_updated = wallets.find_one_and_update({"phone": sender_ph, "balance": {"$gte": amt}}, {"$inc": {"balance": -amt}}, return_document=True)
