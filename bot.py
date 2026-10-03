@@ -140,7 +140,7 @@ socketio.emit('game_update', state_payload)
 def notify_user_balance_update(phone_num, new_balance):
 socketio.emit('balance_update', {"phone": phone_num, "balance": new_balance})
 
-🌟 የአድሚን ዳሽቦርድ ደህንነት ማረጋገጫ ፋንክሽን (0945880474 ብቻ)
+የአድሚን ዳሽቦርድ ደህንነት ማረጋገጫ ፋንክሽን (0945880474 ብቻ)
 def is_request_from_admin(phone_val):
 if not phone_val:
 return False
@@ -1078,4 +1078,4 @@ winner_texts = []
 for w in pending_claims:
 w_res = wallets.find_one_and_update(
 {"phone": w["phone"]},
-{"$inc": {"balance": share_prize}}, return_document=True ) if w_res: gevent.spawn(notify_user_balance
+{"$inc": {"balance": share_prize}}, return_document=True ) if w_res: gevent.spawn(notify_user_balance_upda
