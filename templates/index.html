@@ -129,7 +129,6 @@
             justify-content: flex-start;
         }
 
-        /* 🌟 የኳስ ቆጣሪ ማሳያ ብቻ (BALANCE እና PLAYERS ተወግደዋል) */
         .game-ui-header {
             display: flex;
             justify-content: center;
@@ -288,11 +287,45 @@
             color: #e2e8f0;
             text-align: left;
         }
+
+        /* 🛠 የአድሚን ዳሽቦርድ ስታይል (Styles for Admin Dashboard) */
+        .hidden { display: none !important; }
+        .card { background: #1e1e1e; padding: 15px; margin-bottom: 10px; border-radius: 8px; text-align: left; }
+        .card h3 { color: var(--gold); margin-top: 0; font-size: 1rem; }
+        .admin-input, .admin-button { padding: 8px; margin: 5px 0; width: 100%; box-sizing: border-box; }
+        .admin-button { background: #4CAF50; color: white; border: none; cursor: pointer; border-radius: 6px; font-weight: bold; }
+        .admin-button.danger { background: #f44336; }
     </style>
 </head>
 <body>
 
-    <div id="auth-ui">
+    <!-- 🛠 የአድሚን ማረጋገጫ እና ዳሽቦርድ መዋቅር -->
+    <div id="auth-check" style="padding: 20px; color: var(--gold); font-weight: bold;">እየተጣራ ነው...</div>
+     
+    <div id="admin-content" class="hidden" style="padding: 15px; overflow-y: auto; height: 100vh; box-sizing: border-box;">
+        <h2>🛠 የአድሚን መቆጣጠሪያ ማዕከል</h2>
+        <div class="card">
+            <h3>አጠቃላይ ቀሪ ገንዘብ: <span id="total-bal">0</span> ETB</h3>
+        </div>
+         
+        <div class="card">
+            <h3>ተጠቃሚ ማስተካከል (/add ወይም /sub)</h3>
+            <input type="text" id="target-phone" class="admin-input" placeholder="ስልክ ቁጥር (ለምሳሌ: 09...)">
+            <input type="number" id="target-amount" class="admin-input" placeholder="የገንዘብ መጠን">
+            <button class="admin-button" onclick="performAction('add')">ብር ጨምር (Add)</button>
+            <button class="admin-button danger" onclick="performAction('sub')">ብር ቀንስ (Sub)</button>
+            <button class="admin-button danger" onclick="performAction('block')">አግድ (Block)</button>
+            <button class="admin-button" onclick="performAction('unblock')">ከብሎክ አንሳ (Unblock)</button>
+        </div>
+
+        <div class="card">
+            <h3>የተጠቃሚዎች ዝርዝር</h3>
+            <div id="users-list"></div>
+        </div>
+    </div>
+
+    <!-- መደበኛ የጨዋታ መዋቅር (ወደፊት በአድሚን ሲሆን ይደበቃል ወይም በተናጠል ይሰራሉ) -->
+    <div id="auth-ui" style="display:none;">
         <div class="auth-card">
             <h2>ተመዝገብ</h2>
             <p>ወደ ጨዋታው ለመግባት መረጃዎን ያስገቡ</p>
@@ -342,7 +375,6 @@
         </div>
 
         <div id="game-ui" style="display:none;">
-            <!-- 🌟 ድግግሞሾቹ ተወግደዋል፣ አሁን BALL: 0/75 ብቻ በመሃል ይታያል -->
             <div class="game-ui-header">
                 <div class="ball-counter-container" style="font-weight: bold;">
                     <span>BALL: </span><span id="ball-count">0/75</span>
@@ -457,6 +489,10 @@
     </div>
 
     <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+        const userChatId = tg.initDataUnsafe?.user?.id || "TEST_ADMIN_ID";
+
         let phone = localStorage.getItem('phone');
         let username = localStorage.getItem('username');
         let announced = false, lastBall = "--", clientBalance = 0;
@@ -468,12 +504,71 @@
         let selectedWithdrawMethodName = "TELE BIRR";
 
         window.onload = function() {
-            let telegramChatId = "";
-            if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe) {
-                telegramChatId = window.Telegram.WebApp.initDataUnsafe.user?.id || "";
-            }
+            // መጀመሪያ አድሚን መሆን አለመሆኑን እናረጋግጥ
+            fetch('/api/admin/check_auth', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({chat_id: userChatId})
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.is_admin) {
+                    document.getElementById('auth-check').style.display = 'none';
+                    document.getElementById('admin-content').classList.remove('hidden');
+                    loadStats();
+                } else {
+                    // አድሚን ካልሆነ ወደ መደበኛ ጨዋታ ሎጂክ ይቀጥላል
+                    document.getElementById('auth-check').style.display = 'none';
+                    initGameFlow();
+                }
+            })
+            .catch(() => {
+                document.getElementById('auth-check').style.display = 'none';
+                initGameFlow();
+            });
+        }
 
+        // 🛠 የአድሚን መቆጣጠሪያ ስክሪፕቶች
+        function loadStats() {
+            fetch('/api/admin/stats', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({chat_id: userChatId})
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.success) {
+                    document.getElementById('total-bal').innerText = data.total_balance;
+                    let listHtml = '';
+                    data.users.forEach(u => {
+                        listHtml += `<div style="border-bottom:1px solid #333; padding:5px; font-size: 0.85rem;">
+                            📞 <b>${u.phone}</b> | 👤 ${u.username || 'N/A'} | 💰 <b>${u.balance} ETB</b>
+                        </div>`;
+                    });
+                    document.getElementById('users-list').innerHTML = listHtml;
+                }
+            });
+        }
+
+        function performAction(actionType) {
+            let targetPhone = document.getElementById('target-phone').value;
+            let targetAmount = document.getElementById('target-amount').value;
+            fetch('/api/admin/action', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({chat_id: userChatId, action: actionType, phone: targetPhone, amount: targetAmount})
+            })
+            .then(res => res.json())
+            .then(data => {
+                alert(data.msg);
+                loadStats();
+            });
+        }
+
+        // 🎮 የጨዋታ ፍሰት ሎጂክ
+        function initGameFlow() {
             if (phone && phone.trim() !== "") {
+                let telegramChatId = userChatId;
                 fetch(`/register_or_login`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -536,15 +631,10 @@
 
             if(submitBtn) submitBtn.disabled = true;
 
-            let telegramChatId = "";
-            if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe) {
-                telegramChatId = window.Telegram.WebApp.initDataUnsafe.user?.id || "";
-            }
-
             fetch('/register_or_login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ phone: cleanPhone, username: inputName, chat_id: telegramChatId })
+                body: JSON.stringify({ phone: cleanPhone, username: inputName, chat_id: userChatId })
             })
             .then(res => res.json())
             .then(data => {
@@ -1028,7 +1118,7 @@
                     method: selectedWithdrawMethodName 
                 }) 
             })
-            .then(r => r.json())
+            .then(r => res.json())
             .then(res => { 
                 closeWithdrawForm(); 
                 alert(res.msg || "የማውጣት ጥያቄዎ ተልኳል!"); 
@@ -1051,7 +1141,7 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ phone: phone, receiver_phone: receiverPh, amount: amt })
             })
-            .then(r => r.json())
+            .then(r => res.json())
             .then(res => {
                 closeM('trans-m');
                 alert(res.msg || "ተከናውኗል!");
