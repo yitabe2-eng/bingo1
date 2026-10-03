@@ -102,6 +102,118 @@ def broadcast_game_state():
 def notify_user_balance_update(phone_num, new_balance):
     socketio.emit('balance_update', {"phone": phone_num, "balance": new_balance})
 
+# 🌟 የአድሚን ዳሽቦርድ ደህንነት ማረጋገጫ ፋንክሽን (0945880474 ብቻ)
+def is_request_from_admin(phone_val):
+    if not phone_val:
+        return False
+    clean = re.sub(r'[^0-9]', '', str(phone_val))
+    return clean.endswith("0945880474")
+
+@app.route('/admin_get_users', methods=['GET'])
+def admin_get_users():
+    ph = sanitize_input(request.args.get('phone'))
+    if not is_request_from_admin(ph):
+        return jsonify({"success": False, "msg": "ፈቃድ የለዎትም!"}), 403
+    
+    all_users = list(wallets.find({}, {"_id": 0}))
+    total_bal = sum(u.get("balance", 0) for u in all_users)
+    return jsonify({
+        "success": True,
+        "users": all_users,
+        "total_users": len(all_users),
+        "total_balance": total_bal
+    })
+
+@app.route('/admin_add_balance', methods=['POST'])
+def admin_add_balance():
+    d = request.json or {}
+    if not is_request_from_admin(d.get('admin_phone')):
+        return jsonify({"success": False, "msg": "ፈቃድ የለዎትም!"}), 403
+    
+    target_ph = sanitize_input(d.get('target_phone'))
+    try:
+        amt = float(d.get('amount', 0))
+    except ValueError:
+        return jsonify({"success": False, "msg": "ትክክለኛ መጠን ያስገቡ!"})
+    
+    updated = wallets.find_one_and_update(
+        {"phone": target_ph},
+        {"$inc": {"balance": amt}},
+        return_document=True,
+        upsert=True
+    )
+    new_bal = updated.get("balance", 0) if updated else 0
+    notify_user_balance_update(target_ph, new_bal)
+    return jsonify({"success": True, "msg": f"✅ የተጠቃሚው ({target_ph}) ባላንስ በ {amt} ETB ጨምሯል። አጠቃላይ: {new_bal} ETB"})
+
+@app.route('/admin_sub_balance', methods=['POST'])
+def admin_sub_balance():
+    d = request.json or {}
+    if not is_request_from_admin(d.get('admin_phone')):
+        return jsonify({"success": False, "msg": "ፈቃድ የለዎትም!"}), 403
+    
+    target_ph = sanitize_input(d.get('target_phone'))
+    try:
+        amt = float(d.get('amount', 0))
+    except ValueError:
+        return jsonify({"success": False, "msg": "ትክክለኛ መጠን ያስገቡ!"})
+    
+    updated = wallets.find_one_and_update(
+        {"phone": target_ph},
+        {"$inc": {"balance": -amt}},
+        return_document=True
+    )
+    if updated:
+        new_bal = updated.get("balance", 0)
+        notify_user_balance_update(target_ph, new_bal)
+        return jsonify({"success": True, "msg": f"✅ የተጠቃሚው ({target_ph}) ባላንስ በ {amt} ETB ቀንሷል። አጠቃላይ: {new_bal} ETB"})
+    return jsonify({"success": False, "msg": "ተጠቃሚው አልተገኘም!"})
+
+@app.route('/admin_remove_user', methods=['POST'])
+def admin_remove_user():
+    d = request.json or {}
+    if not is_request_from_admin(d.get('admin_phone')):
+        return jsonify({"success": False, "msg": "ፈቃድ የለዎትም!"}), 403
+    
+    target_ph = sanitize_input(d.get('target_phone'))
+    wallets.delete_one({"phone": target_ph})
+    return jsonify({"success": True})
+
+@app.route('/admin_broadcast', methods=['POST'])
+def admin_broadcast():
+    d = request.json or {}
+    if not is_request_from_admin(d.get('admin_phone')):
+        return jsonify({"success": False, "msg": "ፈቃድ የለዎትም!"}), 403
+    
+    broadcast_msg = sanitize_input(d.get('message'))
+    all_users = list(wallets.find({}))
+    success_count = 0
+    url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
+    
+    broadcast_markup = {
+        "inline_keyboard": [
+            [{"text": "👉 Beshbingo (10ብር)", "url": "https://t.me/beshbingo1bot"}],
+            [{"text": "👉 Supperbeshbingo (50ብር)", "url": "http://t.me/superbeshbingobot"}]
+        ]
+    }
+
+    for u in all_users:
+        u_chat_id = u.get("chat_id")
+        if u_chat_id:
+            payload = {
+                "chat_id": u_chat_id, 
+                "text": broadcast_msg, 
+                "parse_mode": "Markdown",
+                "reply_markup": broadcast_markup
+            }
+            try:
+                res = requests.post(url, json=payload, timeout=2)
+                if res.status_code == 200:
+                    success_count += 1
+            except:
+                pass
+    return jsonify({"success": True, "success_count": success_count})
+
 @app.route('/request_deposit', methods=['POST'])
 def request_deposit():
     d = request.json or {}
@@ -206,7 +318,6 @@ def webhook():
         if chat_id != str(ADMIN_ID):
             wallets.update_one({"chat_id": chat_id}, {"$set": {"chat_id": chat_id}}, upsert=False)
         
-        # --- የ /play ትእዛዝ ሲጠየቅ የሚሰጠው ምላሽ ---
         if text.lower() == "/play":
             url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
             
@@ -222,21 +333,17 @@ def webhook():
             }
             
             message_text = "🕹 *PLAY IN:*\nChoose a room to join the game:"
-            
             payload = {
                 "chat_id": chat_id,
                 "text": message_text,
                 "parse_mode": "Markdown",
                 "reply_markup": keyboard
             }
-            
             try:
                 requests.post(url, json=payload, timeout=2)
             except Exception as e:
                 print(f"Telegram Error sending /play menu: {e}")
-                
             return "OK", 200
-        # ----------------------------------------
         
         if chat_id == str(ADMIN_ID):
             url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
@@ -294,7 +401,7 @@ def webhook():
             elif text == "/all" or text == "/all_balances":
                 all_users = list(wallets.find({}))
                 if not all_users:
-                    requests.post(url, json={"chat_id": ADMIN_ID, "text": "📭 ምንም የተመዘገበ ተጠቃሚ የለም።"})
+                    requests.post(url, json={"chat_id": ADMIN_ID, "text": "📭 ምንም የተመዘገበ ተጠቃሚ ለም።"})
                 else:
                     msg_text = "📋 *የሁሉም ተጠቃሚዎች ባላንስ ዝርዝር:*\n\n"
                     total_sys_balance = 0
@@ -320,14 +427,12 @@ def webhook():
                 else:
                     success_count = 0
                     fail_count = 0
-                    
                     broadcast_markup = {
                         "inline_keyboard": [
                             [{"text": "👉 Beshbingo (10ብር)", "url": "https://t.me/beshbingo1bot"}],
                             [{"text": "👉 Supperbeshbingo (50ብር)", "url": "http://t.me/superbeshbingobot"}]
                         ]
                     }
-
                     for u in all_users:
                         u_chat_id = u.get("chat_id")
                         if u_chat_id:
