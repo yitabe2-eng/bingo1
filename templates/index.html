@@ -129,6 +129,7 @@
             justify-content: flex-start;
         }
 
+        /* 🌟 የኳስ ቆጣሪ ማሳያ ብቻ (BALANCE እና PLAYERS ተወግደዋል) */
         .game-ui-header {
             display: flex;
             justify-content: center;
@@ -341,6 +342,7 @@
         </div>
 
         <div id="game-ui" style="display:none;">
+            <!-- 🌟 ድግግሞሾቹ ተወግደዋል፣ አሁን BALL: 0/75 ብቻ በመሃል ይታያል -->
             <div class="game-ui-header">
                 <div class="ball-counter-container" style="font-weight: bold;">
                     <span>BALL: </span><span id="ball-count">0/75</span>
@@ -412,7 +414,7 @@
 
     <div id="dep-selection-m" class="modal">
         <div class="modal-content" style="text-align:center;">
-            <h2 style="color:var(--gold); margin-top:0; font-size:1.1rem;">💳 የክፍያ መንገድ ይምረጡ (Select Deposit Method)</h2>
+            <h2 style="color:var(--gold); margin-top:0; font-size:1.1rem;">💳 የማንጸኛ መንገድ ይምረጡ (Select Deposit Method)</h2>
             <p style="font-size:0.85rem; color:#94a3b8; margin-bottom:15px;">እባክዎ ሒሳብ ለመሞላት የሚጠቀሙበትን መንገድ ይምረጡ፡</p>
             <div style="display: flex; gap: 10px; margin-bottom: 15px;">
                 <button class="btn-main" style="background:#2563eb; color:white; padding:12px;" onclick="selectDepositMethod('CBE BIRR')">CBE BIRR</button>
@@ -422,18 +424,18 @@
         </div>
     </div>
 
-    <!-- አውቶማቲክ ዲፖዚት ማረጋገጫ ፎርም (Automatic Deposit Form) -->
     <div id="dep-form-m" class="modal">
         <div class="modal-content" style="text-align:center;">
-            <h2 id="dep-method-title" style="color:var(--green); margin-top:0;">AUTOMATIC DEPOSIT</h2>
+            <h2 id="dep-method-title" style="color:var(--green); margin-top:0;">DEPOSIT</h2>
             <div class="deposit-guide-box">
                 <b>📌 የክፍያ መመሪያ:</b><br>
-                በተሰጠው የ <span id="dep-method-name" style="color:var(--gold);">TELE BIRR</span> አካውንት ገንዘብ ከላኩ በኋላ የደረሰኙን ሙሉ <b>ሊንክ (URL)</b> ወይም <b>Transaction ID</b> ከታች ባለው ሳጥን ውስጥ ያስገቡ፡<br><br>
+                በተሰጠው የ <span id="dep-method-name" style="color:var(--gold);">TELE BIRR</span> አካውንት ገንዘብ ከላኩ በኋላ የግብይቱን <b>Transaction ID</b> እና የላኩትን መጠን በመሙላት ማረጋገጫ ያስገቡ。<br><br>
                 <b>አካውንት: <span style="color:var(--gold);" onclick="copyNum('0945880474')">0945880474 (ኮፒ ለማድረግ ይጫኑ)</span></b>
             </div>
             
-            <input type="text" id="auto-receipt-input" placeholder="ሊንኩን ወይም TID እዚህ ይለጥፉ (Paste)..." style="font-size: 0.9rem;">
-            <button class="btn-main btn-deposit" style="width:100%; padding:12px; margin-top:5px;" onclick="submitAutoDeposit()">VERIFY & APPROVE</button>
+            <input type="number" id="da" min="10" placeholder="Amount (ETB)">
+            <input type="text" id="di" placeholder="Transaction ID">
+            <button class="btn-main btn-deposit" style="width:100%; padding:12px; margin-top:5px;" onclick="subD()">SUBMIT</button>
             <button onclick="closeDepositForm()" style="color:#94a3b8; background:none; border:none; margin-top:15px; cursor:pointer; font-weight:bold;">CANCEL</button>
         </div>
     </div>
@@ -830,7 +832,8 @@
 
         function closeDepositForm() {
             document.getElementById('dep-form-m').style.display = 'none';
-            document.getElementById('auto-receipt-input').value = '';
+            document.getElementById('da').value = '';
+            document.getElementById('di').value = '';
         }
 
         function openWithdrawSelection() {
@@ -989,29 +992,26 @@
             }).catch(() => { if(bBtn) bBtn.disabled = false; }); 
         }
         
-        // አውቶማቲክ ዲፖዚት ማረጋገጫ ፋንክሽን (Automatic Deposit Request Handler)
-        function submitAutoDeposit() {
-            let receiptInput = document.getElementById('auto-receipt-input').value.trim();
-            if(!receiptInput || receiptInput.length < 5) {
-                return alert("እባክዎ ትክክለኛ የክፍያ ሊንክ ወይም Transaction ID ያስገቡ!");
-            }
+        function subD() {
+            let amt = parseInt(document.getElementById('da').value);
+            let tid = document.getElementById('di').value.trim();
+            if(!amt || amt < 10 || !tid || tid.length < 4) return alert("ትክክለኛ መረጃ ያስገቡ!");
             
-            fetch('/verify_auto_deposit', { 
-                method: 'POST', 
-                headers: { 'Content-Type': 'application/json' }, 
-                body: JSON.stringify({ phone: phone, receipt_input: receiptInput }) 
+            fetch('/request_deposit', { 
+                method:'POST', headers:{'Content-Type':'application/json'}, 
+                body:JSON.stringify({phone: phone, amount: amt, transaction_id: tid, method: selectedDepositMethodName}) 
             })
             .then(res => res.json())
             .then(d => { 
                 closeDepositForm(); 
-                alert(d.msg || "ክፍያዎ ተረጋግጧል!"); 
-                if(d.success && d.balance !== undefined) {
-                    clientBalance = parseFloat(d.balance);
-                    document.getElementById('balance').innerText = clientBalance.toFixed(0) + " ETB";
+                if (d.msg) {
+                    alert(d.msg);
+                } else {
+                    alert("የዲፖዚት ጥያቄዎ ተልኳል!"); 
                 }
                 fetchBalanceOnly(); 
             })
-            .catch(() => { alert("የኔትወርክ ስህተት አጋጥሟል!"); });
+            .catch(() => { alert("ስህተት!"); });
         }
 
         function subW() {
