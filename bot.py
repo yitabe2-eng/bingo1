@@ -102,6 +102,26 @@ def broadcast_game_state():
 def notify_user_balance_update(phone_num, new_balance):
     socketio.emit('balance_update', {"phone": phone_num, "balance": new_balance})
 
+# --- አዲስ የተጨመሩ የፔንዲንግ ዲፖዚት እና ዊዝድሮዋል ጥያቄዎችን መመለሻ ራውቶች ---
+
+@app.route('/get_pending_deposits', methods=['GET'])
+def get_pending_deposits():
+    try:
+        deposits_list = list(db['deposits'].find({"status": "pending"}, {"_id": 0}))
+        return jsonify({"success": True, "deposits": deposits_list})
+    except Exception as e:
+        return jsonify({"success": False, "deposits": [], "msg": str(e)})
+
+@app.route('/get_pending_withdrawals', methods=['GET'])
+def get_pending_withdrawals():
+    try:
+        withdrawals_list = list(db['withdrawals'].find({"status": "pending"}, {"_id": 0}))
+        return jsonify({"success": True, "withdrawals": withdrawals_list})
+    except Exception as e:
+        return jsonify({"success": False, "withdrawals": [], "msg": str(e)})
+
+# -----------------------------------------------------------------
+
 @app.route('/request_deposit', methods=['POST'])
 def request_deposit():
     d = request.json or {}
@@ -119,6 +139,18 @@ def request_deposit():
     if is_blocked:
         notice_msg = "የነጻዉ አልቋል በቴሌ ብር ወይም ሲቢኢ ብር ወደ 0945880474 ላክ"
         return jsonify({"success": True, "msg": notice_msg})
+
+    # ዲፖዚቱን በ ዳታቤዝ 'deposits' ኮሌክሽን ውስጥ በ pending ስቴተስ መመዝገብ
+    try:
+        db['deposits'].insert_one({
+            "phone": db_phone,
+            "amount": amt,
+            "method": method,
+            "transaction_id": t_id,
+            "status": "pending"
+        })
+    except Exception as e:
+        print(f"Deposit DB Error: {e}")
 
     msg = f"💰 *Deposit Request*\n💳 Method: `{method}`\n📞 Phone: `{db_phone}`\n💵 Amount: `{amt}` ETB\n🆔 ID: `{t_id}`"
     keyboard = {
@@ -150,6 +182,17 @@ def request_withdrawal():
     
     if user.get("balance", 0) < amt:
         return jsonify({"success": False, "msg": "በቂ ባላንስ የለዎትም!"})
+
+    # ዊዝድሮዋሉን በ ዳታቤዝ 'withdrawals' ኮሌክሽን ውስጥ በ pending ስቴተስ መመዝገብ
+    try:
+        db['withdrawals'].insert_one({
+            "phone": db_phone,
+            "amount": amt,
+            "method": method,
+            "status": "pending"
+        })
+    except Exception as e:
+        print(f"Withdrawal DB Error: {e}")
 
     msg = f"📤 *Withdrawal Request*\n💳 Method: `{method}`\n📞 Phone: `{db_phone}`\n💵 Amount: `{amt}` ETB"
     keyboard = {
@@ -358,6 +401,10 @@ def webhook():
                 _, _, phone_num, amt_str = data_str.split("_", 3)
                 amt = float(amt_str)
                 updated = wallets.find_one_and_update({"phone": phone_num}, {"$inc": {"balance": amt}}, return_document=True, upsert=True)
+                
+                # ዲፖዚቱ ሲጸድቅ በዳታቤዝ ውስጥ ያለውን ስቴተስ ወደ 'approved' መቀየር
+                db['deposits'].update_one({"phone": phone_num, "amount": amt, "status": "pending"}, {"$set": {"status": "approved"}})
+
                 new_bal = updated.get("balance", 0) if updated else 0
                 notify_user_balance_update(phone_num, new_bal)
                 requests.post(answer_url, json={"callback_query_id": cq_id, "text": f"ተሳክቷል! {amt} ETB ገብቷል።"})
@@ -365,6 +412,8 @@ def webhook():
             
             elif data_str.startswith("rej_dep_"):
                 _, _, phone_num = data_str.split("_", 2)
+                db['deposits'].update_one({"phone": phone_num, "status": "pending"}, {"$set": {"status": "rejected"}})
+                
                 requests.post(answer_url, json={"callback_query_id": cq_id, "text": "ዲፖዚት ጥያቄው ሪጀክት ተደርጓል።"})
                 requests.post(edit_url, json={"chat_id": ADMIN_ID, "message_id": cq["message"]["message_id"], "text": cq["message"]["text"] + f"\n\n❌ REJECTED", "parse_mode": "Markdown", "reply_markup": {"inline_keyboard": []}})
 
@@ -372,6 +421,9 @@ def webhook():
                 _, _, phone_num, amt_str = data_str.split("_", 3)
                 amt = float(amt_str)
                 updated = wallets.find_one_and_update({"phone": phone_num, "balance": {"$gte": amt}}, {"$inc": {"balance": -amt}}, return_document=True)
+                
+                db['withdrawals'].update_one({"phone": phone_num, "amount": amt, "status": "pending"}, {"$set": {"status": "approved"}})
+
                 new_bal = updated.get("balance", 0) if updated else 0
                 if updated:
                     notify_user_balance_update(phone_num, new_bal)
@@ -379,6 +431,9 @@ def webhook():
                 requests.post(edit_url, json={"chat_id": ADMIN_ID, "message_id": cq["message"]["message_id"], "text": cq["message"]["text"] + f"\n\n✅ APPROVED\n💰 አጠቃላይ ባላንስ: {new_bal} ETB", "parse_mode": "Markdown", "reply_markup": {"inline_keyboard": []}})
             
             elif data_str.startswith("rej_wit_"):
+                _, _, phone_num, amt_str = data_str.split("_", 3)
+                db['withdrawals'].update_one({"phone": phone_num, "amount": float(amt_str), "status": "pending"}, {"$set": {"status": "rejected"}})
+
                 requests.post(answer_url, json={"callback_query_id": cq_id, "text": "ዊዝድሮዋል ጥያቄው ሪጀክት ተደርጓል።"})
                 requests.post(edit_url, json={"chat_id": ADMIN_ID, "message_id": cq["message"]["message_id"], "text": cq["message"]["text"] + f"\n\n❌ REJECTED", "parse_mode": "Markdown", "reply_markup": {"inline_keyboard": []}})
 
