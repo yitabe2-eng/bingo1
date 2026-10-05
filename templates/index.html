@@ -74,25 +74,45 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            gap: 15px;
+            gap: 10px;
             position: relative;
             z-index: 100;
         }
-        .header-banner h1 { margin: 0; font-size: 1.3rem; color: var(--gold); letter-spacing: 2px; }
+        .header-banner h1 { margin: 0; font-size: 1.2rem; color: var(--gold); letter-spacing: 1px; }
         
         .header-btns {
             display: flex;
-            gap: 8px;
+            gap: 6px;
             align-items: center;
         }
+
+        /* 🌟 ከ Refresh button ቀደም ብሎ ባለው ክፍተት ውስጥ ብቻ የሚታይ እና አሮጌውን ቶስት ሙሉ በሙሉ የሻረው ስታይል */
+        #inline-notification {
+            font-size: 0.7rem;
+            font-weight: bold;
+            color: var(--green);
+            background: rgba(0, 255, 136, 0.15);
+            border: 1px solid var(--green);
+            padding: 4px 8px;
+            border-radius: 6px;
+            display: none;
+            white-space: nowrap;
+            animation: fadeInOut 0.4s ease;
+            box-shadow: 0 2px 6px rgba(0,255,136,0.3);
+        }
+        @keyframes fadeInOut {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
         .btn-top-refresh, .btn-top-admin {
             background: var(--gold);
             color: #000;
             border: 1px solid white;
             border-radius: 6px;
-            font-size: 0.81rem;
+            font-size: 0.8rem;
             font-weight: bold;
-            padding: 6px 10px;
+            padding: 6px 9px;
             cursor: pointer;
             display: flex;
             align-items: center;
@@ -306,42 +326,9 @@
         .btn-adm-add { background: var(--green); color: #000; }
         .btn-adm-sub { background: var(--orange); color: #fff; }
         .btn-adm-del { background: var(--red); color: #fff; }
-
-        /* 🌟 ዲፖዚት ተሳክቷል ብቅ የሚል ኖቲፊኬሽን ስታይል (Popup Notification) */
-        #deposit-toast {
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%) translateY(-100px);
-            background: linear-gradient(135deg, #00ff88, #00cc6a);
-            color: #050a18;
-            padding: 14px 24px;
-            border-radius: 14px;
-            font-weight: 900;
-            font-size: 1rem;
-            box-shadow: 0 10px 30px rgba(0, 255, 136, 0.5);
-            z-index: 9999;
-            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            border: 2px solid #fff;
-        }
-        #deposit-toast.show {
-            transform: translateX(-50%) translateY(0);
-        }
     </style>
 </head>
 <body>
-
-    <!-- ዲፖዚት ስኬት ኖቲፊኬሽን ቶስት -->
-    <div id="deposit-toast">
-        <span style="font-size: 1.4rem;">🎉</span>
-        <div>
-            <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px;">Deposit Success</div>
-            <div id="deposit-toast-msg">ሂሳብዎ በ 100 ETB ተሞልቷል!</div>
-        </div>
-    </div>
 
     <div id="auth-ui">
         <div class="auth-card">
@@ -368,6 +355,8 @@
         <div class="header-banner">
             <h1>BESH BINGO</h1>
             <div class="header-btns">
+                <!-- 🌟 ከ Refresh button ቀደም ብሎ ባለው ክፍተት ውስጥ ብቻ የሚታይ ኖቲፊኬሽን -->
+                <div id="inline-notification"></div>
                 <button id="admin-dashboard-btn" class="btn-top-admin" onclick="openAdminDashboard()">🛡️ ADMIN</button>
                 <button class="btn-top-refresh" onclick="forceRecoveryRefresh()">🔄 Refresh</button>
             </div>
@@ -712,14 +701,13 @@
             }).catch(() => {});
         }
 
-        // 🌟 ዲፖዚት ተሳክቷል ኖቲፊኬሽን በሎቢ ዴሽቦርድ ላይ ለ 3 ሰከንድ የሚያሳይ ፈንክሽን
-        function showDepositSuccessToast(amount) {
-            const toast = document.getElementById('deposit-toast');
-            const msgEl = document.getElementById('deposit-toast-msg');
-            msgEl.innerText = `ሂሳብዎ በ ${amount} ETB ተሞልቷል!`;
-            toast.classList.add('show');
+        // 🌟 ኖቲፊኬሽኑ ከ Refresh button ቀደም ብሎ ባለው ክፍተት ውስጥ እንዲታይ የሚያደርግ ፋንክሽን
+        function showInlineNotification(amount) {
+            const notifEl = document.getElementById('inline-notification');
+            notifEl.innerText = `+${amount} ETB ተሞልቷል!`;
+            notifEl.style.display = 'block';
             setTimeout(() => {
-                toast.classList.remove('show');
+                notifEl.style.display = 'none';
             }, 3000);
         }
 
@@ -745,10 +733,10 @@
                 }
             });
 
-            // 🌟 የአድሚን አፕሩቫል ኖቲፊኬሽን መቀበያ
+            // 🌟 የአድሚን አፕሩቫል ኖቲፊኬሽን መቀበያ (ከ Refresh button ቀደም ባለው ክፍተት ውስጥ ይታያል)
             socket.on('deposit_success_notify', function(data) {
                 if (data && phoneMatches(data.phone, phone)) {
-                    showDepositSuccessToast(data.amount);
+                    showInlineNotification(data.amount);
                     fetchBalanceOnly();
                 }
             });
@@ -1157,7 +1145,6 @@
             drawn.forEach(b => { let num = parseInt(String(b).replace(/[^0-9]/g, '')); if(!isNaN(num)) { let el = document.getElementById('b-'+num); if(el) el.className = 'ball-dot active'; } });
         }
 
-        // 🌟 ጥብቅ የማቅለሚያ ማጣሪያ (ቁጥሩ ሳይወጣ ማቅለም በፍጹም አይቻልም)
         function handleCellClickCrossMatch(targetNumVal, clickedCellEl) {
             if(isNaN(targetNumVal)) return;
             let ballFound = false;
