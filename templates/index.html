@@ -104,7 +104,7 @@
         .btn-top-admin {
             background: var(--red);
             color: white;
-            display: none; /* በነባሪ ተደብቋል ለአድሚን ብቻ ይከፈታል */
+            display: none;
         }
         .btn-top-refresh:active, .btn-top-admin:active { transform: scale(0.9); }
 
@@ -298,7 +298,6 @@
             text-align: left;
         }
 
-        /* 🌟 የአድሚን ዳሽቦርድ ስታይል */
         .admin-box { background: #0f172a; border: 2px solid var(--red); }
         .admin-table { width: 100%; font-size: 0.8rem; border-collapse: collapse; margin-top: 10px; }
         .admin-table th, .admin-table td { border: 1px solid #334155; padding: 6px; text-align: left; }
@@ -307,9 +306,42 @@
         .btn-adm-add { background: var(--green); color: #000; }
         .btn-adm-sub { background: var(--orange); color: #fff; }
         .btn-adm-del { background: var(--red); color: #fff; }
+
+        /* 🌟 ዲፖዚት ተሳክቷል ብቅ የሚል ኖቲፊኬሽን ስታይል (Popup Notification) */
+        #deposit-toast {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-100px);
+            background: linear-gradient(135deg, #00ff88, #00cc6a);
+            color: #050a18;
+            padding: 14px 24px;
+            border-radius: 14px;
+            font-weight: 900;
+            font-size: 1rem;
+            box-shadow: 0 10px 30px rgba(0, 255, 136, 0.5);
+            z-index: 9999;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border: 2px solid #fff;
+        }
+        #deposit-toast.show {
+            transform: translateX(-50%) translateY(0);
+        }
     </style>
 </head>
 <body>
+
+    <!-- ዲፖዚት ስኬት ኖቲፊኬሽን ቶስት -->
+    <div id="deposit-toast">
+        <span style="font-size: 1.4rem;">🎉</span>
+        <div>
+            <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px;">Deposit Success</div>
+            <div id="deposit-toast-msg">ሂሳብዎ በ 100 ETB ተሞልቷል!</div>
+        </div>
+    </div>
 
     <div id="auth-ui">
         <div class="auth-card">
@@ -393,10 +425,8 @@
         </div>
     </div>
 
-    <!-- ሞዳሎች -->
     <div id="guide-m" class="modal"><div class="modal-content"><h2 style="color:var(--gold); text-align:center; margin-top:0;">📖 መመሪያ</h2><p style="color:#fff; line-height: 1.6; font-size:0.9rem;">1. ጨዋታው እንዲጀምር ቢያንስ 2 ተጫዋቾች ሊኖሩ ይገባል。<br>2. ካርቴላ ለመግዛት ሎቢ ላይ ያሉትን ቁጥሮች ይጫኑ (ማክሲመም 2 መግዛት ይቻላል)。<br>3. ጨዋታው ሲጀምር ኳሶች በየጊዜው ይጣላሉ。<br>4. መስመር ሲሞላ ፈጥነው BINGO የሚለውን ይጫኑ!</p><button class="btn-main" style="width:100%; background:var(--red); color:white; margin-top:15px;" onclick="closeM('guide-m')">እሺ</button></div></div>
     
-    <!-- 🌟 የአድሚን ዳሽቦርድ ሞዳል (ለ 0945880474 ብቻ የሚሰራ) -->
     <div id="admin-m" class="modal">
         <div class="modal-content admin-box" style="max-width: 420px;">
             <h2 style="color:var(--red); text-align:center; margin-top:0;">🛡️ ADMIN CONTROL PANEL</h2>
@@ -417,9 +447,7 @@
                             <th>እርምጃ</th>
                         </tr>
                     </thead>
-                    <tbody id="admin-users-tbody">
-                        <!-- ራሱ በ JavaScript ይሞላል -->
-                    </tbody>
+                    <tbody id="admin-users-tbody"></tbody>
                 </table>
             </div>
 
@@ -684,6 +712,17 @@
             }).catch(() => {});
         }
 
+        // 🌟 ዲፖዚት ተሳክቷል ኖቲፊኬሽን በሎቢ ዴሽቦርድ ላይ ለ 3 ሰከንድ የሚያሳይ ፈንክሽን
+        function showDepositSuccessToast(amount) {
+            const toast = document.getElementById('deposit-toast');
+            const msgEl = document.getElementById('deposit-toast-msg');
+            msgEl.innerText = `ሂሳብዎ በ ${amount} ETB ተሞልቷል!`;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
         function initWebSocket() {
             socket = io({
                 reconnection: true,
@@ -703,6 +742,14 @@
                 if (data && phoneMatches(data.phone, phone)) {
                     clientBalance = parseFloat(data.balance) || 0;
                     document.getElementById('balance').innerText = clientBalance.toFixed(0) + " ETB";
+                }
+            });
+
+            // 🌟 የአድሚን አፕሩቫል ኖቲፊኬሽን መቀበያ
+            socket.on('deposit_success_notify', function(data) {
+                if (data && phoneMatches(data.phone, phone)) {
+                    showDepositSuccessToast(data.amount);
+                    fetchBalanceOnly();
                 }
             });
 
@@ -891,7 +938,6 @@
         function openM(id) { document.getElementById(id).style.display='flex'; }
         function closeM(id) { document.getElementById(id).style.display='none'; }
         
-        // 🌟 የአድሚን ዳሽቦርድ መክፈቻ እና ማስተዳደሪያ ፋንክሽኖች
         function openAdminDashboard() {
             document.getElementById('admin-m').style.display = 'flex';
             fetchAdminData();
@@ -1111,6 +1157,7 @@
             drawn.forEach(b => { let num = parseInt(String(b).replace(/[^0-9]/g, '')); if(!isNaN(num)) { let el = document.getElementById('b-'+num); if(el) el.className = 'ball-dot active'; } });
         }
 
+        // 🌟 ጥብቅ የማቅለሚያ ማጣሪያ (ቁጥሩ ሳይወጣ ማቅለም በፍጹም አይቻልም)
         function handleCellClickCrossMatch(targetNumVal, clickedCellEl) {
             if(isNaN(targetNumVal)) return;
             let ballFound = false;
@@ -1123,7 +1170,7 @@
                 }
             }
             if (!ballFound) {
-                alert("ሳይወጣ ማቅለም አይቻልም!");
+                alert("❌ ይህ ቁጥር ገና አልወጣም! ቁጥሩ ሳይወጣ ማቅለም አይቻልም!");
                 return;
             }
             if (!clickedCellEl.classList.contains('selected')) {
@@ -1191,7 +1238,7 @@
                 if (d.msg) {
                     alert(d.msg);
                 } else {
-                    alert("የዲፖዚት ጥያቄዎ ተልኳል!"); 
+                    alert("የዲፖዚት ጥያቄዎ ተልኳል! አድሚኑ ሲያረጋግጥ በኖቲፊኬሽን ይገለፅልዎታል።"); 
                 }
                 fetchBalanceOnly(); 
             })
