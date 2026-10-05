@@ -623,7 +623,7 @@ def webhook():
                     
                     extra = ""
                     if t_type == "TRANSFER":
-                        if tx.get("phone"] == u_phone:
+                        if tx.get("phone") == u_phone:
                             extra = f" ➡️ To: `{tx.get('receiver_phone')}`"
                         else:
                             extra = f" ⬅️ From: `{tx.get('phone')}`"
