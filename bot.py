@@ -27,8 +27,8 @@ client = MongoClient(MONGO_URL, serverSelectionTimeoutMS=2000)
 db = client['bingo_db']
 wallets = db['wallets']
 blocked_phones = db['blocked_phones'] 
-transactions = db['transactions'] # ለገቢ፣ ወጪ እና ለጨዋታ ኮሚሽን መመዝገቢያ
-admin_state = db['admin_state'] # የአድሚን ሁኔታዎችን ለማስቀመጥ (ምሳሌ፦ የስልክ ቁጥር ግብአት)
+transactions = db['transactions']
+admin_state = db['admin_state']
 
 try:
     wallets.create_index("phone", unique=True)
@@ -143,8 +143,8 @@ def broadcast_game_state():
 def notify_user_balance_update(phone_num, new_balance):
     socketio.emit('balance_update', {"phone": phone_num, "balance": new_balance})
 
+# 🌟 አድሚኑ አፕሩቭ ሲያደርግ ለተጠቃሚው ኖቲፊኬሽን የሚልክበት ፈንክሽን
 def notify_user_deposit_success(phone_num, amount):
-    # ለአንድ ተጠቃሚ ብቻ ለ 3 ሰከንድ የሚቆይ ዲፖዚት ተሳክቷል ኖቲፊኬሽን
     socketio.emit('deposit_success_notify', {"phone": phone_num, "amount": amount, "duration": 3})
 
 def is_request_from_admin(phone_val):
@@ -152,6 +152,62 @@ def is_request_from_admin(phone_val):
         return False
     clean = re.sub(r'[^0-9]', '', str(phone_val))
     return clean.endswith("0945880474")
+
+# 🌟 2. ጥብቅ የ BINGO መስመር ማረጋገጫ (Strict Validation)
+# ቁጥሮቹ በእርግጥ መውጣታቸውን እና መስመሩ (Horizontal, Vertical, Diagonal) በትክክል መሞላቱን ያረጋግጣል
+def check_bingo_win_strict(card, drawn_balls):
+    drawn_set = set()
+    for b in drawn_balls:
+        clean_b = re.sub(r'[^0-9]', '', str(b))
+        if clean_b.isdigit():
+            drawn_set.add(int(clean_b))
+
+    # 5x5 ማትሪክስ (25 ሕዋሶች)
+    # ዜሮ (0) ወይም FREE (ኢንዴክስ 12) ሁልጊዜ እንደተሟላ ይቆጠራል
+    marked = []
+    for idx, val in enumerate(card):
+        if idx == 12 or str(val).upper() in ["FREE", "★"] or str(val) == "0":
+            marked.append(True)
+        else:
+            try:
+                num_val = int(re.sub(r'[^0-9]', '', str(val)))
+                marked.append(num_val in drawn_set)
+            except:
+                marked.append(False)
+
+    winning_indices = []
+    line_name = None
+
+    # አግድም መስመሮች (Rows)
+    for r in range(5):
+        row_indices = [r * 5 + c for c in range(5)]
+        if all(marked[i] for i in row_indices):
+            winning_indices = row_indices
+            line_name = f"አግድም መስመር {r+1}"
+            return True, winning_indices, line_name
+
+    # ቋሚ መስመሮች (Columns)
+    for c in range(5):
+        col_indices = [r * 5 + c for r in range(5)]
+        if all(marked[i] for i in col_indices):
+            winning_indices = col_indices
+            line_name = f"ቋሚ መስመር {c+1}"
+            return True, winning_indices, line_name
+
+    # ሰያፍ መስመሮች (Diagonals)
+    diag1 = [0, 6, 12, 18, 24]
+    if all(marked[i] for i in diag1):
+            winning_indices = diag1
+            line_name = "ዋና ሰያፍ መስመር"
+            return True, winning_indices, line_name
+
+    diag2 = [4, 8, 12, 16, 20]
+    if all(marked[i] for i in diag2):
+            winning_indices = diag2
+            line_name = "ሁለተኛ ሰያፍ መስመር"
+            return True, winning_indices, line_name
+
+    return False, [], None
 
 def get_financial_stats():
     now = datetime.utcnow()
@@ -316,10 +372,6 @@ def request_deposit():
         amt = 0
     t_id = sanitize_input(d.get('transaction_id', 'N/A'))
     
-    # 🌟 2. የ Transaction ID (SMS) ማረጋገጫዎች
-    # - ቁጥር ብቻ ከሆነ
-    # - ከ 10 ካነሰ
-    # - ምልክቶች ብቻ ከሆነ (!?@&$)
     if t_id.isdigit():
         return jsonify({"success": False, "msg": "የትራንዛክሽን አይድው ስህተት ነው! ቁጥር ብቻ መሆን አይችልም።"})
     if len(t_id) < 10:
@@ -327,7 +379,6 @@ def request_deposit():
     if bool(re.match(r'^[!@#\$%\^&\*\?\.\-\_\+\=\s]+$', t_id)):
         return jsonify({"success": False, "msg": "የትራንዛክሽን አይድው ስህተት ነው! ምልክቶች ብቻ መሆን አይችሉም።"})
 
-    # 🌟 1. በ 5 ደቂቃ ውስጥ 2 request ብቻ እንዲፈቅድ ማጣሪያ
     five_mins_ago = datetime.utcnow() - timedelta(minutes=5)
     recent_deps_count = transactions.count_documents({
         "phone": ph,
@@ -376,7 +427,6 @@ def request_withdrawal():
     if amt < 51:
         return jsonify({"success": False, "msg": "ቢያንስ 51 ETB ነው!"})
     
-    # 🌟 1. በ 5 ደቂቃ ውስጥ 2 request ብቻ ለ Withdrawal
     five_mins_ago = datetime.utcnow() - timedelta(minutes=5)
     recent_wits_count = transactions.count_documents({
         "phone": ph,
@@ -870,7 +920,6 @@ def webhook():
                     new_bal = updated.get("balance", 0) if updated else 0
                     notify_user_balance_update(phone_num, new_bal)
                     
-                    # 🌟 3. ዲፖዚት ሲጸድቅ ለ 3 ሰከንድ የሚቆይ ኖቲፊኬሽን ከብሩ ጋር መላክ
                     notify_user_deposit_success(phone_num, amt)
 
                     requests.post(answer_url, json={"callback_query_id": cq_id, "text": f"ተሳክቷል! {amt} ETB ገብቷል።"})
@@ -1265,8 +1314,9 @@ def claim_bingo():
     winning_indices_list = None
     
     for t_num, card in p_data["cards"].items():
-        win_indices, line_type = check_winning_line(card, current_drawn_balls, player_marked_numbers=None)
-        if win_indices is not None:
+        # 🌟 አሁን የተስተካከለው ትክክለኛው `check_bingo_win_strict` ፈንክሽን እዚህ ተጠርቷል
+        is_win, win_indices, line_type = check_bingo_win_strict(card, current_drawn_balls)
+        if is_win:
             valid_win_found = True
             winning_ticket_num = str(t_num)
             winning_card_data = card
