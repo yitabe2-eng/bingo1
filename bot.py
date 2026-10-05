@@ -84,11 +84,8 @@ def set_webhook():
     except Exception as e:
         print(f"Webhook set failed: {e}")
 
-# 🌟 ለአድሚኑ እና ለተጠቃሚዎች የሚታይ Menu Button ማዋቀሪያ (በ /balance የታከለበት)
 def set_bot_commands():
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/setMyCommands"
-    
-    # 1. ለሁሉም ተራ ተጠቃሚዎች የሚታይ Menu (/balance ጨምሮ)
     default_commands = [
         {"command": "play", "description": "ጨዋታ ይምረጡ 🎮"},
         {"command": "balance", "description": "የሂሳብሪሣቤ (Balance) ለማየት 💰"},
@@ -99,7 +96,6 @@ def set_bot_commands():
     except Exception as e:
         print(f"Error setting default commands: {e}")
 
-    # 2. ለአድሚኑ ብቻ የሚታይ Menu
     if ADMIN_ID:
         admin_commands = [
             {"command": "play", "description": "ጨዋታ ይምረጡ 🎮"},
@@ -143,7 +139,6 @@ def broadcast_game_state():
 def notify_user_balance_update(phone_num, new_balance):
     socketio.emit('balance_update', {"phone": phone_num, "balance": new_balance})
 
-# 🌟 አድሚኑ አፕሩቭ ሲያደርግ ለተጠቃሚው ኖቲፊኬሽን የሚልክበት ፈንክሽን
 def notify_user_deposit_success(phone_num, amount):
     socketio.emit('deposit_success_notify', {"phone": phone_num, "amount": amount, "duration": 3})
 
@@ -153,8 +148,6 @@ def is_request_from_admin(phone_val):
     clean = re.sub(r'[^0-9]', '', str(phone_val))
     return clean.endswith("0945880474")
 
-# 🌟 2. ጥብቅ የ BINGO መስመር ማረጋገጫ (Strict Validation)
-# ቁጥሮቹ በእርግጥ መውጣታቸውን እና መስመሩ (Horizontal, Vertical, Diagonal) በትክክል መሞላቱን ያረጋግጣል
 def check_bingo_win_strict(card, drawn_balls):
     drawn_set = set()
     for b in drawn_balls:
@@ -162,8 +155,6 @@ def check_bingo_win_strict(card, drawn_balls):
         if clean_b.isdigit():
             drawn_set.add(int(clean_b))
 
-    # 5x5 ማትሪክስ (25 ሕዋሶች)
-    # ዜሮ (0) ወይም FREE (ኢንዴክስ 12) ሁልጊዜ እንደተሟላ ይቆጠራል
     marked = []
     for idx, val in enumerate(card):
         if idx == 12 or str(val).upper() in ["FREE", "★"] or str(val) == "0":
@@ -178,7 +169,6 @@ def check_bingo_win_strict(card, drawn_balls):
     winning_indices = []
     line_name = None
 
-    # አግድም መስመሮች (Rows)
     for r in range(5):
         row_indices = [r * 5 + c for c in range(5)]
         if all(marked[i] for i in row_indices):
@@ -186,7 +176,6 @@ def check_bingo_win_strict(card, drawn_balls):
             line_name = f"አግድም መስመር {r+1}"
             return True, winning_indices, line_name
 
-    # ቋሚ መስመሮች (Columns)
     for c in range(5):
         col_indices = [r * 5 + c for r in range(5)]
         if all(marked[i] for i in col_indices):
@@ -194,7 +183,6 @@ def check_bingo_win_strict(card, drawn_balls):
             line_name = f"ቋሚ መስመር {c+1}"
             return True, winning_indices, line_name
 
-    # ሰያፍ መስመሮች (Diagonals)
     diag1 = [0, 6, 12, 18, 24]
     if all(marked[i] for i in diag1):
             winning_indices = diag1
@@ -568,7 +556,6 @@ def webhook():
                     })
                 return "OK", 200
 
-        # 🌟 አዲስ የተጨመረው የ /balance ትእዛዝ (Command) ማስተናገጃ
         if text.lower() == "/balance":
             url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
             u_wallet = wallets.find_one({"chat_id": chat_id})
@@ -601,7 +588,7 @@ def webhook():
             if chat_id == str(ADMIN_ID):
                 admin_state.update_one({"chat_id": chat_id}, {"$set": {"action": "awaiting_phone_for_history"}}, upsert=True)
                 requests.post(url, json={
-                    "chat_id": chat_id,
+                    "chat_id": ADMIN_ID,
                     "text": "📱 እባክዎ የትራንዛክሽን ታሪኩን ማየት የሚፈልጉትን የተጫዋች ስልክ ቁጥር ያስገቡ፦"
                 })
                 return "OK", 200
@@ -971,7 +958,7 @@ def webhook():
                     else:
                         requests.post(answer_url, json={"callback_query_id": cq_id, "text": "❌ የተጠቃሚው ባላንስ በቂ አይደለም!", "show_alert": True})
                 else:
-                    requests.post(answer_url, json={"callback_query_id": cq_id, "text": "⚠️ ይህ ጥያቄ አስቀድሞ ፀድቋል ወይም ተሰርዟል!", "show_alert": True})
+                    requests.post(answer_url, json={"callback_query_id": cq_id, "text": "⚠️️ ይህ ጥያቄ አስቀድሞ ፀድቋል ወይም ተሰርዟል!", "show_alert": True})
             
             elif data_str.startswith("rej_wit_"):
                 parts = data_str.split("_")
@@ -1314,7 +1301,6 @@ def claim_bingo():
     winning_indices_list = None
     
     for t_num, card in p_data["cards"].items():
-        # 🌟 አሁን የተስተካከለው ትክክለኛው `check_bingo_win_strict` ፈንክሽን እዚህ ተጠርቷል
         is_win, win_indices, line_type = check_bingo_win_strict(card, current_drawn_balls)
         if is_win:
             valid_win_found = True
