@@ -154,7 +154,6 @@ def is_request_from_admin(phone_val):
     return clean.endswith("0945880474")
 
 # 🌟 2. ጥብቅ የ BINGO መስመር ማረጋገጫ (Strict Validation)
-# ቁጥሮቹ በእርግጥ መውጣታቸውን እና መስመሩ (Horizontal, Vertical, Diagonal) በትክክል መሞላቱን ያረጋግጣል
 def check_bingo_win_strict(card, drawn_balls):
     drawn_set = set()
     for b in drawn_balls:
@@ -162,8 +161,6 @@ def check_bingo_win_strict(card, drawn_balls):
         if clean_b.isdigit():
             drawn_set.add(int(clean_b))
 
-    # 5x5 ማትሪክስ (25 ሕዋሶች)
-    # ዜሮ (0) ወይም FREE (ኢንዴክስ 12) ሁልጊዜ እንደተሟላ ይቆጠራል
     marked = []
     for idx, val in enumerate(card):
         if idx == 12 or str(val).upper() in ["FREE", "★"] or str(val) == "0":
@@ -178,7 +175,6 @@ def check_bingo_win_strict(card, drawn_balls):
     winning_indices = []
     line_name = None
 
-    # አግድም መስመሮች (Rows)
     for r in range(5):
         row_indices = [r * 5 + c for c in range(5)]
         if all(marked[i] for i in row_indices):
@@ -186,7 +182,6 @@ def check_bingo_win_strict(card, drawn_balls):
             line_name = f"አግድም መስመር {r+1}"
             return True, winning_indices, line_name
 
-    # ቋሚ መስመሮች (Columns)
     for c in range(5):
         col_indices = [r * 5 + c for r in range(5)]
         if all(marked[i] for i in col_indices):
@@ -194,7 +189,6 @@ def check_bingo_win_strict(card, drawn_balls):
             line_name = f"ቋሚ መስመር {c+1}"
             return True, winning_indices, line_name
 
-    # ሰያፍ መስመሮች (Diagonals)
     diag1 = [0, 6, 12, 18, 24]
     if all(marked[i] for i in diag1):
             winning_indices = diag1
@@ -568,7 +562,6 @@ def webhook():
                     })
                 return "OK", 200
 
-        # 🌟 አዲስ የተጨመረው የ /balance ትእዛዝ (Command) ማስተናገጃ
         if text.lower() == "/balance":
             url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
             u_wallet = wallets.find_one({"chat_id": chat_id})
@@ -630,7 +623,7 @@ def webhook():
                     
                     extra = ""
                     if t_type == "TRANSFER":
-                        if tx.get("phone") == u_phone:
+                        if tx.get("phone"] == u_phone:
                             extra = f" ➡️ To: `{tx.get('receiver_phone')}`"
                         else:
                             extra = f" ⬅️ From: `{tx.get('phone')}`"
@@ -920,6 +913,7 @@ def webhook():
                     new_bal = updated.get("balance", 0) if updated else 0
                     notify_user_balance_update(phone_num, new_bal)
                     
+                    # 🌟 አድሚኑ አፕሩቭ ሲያደርግ የሚጠራው ፈንክሽን እዚህ ተካትቷል
                     notify_user_deposit_success(phone_num, amt)
 
                     requests.post(answer_url, json={"callback_query_id": cq_id, "text": f"ተሳክቷል! {amt} ETB ገብቷል።"})
@@ -1314,7 +1308,6 @@ def claim_bingo():
     winning_indices_list = None
     
     for t_num, card in p_data["cards"].items():
-        # 🌟 አሁን የተስተካከለው ትክክለኛው `check_bingo_win_strict` ፈንክሽን እዚህ ተጠርቷል
         is_win, win_indices, line_type = check_bingo_win_strict(card, current_drawn_balls)
         if is_win:
             valid_win_found = True
