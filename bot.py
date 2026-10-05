@@ -140,10 +140,6 @@ def broadcast_game_state():
 def notify_user_balance_update(phone_num, new_balance):
     socketio.emit('balance_update', {"phone": phone_num, "balance": new_balance})
 
-# 🌟 አድሚኑ ዲፖዚቱን አፕሩቭ ሲያደርግ ለተጠቃሚው ስክሪን ኖቲፊኬሽን የሚልክበት ፈንክሽን[cite: 2]
-def notify_user_deposit_success(phone_num, amount):
-    socketio.emit('deposit_success_notify', {"phone": phone_num, "amount": amount, "duration": 3})
-
 def is_request_from_admin(phone_val):
     if not phone_val:
         return False
@@ -547,7 +543,7 @@ def webhook():
                             if tx.get("phone") == target_phone:
                                 extra = f" ➡️ To: `{tx.get('receiver_phone')}`"
                             else:
-                                extra = f" ⬅️ From: `{tx.get('phone')}`"
+                                extra = f" ⬅️️ From: `{tx.get('phone')}`"
                                 
                         report += f"⏱ `{ts}` | *{t_type}*{extra}\n💵 `{amt}` ETB | Status: `{st}`\n------------------------\n"
                     
@@ -909,13 +905,23 @@ def webhook():
                     new_bal = updated.get("balance", 0) if updated else 0
                     notify_user_balance_update(phone_num, new_bal)
                     
-                    # 🌟 ኖቲፊኬሽኑን ወደ ክላይንት (Frontend) የሚልክበት ቁልፍ መስመር[cite: 2]
-                    notify_user_deposit_success(phone_num, amt)
+                    # 🌟 አድሚኑ አፕሩቭ ሲያደርግ በቀጥታ በቴሌግራም ቦት ቻት ማሳወቂያ የሚልክበት ኮድ
+                    user_chat_id = updated.get("chat_id")
+                    if user_chat_id:
+                        notif_text = f"✅ *የዲፖዚት ጥያቄዎ ጸድቋል!*\n\n💵 በሂሳብዎ ላይ *{amt} ETB* ተጨምሯል።\n💰 አጠቃላይ ቀሪ ባላንስዎ: *{new_bal} ETB*"
+                        try:
+                            requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage", json={
+                                "chat_id": user_chat_id,
+                                "text": notif_text,
+                                "parse_mode": "Markdown"
+                            }, timeout=2)
+                        except Exception as e:
+                            print(f"Telegram Notification Error: {e}")
 
                     requests.post(answer_url, json={"callback_query_id": cq_id, "text": f"ተሳክቷል! {amt} ETB ገብቷል።"})
                     requests.post(edit_url, json={"chat_id": ADMIN_ID, "message_id": cq["message"]["message_id"], "text": cq["message"]["text"] + f"\n\n✅ APPROVED\n💰 አጠቃላይ ባላንስ: {new_bal} ETB", "parse_mode": "Markdown", "reply_markup": {"inline_keyboard": []}})
                 else:
-                    requests.post(answer_url, json={"callback_query_id": cq_id, "text": "⚠️ ይህ ጥያቄ አስቀድሞ ፀድቋል ወይም ተሰርዟል!", "show_alert": True})
+                    requests.post(answer_url, json={"callback_query_id": cq_id, "text": "⚠️️ ይህ ጥያቄ አስቀድሞ ፀድቋል ወይም ተሰርዟል!", "show_alert": True})
             
             elif data_str.startswith("rej_dep_"):
                 parts = data_str.split("_")
