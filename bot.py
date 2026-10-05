@@ -13,6 +13,10 @@ from pymongo import MongoClient
 from flask_cors import CORS
 from flask_socketio import SocketIO, emit
 
+# --- Python Telegram Bot (v20+) Imports ---
+from telegram import Update
+from telegram.ext import ApplicationBuilder, ContextTypes, MessageHandler, filters
+
 app = Flask(__name__, template_folder='templates')
 CORS(app)
 
@@ -543,7 +547,7 @@ def webhook():
                             if tx.get("phone") == target_phone:
                                 extra = f" ➡️ To: `{tx.get('receiver_phone')}`"
                             else:
-                                extra = f" ⬅️️ From: `{tx.get('phone')}`"
+                                extra = f" ⬅ From: `{tx.get('phone')}`"
                                 
                         report += f"⏱ `{ts}` | *{t_type}*{extra}\n💵 `{amt}` ETB | Status: `{st}`\n------------------------\n"
                     
@@ -905,7 +909,6 @@ def webhook():
                     new_bal = updated.get("balance", 0) if updated else 0
                     notify_user_balance_update(phone_num, new_bal)
                     
-                    # 🌟 አድሚኑ አፕሩቭ ሲያደርግ በቀጥታ በቴሌግራም ቦት ቻት ማሳወቂያ የሚልክበት ኮድ
                     user_chat_id = updated.get("chat_id")
                     if user_chat_id:
                         notif_text = f"✅ *የዲፖዚት ጥያቄዎ ጸድቋል!*\n\n💵 በሂሳብዎ ላይ *{amt} ETB* ተጨምሯል።\n💰 አጠቃላይ ቀሪ ባላንስዎ: *{new_bal} ETB*"
@@ -921,7 +924,7 @@ def webhook():
                     requests.post(answer_url, json={"callback_query_id": cq_id, "text": f"ተሳክቷል! {amt} ETB ገብቷል።"})
                     requests.post(edit_url, json={"chat_id": ADMIN_ID, "message_id": cq["message"]["message_id"], "text": cq["message"]["text"] + f"\n\n✅ APPROVED\n💰 አጠቃላይ ባላንስ: {new_bal} ETB", "parse_mode": "Markdown", "reply_markup": {"inline_keyboard": []}})
                 else:
-                    requests.post(answer_url, json={"callback_query_id": cq_id, "text": "⚠️️ ይህ ጥያቄ አስቀድሞ ፀድቋል ወይም ተሰርዟል!", "show_alert": True})
+                    requests.post(answer_url, json={"callback_query_id": cq_id, "text": "⚠ ይህ ጥያቄ አስቀድሞ ፀድቋል ወይም ተሰርዟል!", "show_alert": True})
             
             elif data_str.startswith("rej_dep_"):
                 parts = data_str.split("_")
@@ -1427,6 +1430,28 @@ def claim_bingo():
 
     return jsonify({"success": True})
 
+# --- Telegram Handler for Photos ---
+async def get_my_file_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.message.photo:
+        # ከፍተኛ ጥራት ያለው የፎቶው File ID
+        file_id = update.message.photo[-1].file_id
+        await update.message.reply_text(f"የፎቶው File ID ይህ ነው:\n\n`{file_id}`", parse_mode="Markdown")
+
+def main():
+    # ቦቱን በ python-telegram-bot (v20+) መዋቅር ማስጀመር ከፈለጉ:
+    if not BOT_TOKEN:
+        print("BOT_TOKEN is missing!")
+        return
+        
+    application = ApplicationBuilder().token(BOT_TOKEN).build()
+    
+    # ፎቶዎችን የሚቀበል ሀንድለር መመዝገብ
+    application.add_handler(MessageHandler(filters.PHOTO, get_my_file_id))
+    
+    # ያስተውሉ፡ Flask እና SocketIO በ background thread እየተሄዱ ከሆነ 
+    # application.run_polling() መጠቀም ይቻላል (Polling mode በሚጠቀሙበት ጊዜ)።
+    # Webhook የሚጠቀሙ ከሆነ ግን Flask ራሱ ፖስቶችን ይቀበላል።
+
 @socketio.on('connect')
 def handle_connect():
     global loop_started
@@ -1438,4 +1463,5 @@ def handle_connect():
     broadcast_game_state()
 
 if __name__ == '__main__':
+    # እንደ አማራጭ Telegram Bot handler በነፃነት እንዲሰራ ከፈለጉ እዚህ ጋር ማካተት ይችላሉ
     socketio.run(app, host='0.0.0.0', port=int(os.environ.get("PORT", 10000)))
