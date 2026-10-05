@@ -86,7 +86,7 @@
             align-items: center;
         }
 
-        /* 🌟 ከ Refresh button ቀደም ብሎ ባለው ክፍተት ውስጥ ብቻ የሚታይ ኖቲፊኬሽን ስታይል */
+        /* 🌟 ከ Refresh button ቀደም ብሎ የሚታይ ኖቲፊኬሽን ስታይል[cite: 1] */
         #inline-notification {
             font-size: 0.7rem;
             font-weight: bold;
@@ -355,7 +355,7 @@
         <div class="header-banner">
             <h1>BESH BINGO</h1>
             <div class="header-btns">
-                <!-- 🌟 ኖቲፊኬሽን የሚታይበት ቦታ -->
+                <!-- 🌟 ኖቲፊኬሽን የሚታይበት ኤልመንት[cite: 1] -->
                 <div id="inline-notification"></div>
                 <button id="admin-dashboard-btn" class="btn-top-admin" onclick="openAdminDashboard()">🛡️ ADMIN</button>
                 <button class="btn-top-refresh" onclick="forceRecoveryRefresh()">🔄 Refresh</button>
@@ -718,16 +718,12 @@
 
             socket.on('balance_update', function(data) {
                 if (data && phoneMatches(data.phone, phone)) {
-                    const balanceElement = document.getElementById('user-balance');
-                    if (balanceElement) {
-                        balanceElement.innerText = data.balance;
-                    }
                     clientBalance = parseFloat(data.balance) || 0;
                     document.getElementById('balance').innerText = clientBalance.toFixed(0) + " ETB";
                 }
             });
 
-            // 🌟 የዲፖዚት ማረጋገጫ ኖቲፊኬሽን ተቀባይ
+            // 🌟 የዲፖዚት ማረጋገጫ ኖቲፊኬሽን መቀበያ (Socket Listener)[cite: 1]
             socket.on('deposit_success_notify', function(data) {
                 const notif = document.getElementById('inline-notification');
                 if (notif) {
@@ -753,22 +749,12 @@
             try {
                 const response = await fetch(`/get_status?phone=${userPhone}`, {
                     method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    }
+                    headers: { 'Content-Type': 'application/json' }
                 });
-                
                 const result = await response.json();
-                
-                if (result.success !== false) {
-                    const balanceElement = document.getElementById('user-balance');
-                    if (balanceElement) {
-                        balanceElement.innerText = result.balance;
-                    }
-                    if (result.balance !== undefined && result.balance !== null) {
-                        clientBalance = parseFloat(result.balance) || 0;
-                        document.getElementById('balance').innerText = clientBalance.toFixed(0) + " ETB";
-                    }
+                if (result.success !== false && result.balance !== undefined && result.balance !== null) {
+                    clientBalance = parseFloat(result.balance) || 0;
+                    document.getElementById('balance').innerText = clientBalance.toFixed(0) + " ETB";
                 }
             } catch (error) {
                 console.error("ባላንስ ማደስ አልተቻለም:", error);
