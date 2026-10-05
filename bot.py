@@ -140,7 +140,7 @@ def broadcast_game_state():
 def notify_user_balance_update(phone_num, new_balance):
     socketio.emit('balance_update', {"phone": phone_num, "balance": new_balance})
 
-# 🌟 አድሚኑ ዲፖዚቱን አፕሩቭ ሲያደርግ ኖቲፊኬሽን የሚልክበት ፈንክሽን
+# 🌟 አድሚኑ ዲፖዚቱን አፕሩቭ ሲያደርግ ለተጠቃሚው ስክሪን ኖቲፊኬሽን የሚልክበት ፈንክሽን[cite: 2]
 def notify_user_deposit_success(phone_num, amount):
     socketio.emit('deposit_success_notify', {"phone": phone_num, "amount": amount, "duration": 3})
 
@@ -909,7 +909,7 @@ def webhook():
                     new_bal = updated.get("balance", 0) if updated else 0
                     notify_user_balance_update(phone_num, new_bal)
                     
-                    # 🌟 ኖቲፊኬሽኑን ወደ ክላይንት (Frontend) የሚልክበት
+                    # 🌟 ኖቲፊኬሽኑን ወደ ክላይንት (Frontend) የሚልክበት ቁልፍ መስመር[cite: 2]
                     notify_user_deposit_success(phone_num, amt)
 
                     requests.post(answer_url, json={"callback_query_id": cq_id, "text": f"ተሳክቷል! {amt} ETB ገብቷል።"})
