@@ -86,7 +86,7 @@
             align-items: center;
         }
 
-        /* 🌟 ከ Refresh button ቀደም ብሎ ባለው ክፍተት ውስጥ ብቻ የሚታይ እና አሮጌውን ቶስት ሙሉ በሙሉ የሻረው ስታይል */
+        /* 🌟 ከ Refresh button ቀደም ብሎ ባለው ክፍተት ውስጥ ብቻ የሚታይ ኖቲፊኬሽን ስታይል */
         #inline-notification {
             font-size: 0.7rem;
             font-weight: bold;
@@ -355,7 +355,7 @@
         <div class="header-banner">
             <h1>BESH BINGO</h1>
             <div class="header-btns">
-                <!-- 🌟 ከ Refresh button ቀደም ብሎ ባለው ክፍተት ውስጥ ብቻ የሚታይ ኖቲፊኬሽን -->
+                <!-- 🌟 ኖቲፊኬሽን የሚታይበት ቦታ -->
                 <div id="inline-notification"></div>
                 <button id="admin-dashboard-btn" class="btn-top-admin" onclick="openAdminDashboard()">🛡️ ADMIN</button>
                 <button class="btn-top-refresh" onclick="forceRecoveryRefresh()">🔄 Refresh</button>
@@ -727,15 +727,13 @@
                 }
             });
 
-            // 🌟 የተቀላቀለው አዲሱ የሶኬት ኖቲፊኬሽን ኮድ
+            // 🌟 የዲፖዚት ማረጋገጫ ኖቲፊኬሽን ተቀባይ
             socket.on('deposit_success_notify', function(data) {
-                // ኖቲፊኬሽኑ የሚታይበትን ኤልመንት እናመጣለን
                 const notif = document.getElementById('inline-notification');
                 if (notif) {
                     notif.innerText = `✅ በሂሳብዎ ላይ ${data.amount} ETB ተጨምሯል!`;
                     notif.style.display = 'inline-block';
                     
-                    // ከጥቂት ሰከንዶች በኋላ በራሱ እንዲጠፋ
                     setTimeout(() => {
                         notif.style.display = 'none';
                     }, (data.duration || 3) * 1000);
@@ -773,7 +771,7 @@
                     }
                 }
             } catch (error) {
-                console.error("ባላንስን ማደስ አልተቻለም:", error);
+                console.error("ባላንስ ማደስ አልተቻለም:", error);
             }
         }
 
