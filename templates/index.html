@@ -701,24 +701,6 @@
             }).catch(() => {});
         }
 
-        // 🌟 ኖቲፊኬሽኑ ከ Refresh button ቀደም ብሎ ባለው ክፍተት ውስጥ እንዲታይ እና በራሱ እንዲጠፋ የሚያደርግ ፋንክሽን
-        function showInlineNotification(message) {
-            const notificationBar = document.getElementById('inline-notification');
-            
-            if (notificationBar) {
-                notificationBar.innerText = message;
-                notificationBar.style.display = 'block';
-                notificationBar.classList.add('show');
-
-                // ከጥቂት ሰኮንዶች (ለምሳሌ 4 ሰኮንድ) በኋላ መልእክቱን በራሱ መደበቅ
-                setTimeout(() => {
-                    notificationBar.innerText = '';
-                    notificationBar.style.display = 'none';
-                    notificationBar.classList.remove('show');
-                }, 4000);
-            }
-        }
-
         function initWebSocket() {
             socket = io({
                 reconnection: true,
@@ -745,10 +727,21 @@
                 }
             });
 
-            // 🌟 የአድሚን አፕሩቫል ኖቲፊኬሽን መቀበያ (ከ Refresh button ቀደም ባለው ክፍተት ውስጥ ይታያል)
+            // 🌟 የተቀላቀለው አዲሱ የሶኬት ኖቲፊኬሽን ኮድ
             socket.on('deposit_success_notify', function(data) {
+                // ኖቲፊኬሽኑ የሚታይበትን ኤልመንት እናመጣለን
+                const notif = document.getElementById('inline-notification');
+                if (notif) {
+                    notif.innerText = `✅ በሂሳብዎ ላይ ${data.amount} ETB ተጨምሯል!`;
+                    notif.style.display = 'inline-block';
+                    
+                    // ከጥቂት ሰከንዶች በኋላ በራሱ እንዲጠፋ
+                    setTimeout(() => {
+                        notif.style.display = 'none';
+                    }, (data.duration || 3) * 1000);
+                }
+                
                 if (data && phoneMatches(data.phone, phone)) {
-                    showInlineNotification(`ዲፖዚቱ በተሳካ ሁኔታ ጸድቋል! ✨ (+${data.amount} ETB)`);
                     refreshUserBalance(data.phone);
                 }
             });
@@ -758,7 +751,6 @@
             });
         }
 
-        // 3. ባላንስ በቅጽበት የሚያድሰው (Auto Refresh) ተግባር
         async function refreshUserBalance(userPhone) {
             try {
                 const response = await fetch(`/get_status?phone=${userPhone}`, {
