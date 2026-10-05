@@ -143,6 +143,10 @@ def broadcast_game_state():
 def notify_user_balance_update(phone_num, new_balance):
     socketio.emit('balance_update', {"phone": phone_num, "balance": new_balance})
 
+def notify_user_deposit_success(phone_num, amount):
+    # ለአንድ ተጠቃሚ ብቻ ለ 3 ሰከንድ የሚቆይ ዲፖዚት ተሳክቷል ኖቲፊኬሽን
+    socketio.emit('deposit_success_notify', {"phone": phone_num, "amount": amount, "duration": 3})
+
 def is_request_from_admin(phone_val):
     if not phone_val:
         return False
@@ -311,6 +315,28 @@ def request_deposit():
     except ValueError:
         amt = 0
     t_id = sanitize_input(d.get('transaction_id', 'N/A'))
+    
+    # 🌟 2. የ Transaction ID (SMS) ማረጋገጫዎች
+    # - ቁጥር ብቻ ከሆነ
+    # - ከ 10 ካነሰ
+    # - ምልክቶች ብቻ ከሆነ (!?@&$)
+    if t_id.isdigit():
+        return jsonify({"success": False, "msg": "የትራንዛክሽን አይድው ስህተት ነው! ቁጥር ብቻ መሆን አይችልም።"})
+    if len(t_id) < 10:
+        return jsonify({"success": False, "msg": "የትራንዛክሽን አይድው ስህተት ነው! ከ 10 ቁምፊዎች ማነስ የለበትም።"})
+    if bool(re.match(r'^[!@#\$%\^&\*\?\.\-\_\+\=\s]+$', t_id)):
+        return jsonify({"success": False, "msg": "የትራንዛክሽን አይድው ስህተት ነው! ምልክቶች ብቻ መሆን አይችሉም።"})
+
+    # 🌟 1. በ 5 ደቂቃ ውስጥ 2 request ብቻ እንዲፈቅድ ማጣሪያ
+    five_mins_ago = datetime.utcnow() - timedelta(minutes=5)
+    recent_deps_count = transactions.count_documents({
+        "phone": ph,
+        "type": "deposit",
+        "timestamp": {"$gte": five_mins_ago}
+    })
+    if recent_deps_count >= 2:
+        return jsonify({"success": False, "msg": "በ 5 ደቂቃ ውስጥ ከ 2 በላይ የዲፖዚት ጥያቄ መላክ አይችሉም። እባክዎ ትንሽ ይጠብቁ!"})
+
     user = wallets.find_one({"phone": ph})
     db_phone = user["phone"] if user else ph
     
@@ -349,6 +375,17 @@ def request_withdrawal():
         return jsonify({"success": False, "msg": "ትክክለኛ የገንዘብ መጠን ያስገቡ!"})
     if amt < 51:
         return jsonify({"success": False, "msg": "ቢያንስ 51 ETB ነው!"})
+    
+    # 🌟 1. በ 5 ደቂቃ ውስጥ 2 request ብቻ ለ Withdrawal
+    five_mins_ago = datetime.utcnow() - timedelta(minutes=5)
+    recent_wits_count = transactions.count_documents({
+        "phone": ph,
+        "type": "withdrawal",
+        "timestamp": {"$gte": five_mins_ago}
+    })
+    if recent_wits_count >= 2:
+        return jsonify({"success": False, "msg": "በ 5 ደቂቃ ውስጥ ከ 2 በላይ የውዝድሮዋል ጥያቄ መላክ አይችሉም። እባክዎ ትንሽ ይጠብቁ!"})
+
     user = wallets.find_one({"phone": ph})
     if not user:
         return jsonify({"success": False, "msg": "ተጠቃሚው አልተገኘም!"})
@@ -832,6 +869,10 @@ def webhook():
                     updated = wallets.find_one_and_update({"phone": phone_num}, {"$inc": {"balance": amt}}, return_document=True, upsert=True)
                     new_bal = updated.get("balance", 0) if updated else 0
                     notify_user_balance_update(phone_num, new_bal)
+                    
+                    # 🌟 3. ዲፖዚት ሲጸድቅ ለ 3 ሰከንድ የሚቆይ ኖቲፊኬሽን ከብሩ ጋር መላክ
+                    notify_user_deposit_success(phone_num, amt)
+
                     requests.post(answer_url, json={"callback_query_id": cq_id, "text": f"ተሳክቷል! {amt} ETB ገብቷል።"})
                     requests.post(edit_url, json={"chat_id": ADMIN_ID, "message_id": cq["message"]["message_id"], "text": cq["message"]["text"] + f"\n\n✅ APPROVED\n💰 አጠቃላይ ባላንስ: {new_bal} ETB", "parse_mode": "Markdown", "reply_markup": {"inline_keyboard": []}})
                 else:
