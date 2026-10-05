@@ -2,7 +2,9 @@ import os
 import time
 from datetime import datetime, timedelta
 from gevent import monkey
-monkey.patch_all()
+
+# የትሬዲንግ (thread) ግጭትን ለመከላከል thread=False ማድረግ ግዴታ ነው
+monkey.patch_all(thread=False)
 
 import random
 import requests
@@ -1430,27 +1432,10 @@ def claim_bingo():
 
     return jsonify({"success": True})
 
-# --- Telegram Handler for Photos ---
 async def get_my_file_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.message.photo:
-        # ከፍተኛ ጥራት ያለው የፎቶው File ID
         file_id = update.message.photo[-1].file_id
         await update.message.reply_text(f"የፎቶው File ID ይህ ነው:\n\n`{file_id}`", parse_mode="Markdown")
-
-def main():
-    # ቦቱን በ python-telegram-bot (v20+) መዋቅር ማስጀመር ከፈለጉ:
-    if not BOT_TOKEN:
-        print("BOT_TOKEN is missing!")
-        return
-        
-    application = ApplicationBuilder().token(BOT_TOKEN).build()
-    
-    # ፎቶዎችን የሚቀበል ሀንድለር መመዝገብ
-    application.add_handler(MessageHandler(filters.PHOTO, get_my_file_id))
-    
-    # ያስተውሉ፡ Flask እና SocketIO በ background thread እየተሄዱ ከሆነ 
-    # application.run_polling() መጠቀም ይቻላል (Polling mode በሚጠቀሙበት ጊዜ)።
-    # Webhook የሚጠቀሙ ከሆነ ግን Flask ራሱ ፖስቶችን ይቀበላል።
 
 @socketio.on('connect')
 def handle_connect():
@@ -1463,5 +1448,4 @@ def handle_connect():
     broadcast_game_state()
 
 if __name__ == '__main__':
-    # እንደ አማራጭ Telegram Bot handler በነፃነት እንዲሰራ ከፈለጉ እዚህ ጋር ማካተት ይችላሉ
     socketio.run(app, host='0.0.0.0', port=int(os.environ.get("PORT", 10000)))
