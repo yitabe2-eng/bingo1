@@ -326,11 +326,8 @@ def admin_broadcast():
     PHOTO_FILE_ID = "AgACAgQAAxkBAAIU2GrEzqEOyEn3Ao8ELToCaZTM_c1bAAJZEGsbYhEoUk2L9NZP0K1UAQADAgADeQADPQQ"
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendPhoto"
     
-    broadcast_markup = {
-        "inline_keyboard": [
-            [{"text": "👉 Beshbingo (10ብር)", "url": "https://t.me/beshbingo1bot"}],
-            [{"text": "👉 Supperbeshbingo (50ብር)", "url": "http://t.me/superbeshbingobot"}]
-        ]
+
+     
     }
 
     for u in all_users:
