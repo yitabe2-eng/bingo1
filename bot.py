@@ -90,7 +90,8 @@ def set_bot_commands():
     default_commands = [
         {"command": "play", "description": "ጨዋታ ይምረጡ 🎮"},
         {"command": "balance", "description": "የሂሳብሪሣቤ (Balance) ለማየት 💰"},
-        {"command": "history", "description": "የትራንዛክሽን ታሪክ ለማየት"}
+        {"command": "history", "description": "የትራንዛክሽን ታሪክ ለማየት"},
+        {"command": "instruction", "description": "ℹ️ የጨዋታ ህጎች እና የማሸነፊያ መንገዶች"}
     ]
     try:
         requests.post(url, json={"commands": default_commands}, timeout=2)
@@ -102,6 +103,7 @@ def set_bot_commands():
             {"command": "play", "description": "ጨዋታ ይምረጡ 🎮"},
             {"command": "balance", "description": "የሂሳብሪሣቤ (Balance) ለማየት 💰"},
             {"command": "history", "description": "የትራንዛክሽን ታሪክ ለማየት"},
+            {"command": "instruction", "description": "ℹ️ የጨዋታ ህጎች እና የማሸነፊያ መንገዶች"},
             {"command": "admin", "description": "🛠 የአድሚን ማውጫ / Dashboard"},
             {"command": "pending", "description": "⏳ ጥያቄዎችን ለማፅደቅ (Approvals)"},
             {"command": "daily", "description": "📅 የእለት/የሳምንት ገቢና ወጪ"}
@@ -599,6 +601,59 @@ def webhook():
                 })
             return "OK", 200
 
+        if text.lower() in ["/instruction", "/instraction"]:
+            url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
+            rules_msg = (
+                "ℹ️ **የጨዋታ ህጎች እና የማሸነፊያ መንገዶች (Game Rules)**\n"
+                "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+                "ጨዋታውን ለማሸነፍ ከዚህ በታች ከተዘረዘሩት መንገዶች አንዱን ቀድሞ ማግኘት ይበቃል!\n\n"
+                "1️⃣ **አግድም መስመሮች (Horizontal Lines - 5 መንገዶች)**\n"
+                "የማንኛውንም አንድ ሙሉ ረድፍ (ከላይ ወደ ታች) በአግድም ሲሞሉ፡\n"
+                "B  I  N  G  O\n"
+                "+-----+----+-----+\n"
+                "|✅ ✅ ✅ ✅ ✅|  <- ማንኛውም 1 ሙሉ ረድፍ\n"
+                "+-----+----+-----+\n\n"
+                "2️⃣ **አቀባዊ መስመሮች (Vertical Lines - 5 መንገዶች)**\n"
+                "የማንኛውንም አንድ ሙሉ አምድ (ከግራ ወደ ቀኝ) በአቀባዊ ሲሞሉ፡\n"
+                "B  I  N  G  O\n"
+                "+-----+----+-----+\n"
+                "|✅   |    |     |\n"
+                "|✅   |    |     |  <- ማንኛውም 1 ሙሉ አምድ\n"
+                "|✅   |    |     |     (የ N አምድ መሃከለኛውን ነፃ ቦታ ጨምሮ)\n"
+                "|✅   |    |     |\n"
+                "|✅   |    |     |\n"
+                "+-----+----+-----+\n\n"
+                "3️⃣ **ሰያፍ መስመሮች (Diagonal Lines - 2 መንገዶች)**\n"
+                "ካርቴላውን ከማዕዘን እስከ ማዕዘን diagonally ሲያቋርጡ፡\n"
+                "B  I  N  G  O\n"
+                "+-----+----+-----+\n"
+                "|✅   |    |     |\n"
+                "|  ✅ |    |     |  <- ከግራ-ላይ እስከ ቀኝ-ታች\n"
+                "|     |  ✅|     |     ወይም ከቀኝ-ላይ እስከ ግራ-ታች\n"
+                "|     |    |✅   |\n"
+                "|     |    |   ✅|\n"
+                "+-----+----+-----+\n\n"
+                "4️⃣ **አራቱ ኮርነሮች (4 Corners - 1 መንገድ)**\n"
+                "የካርቴላውን አራቱን ጽንፎች (ማዕዘኖች) ብቻ ሲሞሉ፦\n"
+                "B  I  N  G  O\n"
+                "+-----+----+-----+\n"
+                "|✅           ✅|\n"
+                "|               |  <- አራቱ የውጪ ማዕዘኖች\n"
+                "|               |     ብቻ ሲሞሉ\n"
+                "|               |\n"
+                "|✅           ✅|\n"
+                "+-----+----+-----+\n\n"
+                "💰 **የሽልማት ህግ**\n"
+                "- **አሸናፊዎች**: ካየናቸዉ የማሸነፊያ መንገዶች አንዱ ቀድሞ ከሞላልን ! (BINGO) በማለት ቀድሞ የሚያረጋግጠው ተጫዋች አሸናፊ ይሆናል።\n"
+                "- **የሽልማት ክፍፍል**: ከአንድ በላይ አሸናፊዎች በአንድ ዙር ካሉ የደራሽ (የሽልማት) ገንዘቡ በእኩል መጠን ይከፋፈላሉ።"
+            )
+            requests.post(url, json={
+                "chat_id": chat_id,
+                "text": rules_msg,
+                "parse_mode": "Markdown"
+            })
+            return "OK", 200
+
         if text.lower() == "/history":
             url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
             
@@ -799,7 +854,6 @@ def webhook():
                     wallets.delete_one({"phone": target_phone})
                     requests.post(url, json={"chat_id": ADMIN_ID, "text": f"✅ ተጠቃሚው ({target_phone}) ከዳታቤዙ ተሰርዟል!"})
             
-            # --- ጽሁፍ ብቻ ለሁሉም የሚልክ /broadcast1 ትዕዛዝ እዚህ ተጨምሯል ---
             elif text.startswith("/broadcast1"):
                 parts = text.split(" ", 1)
                 if len(parts) < 2 or not parts[1].strip():
