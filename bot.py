@@ -324,7 +324,6 @@ def admin_broadcast():
     PHOTO_FILE_ID = "AgACAgQAAxkBAAIU2GrEzqEOyEn3Ao8ELToCaZTM_c1bAAJZEGsbYhEoUk2L9NZP0K1UAQADAgADeQADPQQ"
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendPhoto"
     
-    # ዩዘርኔሙን ወደ ትክክለኛው የቴሌግራም ቦት ሊንክ (http://t.me/BeshBingoSupportbot) አስተካክለነዋል
     broadcast_msg = (
         "🎉በሽ ቢንጎ :24 ሰአት live\n"
         "🎉 ሱፐር በሽ ቢንጎ  ፡ 💰 10ሺ ደራሽ 🎉\n\n"
@@ -684,7 +683,7 @@ def webhook():
                         [{"text": "📋 የሁሉም ተጠቃሚዎች ባላንስ", "callback_data": "admin_show_all_bal"}],
                         [{"text": "➕ ባላንስ ለመጨመር (/add)", "callback_data": "guide_add"}],
                         [{"text": "➖ ባላንስ ለመቀነስ (/sub)", "callback_data": "guide_sub"}],
-                        [{"text": "📢 መልእክት ለማስተላለፍ (/broadcast)", "callback_data": "guide_broadcast"}],
+                        [{"text": "📢 መልእክት ለማስተላለፍ (/broadcast & /broadcast1)", "callback_data": "guide_broadcast"}],
                         [{"text": "🚫 ተጠቃሚ ብሎክ/ማጥፊያ (/block & /remove)", "callback_data": "guide_block_remove"}],
                         [{"text": "🌐 የአድሚን ዌብ ዳሽቦርድ", "url": f"{WEB_APP_URL}/admin_get_users?phone=0945880474"}]
                     ]
@@ -799,6 +798,46 @@ def webhook():
                     target_phone = sanitize_input(parts[1])
                     wallets.delete_one({"phone": target_phone})
                     requests.post(url, json={"chat_id": ADMIN_ID, "text": f"✅ ተጠቃሚው ({target_phone}) ከዳታቤዙ ተሰርዟል!"})
+            
+            # --- ጽሁፍ ብቻ ለሁሉም የሚልክ /broadcast1 ትዕዛዝ እዚህ ተጨምሯል ---
+            elif text.startswith("/broadcast1"):
+                parts = text.split(" ", 1)
+                if len(parts) < 2 or not parts[1].strip():
+                    requests.post(url, json={"chat_id": ADMIN_ID, "text": "❌ እባክዎ መላክ የሚፈልጉትን መልእክት ከትዕዛዙ ጋር አብረው ይጻፉ!\n*ምሳሌ:* `/broadcast1 ሰላም ተጫዋቾች...`", "parse_mode": "Markdown"})
+                else:
+                    custom_msg = parts[1].strip()
+                    all_users = list(wallets.find({}))
+                    if not all_users:
+                        requests.post(url, json={"chat_id": ADMIN_ID, "text": "📭 ምንም የተመዘገበ ተጠቃሚ የለም።"})
+                    else:
+                        success_count = 0
+                        fail_count = 0
+                        send_url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
+                        sent_chat_ids = set()
+                        
+                        for u in all_users:
+                            u_chat_id = u.get("chat_id")
+                            if u_chat_id and u_chat_id not in sent_chat_ids:
+                                sent_chat_ids.add(u_chat_id)
+                                payload = {
+                                    "chat_id": u_chat_id, 
+                                    "text": custom_msg, 
+                                    "parse_mode": "Markdown"
+                                }
+                                try:
+                                    res = requests.post(send_url, json=payload, timeout=2)
+                                    if res.status_code == 200:
+                                        success_count += 1
+                                    else:
+                                        fail_count += 1
+                                except:
+                                    fail_count += 1
+                        requests.post(url, json={
+                            "chat_id": ADMIN_ID, 
+                            "text": f"📢 *የጽሁፍ ብሮድካስት ተጠናቋል!*\n\n✅ የተሳካላቸው: {success_count}\n❌ ያልተሳካላቸው: {fail_count}",
+                            "parse_mode": "Markdown"
+                        })
+
             elif text == "/broadcast" or text.startswith("/broadcast"):
                 all_users = list(wallets.find({}))
                 if not all_users:
@@ -905,7 +944,7 @@ def webhook():
             elif data_str == "guide_sub":
                 send_telegram("➖ *ባላንስ ለመቀነስ የትእዛዝ ፎርማት:*\n\n`/sub <ስልክ> <መጠን>`\n*ምሳሌ:* `/sub 0912345678 50`")
             elif data_str == "guide_broadcast":
-                send_telegram("📢 *ለሁሉም መልእክት ለመላክ:*\n\n`/broadcast`")
+                send_telegram("📢 *ለሁሉም መልእክት ለመላክ:*\n\n1. ፎቶ ያለው: `/broadcast`\n2. ጽሁፍ ብቻ: `/broadcast1 <መልእክትዎ>`")
             elif data_str == "guide_block_remove":
                 send_telegram("🚫 *ብሎክ ለማድረግና ለማጥፋት:*\n\n1. ብሎክ ማድረግ: `/block <ስልክ>`\n2. ከብሎክ ማንሳት: `/unblock <ስልክ>`\n3. ተጠቃሚ መደለዝ: `/remove <ስልክ>`")
 
@@ -989,7 +1028,7 @@ def webhook():
                     new_bal = updated.get("balance", 0) if updated else 0
                     if updated:
                         notify_user_balance_update(phone_num, new_bal)
-                        requests.post(answer_url, json={"callback_query_id": cq_id, "text": f"ዊዝድሮዋል ጸድቋል!"})
+                        requests.post(answer_url, json={"callback_query_id": cq_id, "text": "ዊዝድሮዋል ጸድቋል!"})
                         requests.post(edit_url, json={"chat_id": ADMIN_ID, "message_id": cq["message"]["message_id"], "text": cq["message"]["text"] + f"\n\n✅ APPROVED\n💰 አጠቃላይ ባላንስ: {new_bal} ETB", "parse_mode": "Markdown", "reply_markup": {"inline_keyboard": []}})
                     else:
                         requests.post(answer_url, json={"callback_query_id": cq_id, "text": "❌ የተጠቃሚው ባላንስ በቂ አይደለም!", "show_alert": True})
