@@ -504,10 +504,23 @@ def request_transfer():
 @app.route('/webhook', methods=['POST'])
 def webhook():
     data = request.json or {}
+    
+    # 🌟 በአድሚን ቻት ውስጥ ፎቶ ሲላክ የፋይል ID እንዲልክልዎ የተደረገበት ክፍል
     if "message" in data:
         msg = data["message"]
-        text = msg.get("text", "")
         chat_id = str(msg.get("chat", {}).get("id", ""))
+        
+        if chat_id == str(ADMIN_ID):
+            if "photo" in msg:
+                photo_id = msg["photo"][-1]["file_id"]  # ትልቁን ፎቶ ጥራት የሚወስደው
+                requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage", json={
+                    "chat_id": ADMIN_ID,
+                    "text": f"የዚህ ፎቶ File ID ይህ ነው:\n`{photo_id}`",
+                    "parse_mode": "Markdown"
+                })
+                return "OK", 200
+
+        text = msg.get("text", "")
         
         if chat_id != str(ADMIN_ID):
             wallets.update_one({"chat_id": chat_id}, {"$set": {"chat_id": chat_id}}, upsert=False)
@@ -543,7 +556,7 @@ def webhook():
                             if tx.get("phone") == target_phone:
                                 extra = f" ➡️ To: `{tx.get('receiver_phone')}`"
                             else:
-                                extra = f" ⬅️️ From: `{tx.get('phone')}`"
+                                extra = f" ⬅ From: `{tx.get('phone')}`"
                                 
                         report += f"⏱ `{ts}` | *{t_type}*{extra}\n💵 `{amt}` ETB | Status: `{st}`\n------------------------\n"
                     
@@ -905,7 +918,6 @@ def webhook():
                     new_bal = updated.get("balance", 0) if updated else 0
                     notify_user_balance_update(phone_num, new_bal)
                     
-                    # 🌟 አድሚኑ አፕሩቭ ሲያደርግ በቀጥታ በቴሌግራም ቦት ቻት ማሳወቂያ የሚልክበት ኮድ
                     user_chat_id = updated.get("chat_id")
                     if user_chat_id:
                         notif_text = f"✅ *የዲፖዚት ጥያቄዎ ጸድቋል!*\n\n💵 በሂሳብዎ ላይ *{amt} ETB* ተጨምሯል።\n💰 አጠቃላይ ቀሪ ባላንስዎ: *{new_bal} ETB*"
@@ -921,7 +933,7 @@ def webhook():
                     requests.post(answer_url, json={"callback_query_id": cq_id, "text": f"ተሳክቷል! {amt} ETB ገብቷል።"})
                     requests.post(edit_url, json={"chat_id": ADMIN_ID, "message_id": cq["message"]["message_id"], "text": cq["message"]["text"] + f"\n\n✅ APPROVED\n💰 አጠቃላይ ባላንስ: {new_bal} ETB", "parse_mode": "Markdown", "reply_markup": {"inline_keyboard": []}})
                 else:
-                    requests.post(answer_url, json={"callback_query_id": cq_id, "text": "⚠️️ ይህ ጥያቄ አስቀድሞ ፀድቋል ወይም ተሰርዟል!", "show_alert": True})
+                    requests.post(answer_url, json={"callback_query_id": cq_id, "text": "⚠ ይህ ጥያቄ አስቀድሞ ፀድቋል ወይም ተሰርዟል!", "show_alert": True})
             
             elif data_str.startswith("rej_dep_"):
                 parts = data_str.split("_")
