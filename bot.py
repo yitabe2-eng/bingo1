@@ -321,7 +321,10 @@ def admin_broadcast():
     broadcast_msg = sanitize_input(d.get('message'))
     all_users = list(wallets.find({}))
     success_count = 0
-    url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
+    
+    # 🌟 የፎቶ ፋይል አይዲ (File ID) እዚህ ጋር ተካቷል
+    PHOTO_FILE_ID = "AgACAgQAAxkBAAIU2GrEzqEOyEn3Ao8ELToCaZTM_c1bAAJZEGsbYhEoUk2L9NZP0K1UAQADAgADeQADPQQ"
+    url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendPhoto"
     
     broadcast_markup = {
         "inline_keyboard": [
@@ -335,7 +338,8 @@ def admin_broadcast():
         if u_chat_id:
             payload = {
                 "chat_id": u_chat_id, 
-                "text": broadcast_msg, 
+                "photo": PHOTO_FILE_ID,
+                "caption": broadcast_msg, 
                 "parse_mode": "Markdown",
                 "reply_markup": broadcast_markup
             }
@@ -505,14 +509,13 @@ def request_transfer():
 def webhook():
     data = request.json or {}
     
-    # 🌟 በአድሚን ቻት ውስጥ ፎቶ ሲላክ የፋይል ID እንዲልክልዎ የተደረገበት ክፍል
     if "message" in data:
         msg = data["message"]
         chat_id = str(msg.get("chat", {}).get("id", ""))
         
         if chat_id == str(ADMIN_ID):
             if "photo" in msg:
-                photo_id = msg["photo"][-1]["file_id"]  # ትልቁን ፎቶ ጥራት የሚወስደው
+                photo_id = msg["photo"][-1]["file_id"]
                 requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage", json={
                     "chat_id": ADMIN_ID,
                     "text": f"የዚህ ፎቶ File ID ይህ ነው:\n`{photo_id}`",
@@ -800,6 +803,9 @@ def webhook():
                 else:
                     success_count = 0
                     fail_count = 0
+                    PHOTO_FILE_ID = "AgACAgQAAxkBAAIU2GrEzqEOyEn3Ao8ELToCaZTM_c1bAAJZEGsbYhEoUk2L9NZP0K1UAQADAgADeQADPQQ"
+                    photo_url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendPhoto"
+                    
                     broadcast_markup = {
                         "inline_keyboard": [
                             [{"text": "👉 Beshbingo (10ብር)", "url": "https://t.me/beshbingo1bot"}],
@@ -811,12 +817,13 @@ def webhook():
                         if u_chat_id:
                             payload = {
                                 "chat_id": u_chat_id, 
-                                "text": broadcast_msg, 
+                                "photo": PHOTO_FILE_ID,
+                                "caption": broadcast_msg, 
                                 "parse_mode": "Markdown",
                                 "reply_markup": broadcast_markup
                             }
                             try:
-                                res = requests.post(url, json=payload, timeout=2)
+                                res = requests.post(photo_url, json=payload, timeout=2)
                                 if res.status_code == 200:
                                     success_count += 1
                                 else:
@@ -825,7 +832,7 @@ def webhook():
                                 fail_count += 1
                     requests.post(url, json={
                         "chat_id": ADMIN_ID, 
-                        "text": f"📢 *ብሮድካስት ተጠናቋል!*\n\n✅ የተሳካላቸው: {success_count}\n❌ ያልተሳካላቸው: {fail_count}"
+                        "text": f"📢 *የፎቶ ብሮድካስት ተጠናቋል!*\n\n✅ የተሳካላቸው: {success_count}\n❌ ያልተሳካላቸው: {fail_count}"
                     })
     elif "callback_query" in data:
         cq = data["callback_query"]
