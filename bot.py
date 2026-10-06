@@ -324,7 +324,7 @@ def admin_broadcast():
     PHOTO_FILE_ID = "AgACAgQAAxkBAAIU2GrEzqEOyEn3Ao8ELToCaZTM_c1bAAJZEGsbYhEoUk2L9NZP0K1UAQADAgADeQADPQQ"
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendPhoto"
     
-    # የጠየቁት የካፕሽን 텍ስት (Inline Button ሙሉ በሙሉ ጠፍቷል)
+    # ዩዘርኔሙን ወደ ትክክለኛው የቴሌግራም ቦት ሊንክ (http://t.me/BeshBingoSupportbot) አስተካክለነዋል
     broadcast_msg = (
         "🎉በሽ ቢንጎ :24 ሰአት live\n"
         "🎉 ሱፐር በሽ ቢንጎ  ፡ 💰 10ሺ ደራሽ 🎉\n\n"
@@ -332,10 +332,9 @@ def admin_broadcast():
         "🎫 ካርቴላ ሳያልቅ ⏳ ቀድመው ይያዙ 🏃‍♂️\n\n"
         "❓ ማንኛውም ጥያቄ ካለ\n"
         "📞     0925960226\n"
-        "👉     @BeshBingoSupport"
+        "👉     [BeshBingoSupport](http://t.me/BeshBingoSupportbot)"
     )
 
-    # ተጠቃሚዎችን በ chat_id ሼር በማድረግ አንድ ተጠቃሚ አንድ ጊዜ ብቻ እንዲደርሰው ማድረግ (Set በመጠቀም ድግግሞሽን መከላከል)
     sent_chat_ids = set()
 
     for u in all_users:
@@ -817,7 +816,7 @@ def webhook():
                         "🎫 ካርቴላ ሳያልቅ ⏳ ቀድመው ይያዙ 🏃‍♂️\n\n"
                         "❓ ማንኛውም ጥያቄ ካለ\n"
                         "📞     0925960226\n"
-                        "👉     @BeshBingoSupport"
+                        "👉     [BeshBingoSupport](http://t.me/BeshBingoSupportbot)"
                     )
                     
                     sent_chat_ids = set()
