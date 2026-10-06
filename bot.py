@@ -318,27 +318,35 @@ def admin_broadcast():
     if not is_request_from_admin(d.get('admin_phone')):
         return jsonify({"success": False, "msg": "ፈቃድ የለዎትም!"}), 403
     
-    broadcast_msg = sanitize_input(d.get('message'))
     all_users = list(wallets.find({}))
     success_count = 0
     
-    # 🌟 የፎቶ ፋይል አይዲ (File ID) እዚህ ጋር ተካቷል
     PHOTO_FILE_ID = "AgACAgQAAxkBAAIU2GrEzqEOyEn3Ao8ELToCaZTM_c1bAAJZEGsbYhEoUk2L9NZP0K1UAQADAgADeQADPQQ"
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendPhoto"
     
+    # የጠየቁት የካፕሽን 텍ስት (Inline Button ሙሉ በሙሉ ጠፍቷል)
+    broadcast_msg = (
+        "🎉በሽ ቢንጎ :24 ሰአት live\n"
+        "🎉 ሱፐር በሽ ቢንጎ  ፡ 💰 10ሺ ደራሽ 🎉\n\n"
+        "🗓 ዘወትር ቅዳሜ እና እሁድ 🕙 12 ሰዐት\n"
+        "🎫 ካርቴላ ሳያልቅ ⏳ ቀድመው ይያዙ 🏃‍♂️\n\n"
+        "❓ ማንኛውም ጥያቄ ካለ\n"
+        "📞     0925960226\n"
+        "👉     @BeshBingoSupport"
+    )
 
-     
-    }
+    # ተጠቃሚዎችን በ chat_id ሼር በማድረግ አንድ ተጠቃሚ አንድ ጊዜ ብቻ እንዲደርሰው ማድረግ (Set በመጠቀም ድግግሞሽን መከላከል)
+    sent_chat_ids = set()
 
     for u in all_users:
         u_chat_id = u.get("chat_id")
-        if u_chat_id:
+        if u_chat_id and u_chat_id not in sent_chat_ids:
+            sent_chat_ids.add(u_chat_id)
             payload = {
                 "chat_id": u_chat_id, 
                 "photo": PHOTO_FILE_ID,
                 "caption": broadcast_msg, 
-                "parse_mode": "Markdown",
-                "reply_markup": broadcast_markup
+                "parse_mode": "Markdown"
             }
             try:
                 res = requests.post(url, json=payload, timeout=2)
@@ -792,8 +800,7 @@ def webhook():
                     target_phone = sanitize_input(parts[1])
                     wallets.delete_one({"phone": target_phone})
                     requests.post(url, json={"chat_id": ADMIN_ID, "text": f"✅ ተጠቃሚው ({target_phone}) ከዳታቤዙ ተሰርዟል!"})
-            elif text.startswith("/broadcast "):
-                broadcast_msg = text.replace("/broadcast ", "", 1)
+            elif text == "/broadcast" or text.startswith("/broadcast"):
                 all_users = list(wallets.find({}))
                 if not all_users:
                     requests.post(url, json={"chat_id": ADMIN_ID, "text": "📭 ምንም የተመዘገበ ተጠቃሚ የለም።"})
@@ -803,21 +810,26 @@ def webhook():
                     PHOTO_FILE_ID = "AgACAgQAAxkBAAIU2GrEzqEOyEn3Ao8ELToCaZTM_c1bAAJZEGsbYhEoUk2L9NZP0K1UAQADAgADeQADPQQ"
                     photo_url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendPhoto"
                     
-                    broadcast_markup = {
-                        "inline_keyboard": [
-                            [{"text": "👉 Beshbingo (10ብር)", "url": "https://t.me/beshbingo1bot"}],
-                            [{"text": "👉 Supperbeshbingo (50ብር)", "url": "http://t.me/superbeshbingobot"}]
-                        ]
-                    }
+                    broadcast_msg = (
+                        "🎉በሽ ቢንጎ :24 ሰአት live\n"
+                        "🎉 ሱፐር በሽ ቢንጎ  ፡ 💰 10ሺ ደራሽ 🎉\n\n"
+                        "🗓 ዘወትር ቅዳሜ እና እሁድ 🕙 12 ሰዐት\n"
+                        "🎫 ካርቴላ ሳያልቅ ⏳ ቀድመው ይያዙ 🏃‍♂️\n\n"
+                        "❓ ማንኛውም ጥያቄ ካለ\n"
+                        "📞     0925960226\n"
+                        "👉     @BeshBingoSupport"
+                    )
+                    
+                    sent_chat_ids = set()
                     for u in all_users:
                         u_chat_id = u.get("chat_id")
-                        if u_chat_id:
+                        if u_chat_id and u_chat_id not in sent_chat_ids:
+                            sent_chat_ids.add(u_chat_id)
                             payload = {
                                 "chat_id": u_chat_id, 
                                 "photo": PHOTO_FILE_ID,
                                 "caption": broadcast_msg, 
-                                "parse_mode": "Markdown",
-                                "reply_markup": broadcast_markup
+                                "parse_mode": "Markdown"
                             }
                             try:
                                 res = requests.post(photo_url, json=payload, timeout=2)
@@ -894,7 +906,7 @@ def webhook():
             elif data_str == "guide_sub":
                 send_telegram("➖ *ባላንስ ለመቀነስ የትእዛዝ ፎርማት:*\n\n`/sub <ስልክ> <መጠን>`\n*ምሳሌ:* `/sub 0912345678 50`")
             elif data_str == "guide_broadcast":
-                send_telegram("📢 *ለሁሉም መልእክት ለመላክ:*\n\n`/broadcast <መልእክት>`\n*ምሳሌ:* `/broadcast እንኳን ወደ አዲሱ ዙር በደህና መጡ!`")
+                send_telegram("📢 *ለሁሉም መልእክት ለመላክ:*\n\n`/broadcast`")
             elif data_str == "guide_block_remove":
                 send_telegram("🚫 *ብሎክ ለማድረግና ለማጥፋት:*\n\n1. ብሎክ ማድረግ: `/block <ስልክ>`\n2. ከብሎክ ማንሳት: `/unblock <ስልክ>`\n3. ተጠቃሚ መደለዝ: `/remove <ስልክ>`")
 
@@ -983,7 +995,7 @@ def webhook():
                     else:
                         requests.post(answer_url, json={"callback_query_id": cq_id, "text": "❌ የተጠቃሚው ባላንስ በቂ አይደለም!", "show_alert": True})
                 else:
-                    requests.post(answer_url, json={"callback_query_id": cq_id, "text": "⚠️ ይህ ጥያቄ አስቀድሞ ፀድቋል ወይም ተሰርዟል!", "show_alert": True})
+                    requests.post(answer_url, json={"callback_query_id": cq_id, "text": "⚠ ይህ ጥያቄ አስቀድሞ ፀድቋል ወይም ተሰርዟል!", "show_alert": True})
             
             elif data_str.startswith("rej_wit_"):
                 parts = data_str.split("_")
