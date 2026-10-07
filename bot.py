@@ -37,6 +37,7 @@ try:
 except Exception as e:
     print(f"Index creation notice: {e}")
 
+# 🌟 የ 10፣ 20፣ የዕለት 50 እና የቅዳሜ/እሁድ ልዩ ሱፐር (ወይም የሳምንቱ መጨረሻ 50) ጨዋታ ስቴቶች
 game_states = {
     "10": {
         "status": "lobby", "timer": 30, "ball_timer": 2, "pot": 0, "players": {}, 
@@ -56,7 +57,7 @@ game_states = {
         "winning_card": None, "winning_ticket_num": None, "winning_indices": None,
         "winning_line_name": None, "all_cards": {}
     },
-    "super": { 
+    "super": { # 🌟 ከ bot11 የመጣው የሳምንቱ መጨረሻ (ቅዳሜ እና እሁድ) 50 ብር ጨዋታ ስቴት
         "status": "lobby", "timer": 30, "ball_timer": 3, "pot": 0, "players": {}, 
         "sold_tickets": {}, "current_ball": "--", "drawn_balls": [], "winner": None,
         "winning_card": None, "winning_ticket_num": None, "winning_indices": None,
@@ -130,6 +131,7 @@ def broadcast_game_state(room_type):
 def notify_user_balance_update(phone_num, new_balance):
     socketio.emit('balance_update', {"phone": phone_num, "balance": new_balance})
 
+# 🌟 ከ bot11 የመጣው የሙሉ ዝግ (Full House) ማረጋገጫ ህግ
 def check_winning_line(card, drawn_numbers, player_marked_numbers=None):
     drawn_set = set()
     for b in drawn_numbers:
@@ -230,6 +232,7 @@ def reset_game(room_type):
     })
     broadcast_game_state(room_type) 
 
+# 🌟 የዕለት ተዕለት ሩሞች (10፣ 20 እና 50) ጨዋታ ሉፕ
 def run_game_loop(room_type):
     balls = [f"{'BINGO'[i//15]}{i+1}" for i in range(75)]
     global reset_task_references
@@ -308,6 +311,7 @@ def run_game_loop(room_type):
             broadcast_game_state(room_type)
         socketio.sleep(1)
 
+# 🌟 ከ bot11 የመጣው የሳምንቱ መጨረሻ (ቅዳሜ እና እሁድ ከሰዓት 11:00 ሰዓት) ልዩ የጋራ ሉፕ
 def super_game_loop():
     balls = [f"{'BINGO'[i//15]}{i+1}" for i in range(75)]
     global reset_task_references
@@ -318,6 +322,7 @@ def super_game_loop():
         if current_status == "lobby":
             while True:
                 current_time = time.gmtime()
+                # ቅዳሜ (5) እና እሁድ (6) ከሰዓት 11:00 ሰዓት (14:00 UTC)
                 if current_time.tm_wday in [5, 6] and current_time.tm_hour == 14 and current_time.tm_min == 0 and current_time.tm_sec == 0:
                     break
                 if state["status"] != "lobby":
@@ -419,7 +424,7 @@ def get_status():
         return jsonify({
             "success": False,
             "user_exists": False,
-            "msg": "መለያዎ ከሲስተሙ ተሰርዟል! እባክዎ እንደገና ይመዝገቡ።"
+            "msg": "መለያዎ ከሲስተሙ ተሰርዟል! እባክዎ እንደገና ይመዝገቡ。"
         })
         
     db_phone = user['phone'] if user else phone
@@ -849,40 +854,58 @@ def register_or_login():
     input_chat_id = str(data.get('chat_id', '')).strip()
     referred_by = sanitize_input(data.get('referred_by'))
     
-    query = {}
+    clean_phone = input_phone.replace("+", "").replace(" ", "") if input_phone else ""
+    
+    query_conditions = []
     if input_chat_id:
-        query = {"chat_id": input_chat_id}
-    elif input_phone:
-        clean_phone = input_phone.replace("+", "").replace(" ", "")
-        query = {"phone": clean_phone}
-    else:
-        return jsonify({"success": False, "msg": "እባክዎ መረጃ ያስገቡ!"}), 400
+        query_conditions.append({"chat_id": input_chat_id})
+    if clean_phone:
+        query_conditions.append({"phone": clean_phone})
+        cleaned_last9 = clean_phone[-9:] if len(clean_phone) >= 9 else clean_phone
+        if cleaned_last9:
+            query_conditions.append({"phone": {"$regex": cleaned_last9 + "$"}})
 
-    existing_user = wallets.find_one(query)
+    existing_user = None
+    if query_conditions:
+        existing_user = wallets.find_one({"$or": query_conditions})
     
     if existing_user:
+        real_phone = existing_user.get("phone", clean_phone)
+        update_fields = {}
+        if input_chat_id and not existing_user.get("chat_id"):
+            update_fields["chat_id"] = input_chat_id
+        if input_username and existing_user.get("username", "").startswith("User_"):
+            update_fields["username"] = input_username
+            update_fields["name"] = input_username
+            
+        if update_fields:
+            wallets.update_one({"phone": real_phone}, {"$set": update_fields})
+            
+        ref_user = wallets.find_one({"phone": real_phone})
         return jsonify({
             "success": True, 
-            "balance": existing_user.get("balance", 0),
-            "username": existing_user.get("username", input_username)
+            "balance": ref_user.get("balance", 0),
+            "username": ref_user.get("username", input_username)
         })
 
-    clean_phone = input_phone.replace("+", "").replace(" ", "") if input_phone else f"tg_{input_chat_id}"
-    fallback_name = input_username if input_username else f"User_{clean_phone[-4:]}"
+    if not clean_phone and not input_chat_id:
+        return jsonify({"success": False, "msg": "እባክዎ ትክክለኛ መረጃ ያስገቡ!"}), 400
+
+    new_phone = clean_phone if clean_phone else f"tg_{input_chat_id}"
+    fallback_name = input_username if input_username else f"User_{new_phone[-4:]}"
     
-    update_data = {"username": fallback_name, "name": fallback_name, "phone": clean_phone}
+    update_data = {"username": fallback_name, "name": fallback_name, "phone": new_phone}
     if input_chat_id:
         update_data["chat_id"] = input_chat_id
-        
     if referred_by:
         update_data["referred_by"] = referred_by
 
     wallets.update_one(
-        {"phone": clean_phone},
+        {"phone": new_phone},
         {"$set": update_data, "$setOnInsert": {"balance": 0}},
         upsert=True
     )
-    existing = wallets.find_one({"phone": clean_phone})
+    existing = wallets.find_one({"phone": new_phone})
     return jsonify({
         "success": True, 
         "balance": existing.get("balance", 0) if existing else 0,
@@ -1057,7 +1080,7 @@ def handle_connect():
         socketio.start_background_task(lambda: run_game_loop("10"))
         socketio.start_background_task(lambda: run_game_loop("20"))
         socketio.start_background_task(lambda: run_game_loop("50"))
-        socketio.start_background_task(super_game_loop) 
+        socketio.start_background_task(super_game_loop)
         
     broadcast_game_state("10")
     broadcast_game_state("20")
