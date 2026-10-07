@@ -37,8 +37,15 @@ try:
 except Exception as e:
     print(f"Index creation notice: {e}")
 
+# 🌟 የ 10፣ 20 እና የ 50 ብር ጨዋታዎችን የየራሳቸውን Pot እና State ለመቆጣጠር
 game_states = {
     "10": {
+        "status": "lobby", "timer": 30, "ball_timer": 2, "pot": 0, "players": {}, 
+        "sold_tickets": {}, "current_ball": "--", "drawn_balls": [], "winner": None,
+        "winning_card": None, "winning_ticket_num": None, "winning_indices": None,
+        "winning_line_name": None, "all_cards": {}
+    },
+    "20": {
         "status": "lobby", "timer": 30, "ball_timer": 2, "pot": 0, "players": {}, 
         "sold_tickets": {}, "current_ball": "--", "drawn_balls": [], "winner": None,
         "winning_card": None, "winning_ticket_num": None, "winning_indices": None,
@@ -53,9 +60,9 @@ game_states = {
 }
 
 loop_started = False
-reset_task_references = {"10": None, "50": None}
-pending_claims = {"10": [], "50": []}
-claim_lock_active = {"10": False, "50": False}
+reset_task_references = {"10": None, "20": None, "50": None}
+pending_claims = {"10": [], "20": [], "50": []}
+claim_lock_active = {"10": False, "20": False, "50": False}
 
 def sanitize_input(text):
     if not text:
@@ -113,7 +120,6 @@ def broadcast_game_state(room_type):
         "all_cards": state.get("all_cards", {}), 
         "active_players": len(state["players"])
     }
-    # 🌟 እያንዳንዱ ጨዋታ የየራሱን የተለየ ቻናል እንዲጠቀም ማድረግ (Collision ማጥፋት)
     socketio.emit(f'game_update_{room_type}', state_payload)
 
 def notify_user_balance_update(phone_num, new_balance):
@@ -167,7 +173,7 @@ def check_bingo_win_strict(card, drawn_balls):
     return None, None
 
 def refund_all_sold_tickets(room_type):
-    price = 10 if room_type == "10" else 50
+    price = 10 if room_type == "10" else (20 if room_type == "20" else 50)
     state = game_states[room_type]
     for t_num, phone_num in list(state["sold_tickets"].items()):
         updated_user = wallets.find_one_and_update({"phone": phone_num}, {"$inc": {"balance": price}}, return_document=True)
@@ -268,6 +274,10 @@ def run_game_loop(room_type):
 def index_10(): 
     return render_template('index.html')
 
+@app.route('/twenty')
+def index_20():
+    return render_template('index2.html')
+
 @app.route('/super')
 def index_50():
     return render_template('index1.html')
@@ -311,7 +321,7 @@ def buy_ticket():
     ph, t_num, uname = sanitize_input(d.get('phone')), str(d.get('ticket_num')), sanitize_input(d.get('username'))
     room = str(d.get('room', '10'))
     state = game_states.get(room, game_states["10"])
-    price = 10 if room == "10" else 50
+    price = 10 if room == "10" else (20 if room == "20" else 50)
 
     if not ph or not t_num:
         return jsonify({"success": False})
@@ -354,7 +364,7 @@ def cancel_ticket():
     ph, t_num = sanitize_input(d.get('phone')), str(d.get('ticket_num'))
     room = str(d.get('room', '10'))
     state = game_states.get(room, game_states["10"])
-    price = 10 if room == "10" else 50
+    price = 10 if room == "10" else (20 if room == "20" else 50)
 
     user = wallets.find_one({"phone": ph})
     if not user or state["status"] != "lobby":
@@ -666,8 +676,8 @@ def webhook():
             keyboard = {
                 "inline_keyboard": [
                     [{"text": "🎮 PLAY | 10 ብር", "web_app": {"url": WEB_APP_URL}}], 
+                    [{"text": "🎮 PLAY | 20 ብር", "web_app": {"url": f"{WEB_APP_URL}/twenty"}}], 
                     [{"text": "🎮 PLAY | 50 ብር", "web_app": {"url": f"{WEB_APP_URL}/super"}}], 
-                    [{"text": "SuperbeshBingo | 50 ብር", "url": "http://t.me/superbeshbingobot"}],
                     [{"text": "⚽ BeshBingo Bonus", "callback_data": "Besh_bingo_bonus"}]
                 ]
             }
@@ -688,8 +698,10 @@ def handle_connect():
         set_webhook()
         set_bot_commands()
         socketio.start_background_task(lambda: run_game_loop("10"))
+        socketio.start_background_task(lambda: run_game_loop("20"))
         socketio.start_background_task(lambda: run_game_loop("50"))
     broadcast_game_state("10")
+    broadcast_game_state("20")
     broadcast_game_state("50")
 
 if __name__ == '__main__':
