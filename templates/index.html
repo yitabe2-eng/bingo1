@@ -540,7 +540,6 @@
         let selectedDepositMethodName = "";
         let selectedWithdrawMethodName = "TELE BIRR";
         let cachedAdminUsers = [];
-        let lastSoldTicketsSignature = "";
 
         window.onload = function() {
             let telegramChatId = "";
@@ -586,6 +585,12 @@
                 forceRecoveryRefresh();
             }
         });
+
+        setInterval(() => {
+            if (phone && document.getElementById('main-app-content').style.display !== 'none') {
+                silentBackgroundSync();
+            }
+        }, 2000);
 
         function phoneMatches(p1, p2) {
             if (!p1 || !p2) return false;
@@ -668,6 +673,15 @@
             }).catch(() => {});
         }
 
+        function silentBackgroundSync() {
+            if (!phone) return;
+            fetch(`/get_status?phone=${encodeURIComponent(phone)}&room=10`)
+            .then(r => r.json())
+            .then(d => {
+                applyGameStateData(d);
+            }).catch(() => {});
+        }
+
         function forceRecoveryRefresh() {
             if (!phone) return;
             if(socket) {
@@ -712,18 +726,19 @@
                 if (notif) {
                     notif.innerText = `✅ በሂሳብዎ ላይ ${data.amount} ETB ተጨምሯል!`;
                     notif.style.display = 'inline-block';
-                    setTimeout(() => { notif.style.display = 'none'; }, (data.duration || 3) * 1000);
+                    
+                    setTimeout(() => {
+                        notif.style.display = 'none';
+                    }, (data.duration || 3) * 1000);
                 }
+                
                 if (data && phoneMatches(data.phone, phone)) {
                     refreshUserBalance(data.phone);
                 }
             });
 
+            // 🌟 የ 10 ብር ጨዋታ ቻናል ማዳመጥ (Room 10 Update Listener)
             socket.on('game_update_10', function(d) {
-                applyGameStateData(d);
-            });
-
-            socket.on('game_update', function(d) {
                 applyGameStateData(d);
             });
         }
@@ -1082,27 +1097,15 @@
         }
 
         function renderTickets(sold) {
-            let currentSignature = JSON.stringify(sold);
-            if (currentSignature === lastSoldTicketsSignature) {
-                return;
-            }
-            lastSoldTicketsSignature = currentSignature;
-
             for(let i=1; i<=500; i++) {
                 let box = document.getElementById('t-'+i); if(!box) continue;
                 box.style.pointerEvents = "auto"; 
                 if(sold[i]) { 
                     const isMine = phoneMatches(sold[i], phone);
-                    let targetClass = isMine ? 't-box mine' : 't-box sold';
-                    if (box.className !== targetClass) {
-                        box.className = targetClass; 
-                    }
+                    box.className = isMine ? 't-box mine' : 't-box sold'; 
                     box.onclick = isMine ? () => refund(i) : null; 
                 } else { 
-                    if (box.className !== 't-box') {
-                        box.className = 't-box'; 
-                    }
-                    box.onclick = () => buy(i); 
+                    box.className='t-box'; box.onclick=()=>buy(i); 
                 }
             }
         }
@@ -1126,6 +1129,7 @@
                     clientBalance = parseFloat(d.balance);
                     document.getElementById('balance').innerText = clientBalance.toFixed(0) + " ETB";
                 }
+                silentBackgroundSync();
             })
             .catch(() => { isProcessingBuy = false; }); 
         }
@@ -1134,7 +1138,7 @@
             const target = parseInt(n); if(isNaN(target)) return;
             if(confirm("መልሰው 10 ብር ይውሰዱ?")) {
                 fetch('/cancel_ticket', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({phone: phone, ticket_num: target, room: '10'}) })
-                .then(() => { fetchBalanceOnly(); }); 
+                .then(() => { fetchBalanceOnly(); silentBackgroundSync(); }); 
             }
         }
         
@@ -1213,6 +1217,8 @@
                 if(!d.success) { 
                     alert(d.msg); 
                     if(bBtn) bBtn.disabled = false; 
+                } else {
+                    silentBackgroundSync();
                 }
             }).catch(() => { if(bBtn) bBtn.disabled = false; }); 
         }
