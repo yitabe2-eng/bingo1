@@ -196,6 +196,8 @@ def reset_game(room_type):
 def run_game_loop(room_type):
     balls = [f"{'BINGO'[i//15]}{i+1}" for i in range(75)]
     global reset_task_references
+    last_broadcasted_timer = -1
+    
     while True:
         state = game_states[room_type]
         current_status = state["status"]
@@ -204,7 +206,10 @@ def run_game_loop(room_type):
                 if state["status"] != "lobby": 
                     break
                 state["timer"] = i
-                broadcast_game_state(room_type) 
+                # 🌟 ሰኮንዱ ሲቀየር ብቻ ወደ ክላይንት እንልካለን (ፍሊከሪንግን ሙሉ በሙሉ ለማጥፋት)
+                if last_broadcasted_timer != i:
+                    last_broadcasted_timer = i
+                    broadcast_game_state(room_type) 
                 socketio.sleep(1) 
             
             if state["status"] == "lobby" and len(state["players"]) >= 2:
@@ -270,12 +275,10 @@ def run_game_loop(room_type):
 # --- 🌟 ራውቶች (Routes) ---
 @app.route('/')
 def index_10(): 
-    # የ 10 ብሩ ጨዋታ (index.html)
     return render_template('index.html')
 
 @app.route('/super')
 def index_50():
-    # የ 50 ብሩ ጨዋታ (index1.html)
     return render_template('index1.html')
 
 @app.route('/get_status')
@@ -529,8 +532,6 @@ def claim_bingo():
             pending_claims[room].append(claim_info)
 
     return jsonify({"success": True})
-
-# --- እባክዎ የዲፖዚት፣ ዊዝድሮዋል እና አድሚን ትዕዛዞችዎን በቀጥታ ያስቀጥሉ ---
 
 @app.route('/request_deposit', methods=['POST'])
 def request_deposit():
