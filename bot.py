@@ -37,7 +37,6 @@ try:
 except Exception as e:
     print(f"Index creation notice: {e}")
 
-# 🌟 የ 10፣ 20፣ የዕለት 50 እና የቅዳሜ/እሁድ ልዩ ሱፐር (ወይም የሳምንቱ መጨረሻ 50) ጨዋታ ስቴቶች
 game_states = {
     "10": {
         "status": "lobby", "timer": 30, "ball_timer": 2, "pot": 0, "players": {}, 
@@ -57,7 +56,7 @@ game_states = {
         "winning_card": None, "winning_ticket_num": None, "winning_indices": None,
         "winning_line_name": None, "all_cards": {}
     },
-    "super": { # 🌟 ከ bot11 የመጣው የሳምንቱ መጨረሻ (ቅዳሜ እና እሁድ) 50 ብር ጨዋታ ስቴት
+    "super": { 
         "status": "lobby", "timer": 30, "ball_timer": 3, "pot": 0, "players": {}, 
         "sold_tickets": {}, "current_ball": "--", "drawn_balls": [], "winner": None,
         "winning_card": None, "winning_ticket_num": None, "winning_indices": None,
@@ -131,7 +130,6 @@ def broadcast_game_state(room_type):
 def notify_user_balance_update(phone_num, new_balance):
     socketio.emit('balance_update', {"phone": phone_num, "balance": new_balance})
 
-# 🌟 ከ bot11 የመጣው የሙሉ ዝግ (Full House) ማረጋገጫ ህግ
 def check_winning_line(card, drawn_numbers, player_marked_numbers=None):
     drawn_set = set()
     for b in drawn_numbers:
@@ -232,7 +230,6 @@ def reset_game(room_type):
     })
     broadcast_game_state(room_type) 
 
-# 🌟 የዕለት ተዕለት ሩሞች (10፣ 20 እና 50) ጨዋታ ሉፕ
 def run_game_loop(room_type):
     balls = [f"{'BINGO'[i//15]}{i+1}" for i in range(75)]
     global reset_task_references
@@ -311,7 +308,6 @@ def run_game_loop(room_type):
             broadcast_game_state(room_type)
         socketio.sleep(1)
 
-# 🌟 ከ bot11 የመጣው የሳምንቱ መጨረሻ (ቅዳሜ እና እሁድ ከሰዓት 11:00 ሰዓት) ልዩ የጋራ ሉፕ
 def super_game_loop():
     balls = [f"{'BINGO'[i//15]}{i+1}" for i in range(75)]
     global reset_task_references
@@ -322,7 +318,6 @@ def super_game_loop():
         if current_status == "lobby":
             while True:
                 current_time = time.gmtime()
-                # ቅዳሜ (5) እና እሁድ (6) ከሰዓት 11:00 ሰዓት (14:00 UTC)
                 if current_time.tm_wday in [5, 6] and current_time.tm_hour == 14 and current_time.tm_min == 0 and current_time.tm_sec == 0:
                     break
                 if state["status"] != "lobby":
@@ -520,7 +515,6 @@ def cancel_ticket():
     ph, t_num = sanitize_input(d.get('phone')), str(d.get('ticket_num'))
     room = str(d.get('room', '10'))
     
-    # ከ bot11 የመጣው የሳምንቱ መጨረሻ (super) ህግ ካርቴላ ከተገዛ በኋላ መሰረዝ አይቻልም የሚለው ነው
     if room == "super":
         return jsonify({"success": False, "msg": "ካርተላ ከተገዛ በኋላ መመለስ (ሰረዝ ማድረግ) አይቻልም!"})
 
@@ -577,7 +571,6 @@ def claim_bingo():
     winning_line_type = None
     winning_indices_list = None
     
-    # 🌟 ለሳምንቱ መጨረሻ (super) የሙሉ ዝግ (Full House) ማረጋገጫ ከ bot11
     if room == "super":
         marked_0 = d.get('marked_0', [])
         marked_1 = d.get('marked_1', [])
@@ -769,7 +762,7 @@ def request_withdrawal():
         amt = float(d.get('amount', 0))
     except ValueError:
         return jsonify({"success": False, "msg": "ትክክለኛ የገንዘብ መጠን ያስገቡ!"})
-    if amt < 20: # ዝቅተኛው 20 ከ bot11
+    if amt < 20: 
         return jsonify({"success": False, "msg": "ቢያንስ 20 ETB ማውጣት ይችላሉ!"})
     
     user = wallets.find_one({"phone": ph})
@@ -856,18 +849,32 @@ def register_or_login():
     input_chat_id = str(data.get('chat_id', '')).strip()
     referred_by = sanitize_input(data.get('referred_by'))
     
-    if not input_phone:
-        return jsonify({"success": False, "msg": "እባክዎ ስልክ ቁጥር ያስገቡ!"}), 400
-        
-    clean_phone = input_phone.replace("+", "").replace(" ", "")
+    query = {}
+    if input_chat_id:
+        query = {"chat_id": input_chat_id}
+    elif input_phone:
+        clean_phone = input_phone.replace("+", "").replace(" ", "")
+        query = {"phone": clean_phone}
+    else:
+        return jsonify({"success": False, "msg": "እባክዎ መረጃ ያስገቡ!"}), 400
+
+    existing_user = wallets.find_one(query)
+    
+    if existing_user:
+        return jsonify({
+            "success": True, 
+            "balance": existing_user.get("balance", 0),
+            "username": existing_user.get("username", input_username)
+        })
+
+    clean_phone = input_phone.replace("+", "").replace(" ", "") if input_phone else f"tg_{input_chat_id}"
     fallback_name = input_username if input_username else f"User_{clean_phone[-4:]}"
     
-    existing_user = wallets.find_one({"phone": clean_phone})
-    update_data = {"username": fallback_name, "name": fallback_name}
+    update_data = {"username": fallback_name, "name": fallback_name, "phone": clean_phone}
     if input_chat_id:
         update_data["chat_id"] = input_chat_id
         
-    if referred_by and (not existing_user or not existing_user.get("referred_by")):
+    if referred_by:
         update_data["referred_by"] = referred_by
 
     wallets.update_one(
@@ -890,7 +897,6 @@ def webhook():
         chat_id = str(msg.get("chat", {}).get("id", ""))
         text = msg.get("text", "")
         
-        # 🌟 ከ bot11 የመጡ የአድሚን ትዕዛዞች (/all, /show, /gen_link, ወዘተ)
         if chat_id == ADMIN_ID:
             parts = text.split()
             cmd = parts[0] if parts else ""
@@ -1051,7 +1057,7 @@ def handle_connect():
         socketio.start_background_task(lambda: run_game_loop("10"))
         socketio.start_background_task(lambda: run_game_loop("20"))
         socketio.start_background_task(lambda: run_game_loop("50"))
-        socketio.start_background_task(super_game_loop) # 🌟 ሳምንታዊው የካቲት/ቅዳሜ እሁድ ሉፕ
+        socketio.start_background_task(super_game_loop) 
         
     broadcast_game_state("10")
     broadcast_game_state("20")
