@@ -37,7 +37,6 @@ try:
 except Exception as e:
     print(f"Index creation notice: {e}")
 
-# 🌟 የ 10 ብር እና የ 50 ብር ጨዋታዎችን የየራሳቸውን Pot እና State ለመቆጣጠር
 game_states = {
     "10": {
         "status": "lobby", "timer": 30, "ball_timer": 2, "pot": 0, "players": {}, 
@@ -114,17 +113,11 @@ def broadcast_game_state(room_type):
         "all_cards": state.get("all_cards", {}), 
         "active_players": len(state["players"])
     }
+    # 🌟 እያንዳንዱ ጨዋታ የየራሱን የተለየ ቻናል እንዲጠቀም ማድረግ (Collision ማጥፋት)
     socketio.emit(f'game_update_{room_type}', state_payload)
-    socketio.emit('game_update', state_payload)
 
 def notify_user_balance_update(phone_num, new_balance):
     socketio.emit('balance_update', {"phone": phone_num, "balance": new_balance})
-
-def is_request_from_admin(phone_val):
-    if not phone_val:
-        return False
-    clean = re.sub(r'[^0-9]', '', str(phone_val))
-    return clean.endswith("0945880474")
 
 def check_bingo_win_strict(card, drawn_balls):
     drawn_set = set()
@@ -206,7 +199,6 @@ def run_game_loop(room_type):
                 if state["status"] != "lobby": 
                     break
                 state["timer"] = i
-                # 🌟 ሰኮንዱ ሲቀየር ብቻ ወደ ክላይንት እንልካለን (ፍሊከሪንግን ሙሉ በሙሉ ለማጥፋት)
                 if last_broadcasted_timer != i:
                     last_broadcasted_timer = i
                     broadcast_game_state(room_type) 
@@ -272,7 +264,6 @@ def run_game_loop(room_type):
             broadcast_game_state(room_type)
         socketio.sleep(1)
 
-# --- 🌟 ራውቶች (Routes) ---
 @app.route('/')
 def index_10(): 
     return render_template('index.html')
@@ -486,11 +477,10 @@ def claim_bingo():
                         if win_res:
                             gevent.spawn(notify_user_balance_update, w["phone"], win_res.get("balance", 0))
                         
-                        success_msg = f"🏆 *WINNER!* \n👤 Name: {w['username']} | 📞 Phone: `{w['phone']}` | 🎫 Ticket: {w['ticket_num']} \n🎯 Winning Ball: {w['winning_ball']} \n💰 Prize Won: {total_prize:.2f} ETB"
+                        success_msg = f"🏆 *WINNER (Room {room} ETB)!* \n👤 Name: {w['username']} | 📞 Phone: `{w['phone']}` | 🎫 Ticket: {w['ticket_num']} \n🎯 Winning Ball: {w['winning_ball']} \n💰 Prize Won: {total_prize:.2f} ETB"
                         send_telegram(success_msg)
                     else:
                         share_prize = total_prize / num_winners
-                        winner_texts = []
                         for w in pending_claims[room]:
                             w_res = wallets.find_one_and_update(
                                 {"phone": w["phone"]}, 
@@ -499,10 +489,7 @@ def claim_bingo():
                             )
                             if w_res:
                                 gevent.spawn(notify_user_balance_update, w["phone"], w_res.get("balance", 0))
-                            winner_texts.append(f"👤 {w['username']} (`{w['phone']}`) - 🎫 {w['ticket_num']}")
-                        
-                        success_msg = f"🏆 *WINNERS (Shared Prize on Ball {pending_claims[room][0]['winning_ball']})!* \n💰 Total Pot Share: {share_prize:.2f} ETB each ({num_winners} winners)\n" + "\n".join(winner_texts)
-                        send_telegram(success_msg)
+                        send_telegram(f"🏆 *WINNERS (Room {room}) Shared!* 💰 {share_prize:.2f} ETB each")
                         
                     broadcast_game_state(room)
 
@@ -522,14 +509,8 @@ def claim_bingo():
 
             socketio.start_background_task(process_claims_by_ball)
         else:
-            already_exists = any(c["phone"] == db_phone for c in pending_claims[room])
-            if not already_exists:
+            if not any(c["phone"] == db_phone for c in pending_claims[room]):
                 pending_claims[room].append(claim_info)
-
-    elif state["status"] == "result" and claim_lock_active[room]:
-        already_exists = any(c["phone"] == db_phone for c in pending_claims[room])
-        if not already_exists:
-            pending_claims[room].append(claim_info)
 
     return jsonify({"success": True})
 
@@ -544,11 +525,6 @@ def request_deposit():
         amt = 0
     t_id = sanitize_input(d.get('transaction_id', 'N/A'))
     
-    if t_id.isdigit():
-        return jsonify({"success": False, "msg": "የትራንዛክሽን አይድው ስህተት ነው! ቁጥር ብቻ መሆን አይችልም።"})
-    if len(t_id) < 10:
-        return jsonify({"success": False, "msg": "የትራንዛክሽን አይድው ስህተት ነው! ከ 10 ቁምፊዎች ማነስ የለበትም።"})
-
     user = wallets.find_one({"phone": ph})
     db_phone = user["phone"] if user else ph
     
