@@ -38,6 +38,7 @@ try:
 except Exception as e:
     print(f"Index creation notice: {e}")
 
+# ለ 10፣ 20 እና 50 ብር ሩሞች የተዘጋጀ የጨዋታ ሁኔታዎች (Game States)
 game_states = {
     "10": {
         "status": "lobby", "timer": 30, "ball_timer": 2, "pot": 0, "players": {}, 
@@ -197,36 +198,7 @@ def get_financial_stats():
         f" 💰 *የሳምንቱ የተጣራ ትርፍ:* `{week_profit:,.2f} ETB`"
     )
 
-def check_winning_line(card, drawn_numbers, player_marked_numbers=None):
-    drawn_set = set()
-    for b in drawn_numbers:
-        if len(b) > 1:
-            try:
-                drawn_set.add(int(b[1:]))
-            except ValueError:
-                pass
-    drawn_set.add(0) 
-
-    marked_set = set(player_marked_numbers) if player_marked_numbers is not None else None
-
-    def is_hit(idx):
-        val = card[idx]
-        if idx == 12 or val == 0 or val == "FREE" or val == "★" or val == "Besh":
-            return True
-        try:
-            val_int = int(val)
-            if marked_set is not None:
-                return (val_int in drawn_set) and (val_int in marked_set)
-            return val_int in drawn_set
-        except:
-            return False
-
-    all_indices = list(range(25))
-    if all(is_hit(idx) for idx in all_indices):
-        return all_indices, "ሙሉ ዝግ (Full House)"
-    
-    return None, None
-
+# ከ bot 59 የተወሰደ ጥብቅ የማሸነፊያ መስመር ማረጋገጫ (Strict Winning Line Logic)
 def check_bingo_win_strict(card, drawn_balls):
     drawn_set = set()
     for b in drawn_balls:
@@ -236,7 +208,7 @@ def check_bingo_win_strict(card, drawn_balls):
 
     marked = []
     for idx, val in enumerate(card):
-        if idx == 12 or str(val).upper() in ["FREE", "★", "BESH"] or str(val) == "0":
+        if idx == 12 or str(val).upper() in ["FREE", "★"] or str(val) == "0":
             marked.append(True)
         else:
             try:
@@ -245,34 +217,43 @@ def check_bingo_win_strict(card, drawn_balls):
             except:
                 marked.append(False)
 
-    all_win_indices = set()
-    line_types = []
-    for i in range(5):
-        row_indices = [i*5 + j for j in range(5)]
-        if all(marked[idx] for idx in row_indices):
-            all_win_indices.update(row_indices)
-            line_types.append(f"ረድፍ {i+1}")
-    for j in range(5):
-        col_indices = [j + i*5 for i in range(5)]
-        if all(marked[idx] for idx in col_indices):
-            all_win_indices.update(col_indices)
-            line_types.append(f"አምድ {j+1}")
-    diag1_indices = [0, 6, 12, 18, 24]
-    if all(marked[idx] for idx in diag1_indices):
-        all_win_indices.update(diag1_indices)
-        line_types.append("ዲያጎናል ↘")
-    diag2_indices = [4, 8, 12, 16, 20]
-    if all(marked[idx] for idx in diag2_indices):
-        all_win_indices.update(diag2_indices)
-        line_types.append("ዲያጎናል ↙")
-    corner_indices = [0, 4, 20, 24]
-    if all(marked[idx] for idx in corner_indices):
-        all_win_indices.update(corner_indices)
-        line_types.append("ኮርነር (4 ማዕዘኖች)")
+    winning_indices = []
+    line_name = None
 
-    if all_win_indices:
-        return list(all_win_indices), " + ".join(line_types)
-    return None, None
+    # 1. አግድም መስመሮች (Horizontal Lines)
+    for r in range(5):
+        row_indices = [r * 5 + c for c in range(5)]
+        if all(marked[i] for i in row_indices):
+            winning_indices = row_indices
+            line_name = f"አግድም መስመር {r+1}"
+            return True, winning_indices, line_name
+
+    # 2. ቋሚ መስመሮች (Vertical Lines)
+    for c in range(5):
+        col_indices = [r * 5 + c for r in range(5)]
+        if all(marked[i] for i in col_indices):
+            winning_indices = col_indices
+            line_name = f"ቋሚ መስመር {c+1}"
+            return True, winning_indices, line_name
+
+    # 3. ዋና ሰያፍ መስመር (Main Diagonal)
+    diag1 = [0, 6, 12, 18, 24]
+    if all(marked[i] for i in diag1):
+        winning_indices = diag1
+        line_name = "ዋና ሰያፍ መስመር"
+        return True, winning_indices, line_name
+
+    # 4. ሁለተኛ ሰያፍ መስመር (Secondary Diagonal)
+    diag2 = [4, 8, 12, 16, 20]
+    if all(marked[i] for i in diag2):
+        winning_indices = diag2
+        line_name = "ሁለተኛ ሰያፍ መስመር"
+        return True, winning_indices, line_name
+
+    return False, [], None
+
+def check_winning_line(card, drawn_numbers, player_marked_numbers=None):
+    return check_bingo_win_strict(card, drawn_numbers)
 
 def refund_all_sold_tickets(room_type):
     price = 10 if room_type == "10" else (20 if room_type == "20" else 50)
@@ -1052,6 +1033,7 @@ def webhook():
             return "OK", 200
 
         if text.lower() in ["/instruction", "/instraction"]:
+            url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
             rules_msg = (
                 "ℹ️ **የጨዋታ ህጎች እና የማሸነፊያ መንገዶች (Game Rules)**\n"
                 "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
@@ -1106,7 +1088,11 @@ def webhook():
                 "- አሸናፊዎች: ከላይ ከተዘረዘሩት የማሸነፊያ መንገዶች አንዱን ቀድሞ የሚያረጋግጠው ተጫዋች አሸናፊ ይሆናል! (ለሱፐር በሽ ሙሉ ዝግ ብቻ ግዴታ ነው)\n"
                 "- የሽልማት ክፍፍል: ከአንድ በላይ አሸናፊዎች በአንድ ዙር ካሉ የደራሽ (የሽልማት) ገንዘቡ በእኩል መጠን ይከፋፈላሉ።"
             )
-            send_telegram(rules_msg)
+            requests.post(url, json={
+                "chat_id": chat_id,
+                "text": rules_msg,
+                "parse_mode": "Markdown"
+            }, timeout=2)
             return "OK", 200
 
         if text.lower() == "/history":
@@ -1368,6 +1354,22 @@ def webhook():
                 admin_state.update_one({"chat_id": ADMIN_ID}, {"$set": {"action": "awaiting_history_dates"}}, upsert=True)
                 requests.post(answer_url, json={"callback_query_id": cq_id, "text": "ቀን እና ዓይነት ያስገቡ"})
                 send_telegram("📅 እባክዎ ፍለጋ የሚፈልጉትን **የመጀመሪያ ቀን**፣ **የመጨረሻ ቀን** እና **የታሪክ ዓይነት** በዚህ ፎርማት ይጻፉ:\n\n`YYYY-MM-DD YYYY-MM-DD deposit`\nወይም `withdrawal`")
+
+            elif data_str == "guide_add":
+                requests.post(answer_url, json={"callback_query_id": cq_id, "text": "መመሪያ"})
+                send_telegram("➕ *ባላንስ ለመጨመር የትእዛዝ ፎርማት:*\n\n`/add <ስልክ> <መጠን>`\n*ምሳሌ:* `/add 0912345678 100`")
+
+            elif data_str == "guide_sub":
+                requests.post(answer_url, json={"callback_query_id": cq_id, "text": "መመሪያ"})
+                send_telegram("➖ *ባላንስ ለመቀነስ የትእዛዝ ፎርማት:*\n\n`/sub <ስልክ> <መጠን>`\n*ምሳሌ:* `/sub 0912345678 50`")
+
+            elif data_str == "guide_broadcast":
+                requests.post(answer_url, json={"callback_query_id": cq_id, "text": "መመሪያ"})
+                send_telegram("📢 *ለሁሉም መልእክት ለመላክ:*\n\n1. ፎቶ ያለው: `/broadcast`\n2. ጽሁፍ ብቻ: `/broadcast1 <መልእክትዎ>`")
+
+            elif data_str == "guide_block_remove":
+                requests.post(answer_url, json={"callback_query_id": cq_id, "text": "መመሪያ"})
+                send_telegram("🚫 *ብሎክ ለማድረግና ለማጥፋት:*\n\n1. ብሎክ ማድረግ: `/block <ስልክ>`\n2. ከብሎክ ማንሳት: `/unblock <ስልክ>`\n3. ተጠቃሚ መደለዝ: `/remove <ስልክ>`")
 
             elif data_str == "admin_pending_req":
                 pendings = list(transactions.find({"status": "pending"}).limit(10))
