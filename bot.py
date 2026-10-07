@@ -675,9 +675,10 @@ def webhook():
             url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
             keyboard = {
                 "inline_keyboard": [
-                    [{"text": "🎮 PLAY | 10 ብር", "web_app": {"url": WEB_APP_URL}}], 
-                    [{"text": "🎮 PLAY | 20 ብር", "web_app": {"url": f"{WEB_APP_URL}/twenty"}}], 
-                    [{"text": "🎮 PLAY | 50 ብር", "web_app": {"url": f"{WEB_APP_URL}/super"}}], 
+                    [{"text": "🎮 PLAY BeshBingo| በ10 ብር", "web_app": {"url": WEB_APP_URL}}], 
+                    [{"text": "🎮 PLAY BeshBingo| በ20 ብር", "web_app": {"url": f"{WEB_APP_URL}/twenty"}}], 
+                    [{"text": "🎮 PLAY BeshBingo| በ50 ብር", "web_app": {"url": f"{WEB_APP_URL}/super"}}], 
+                    [{"text": "beshBingo ሳምንታዊ | 50 ብር", "url": "http://t.me/superbeshbingobot"}],
                     [{"text": "⚽ BeshBingo Bonus", "callback_data": "Besh_bingo_bonus"}]
                 ]
             }
