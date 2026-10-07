@@ -690,6 +690,7 @@ def webhook():
                 "inline_keyboard": [
                     [{"text": "🎮 PLAY | 10 ብር", "web_app": {"url": WEB_APP_URL}}], 
                     [{"text": "🎮 PLAY | 50 ብር", "web_app": {"url": f"{WEB_APP_URL}/super"}}], 
+                    [{"text": "SuperbeshBingo | 50 ብር", "url": "http://t.me/superbeshbingobot"}],
                     [{"text": "⚽ BeshBingo Bonus", "callback_data": "Besh_bingo_bonus"}]
                 ]
             }
