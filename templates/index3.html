@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>SUPERBESH BINGO - SECURE PREMIUM</title>
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     
     <style>
         :root { 
@@ -28,7 +29,7 @@
         }
         
         #auth-ui {
-            display: flex;
+            display: none;
             flex-direction: column;
             align-items: center;
             justify-content: center;
@@ -307,7 +308,7 @@
             
             <div class="timer-container">
                 <div id="timer">30</div>
-                <div class="buy-notice">🎟️ ካርቴላ ይግዙ (50 ETB)</div>
+                <div class="buy-notice">🎟️ ካርቴላ ይግዙ (50 ETB)[cite: 17]</div>
             </div>
 
             <div class="grid-500" id="ticket-area"></div>
@@ -342,8 +343,8 @@
         <div class="modal-content">
             <h2 style="color:var(--gold); text-align:center; margin-top:0;">📖 መመሪያ</h2>
             <p style="color:#fff; line-height: 1.6; font-size:0.9rem;">
-                1. ጨዋታው የሚካሄደው በሳምንት ሁለት ቀን (ቅዳሜ እና እሁድ ከሰዓት በኋላ 11:00 ሰዓት (14:00 UTC)) ላይ ነው።<br>
-                2. የካርቴላ ግዢ፦ ለቅዳሜው ጨዋታ ካርቴላ ከእሁድ ጨዋታ ማብቂያ አንስቶ እስከ ቅዳሜ ከሰዓት 10:58 ድረስ መግዛት ይቻላል፤ ለእሁዱ ጨዋታ ደግሞ ከቅዳሜ ጨዋታ ማብቂያ ጀምሮ እስከ እሁድ ከሰዓት 10:58 ድረስ ይቻላል።<br>
+                1. ጨዋታው የሚካሄደው በሳምንት ሁለት ቀን (ቅዳሜ እና እሁድ ከሰዓት በኋላ 11:00 ሰዓት (14:00 UTC)) ላይ ነው።[cite: 17]<br>
+                2. የካርቴላ ግዢ፦ ለቅዳሜው ጨዋታ ካርቴላ ከእሁድ ጨዋታ ማብቂያ አንስቶ እስከ ቅዳሜ ከሰዓት 10:58 ድረስ መግዛት ይቻላል፤ ለእሁዱ ጨዋታ ደግሞ ከቅዳሜ ጨዋታ ማብቂያ ጀምሮ እስከ እሁድ ከሰዓት 10:58 ድረስ ይቻላል።[cite: 17]<br>
                 3. ካርቴላ ከተገዛ በኋላ መሰረዝ (Cancel ማድረግ) አይቻልም።[cite: 17]<br>
                 4. ማሸነፊያው ሙሉ ዝግ (Full House) ብቻ ነው።[cite: 17]<br>
                 5. መስመር ሲሞላ ፈጥነው BINGO የሚለውን ይጫኑ![cite: 17]
@@ -407,28 +408,50 @@
         }
 
         window.onload = function() {
-            if (phone && username) {
-                fetch(`/get_status?phone=${encodeURIComponent(phone)}&room=super`)
-                .then(r => r.json())
+            let telegramChatId = "";
+            if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe) {
+                telegramChatId = window.Telegram.WebApp.initDataUnsafe.user?.id || "";
+            }
+
+            if ((phone && phone.trim() !== "") || telegramChatId) {
+                let loginPhone = phone || ("tg_" + telegramChatId);
+                let loginUsername = username || (window.Telegram?.WebApp?.initDataUnsafe?.user?.first_name || "ተጫዋች");
+
+                let refCode = getQueryParam('ref');
+
+                fetch(`/register_or_login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        phone: loginPhone, 
+                        username: loginUsername,
+                        chat_id: telegramChatId,
+                        referred_by: refCode 
+                    })
+                })
+                .then(res => res.json())
                 .then(d => {
-                    if (d.user_exists === false) {
-                        localStorage.removeItem('phone');
-                        localStorage.removeItem('username');
-                        phone = null;
-                        username = null;
-                        document.getElementById('auth-ui').style.display = 'flex';
-                        document.getElementById('main-app-content').style.display = 'none';
-                    } else {
+                    if (d.success) {
+                        localStorage.setItem('phone', loginPhone);
+                        localStorage.setItem('username', loginUsername);
+                        phone = loginPhone;
+                        username = loginUsername;
                         showGameUI();
+                    } else {
+                        showAuthUI();
                     }
                 })
                 .catch(() => {
                     showGameUI();
                 });
             } else {
-                document.getElementById('auth-ui').style.display = 'flex';
-                document.getElementById('main-app-content').style.display = 'none';
+                showAuthUI();
             }
+        }
+
+        function showAuthUI() {
+            document.getElementById('auth-ui').style.display = 'flex';
+            document.getElementById('main-app-content').style.display = 'none';
         }
 
         function phoneMatches(p1, p2) {
