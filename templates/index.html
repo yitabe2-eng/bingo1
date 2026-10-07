@@ -540,6 +540,7 @@
         let selectedDepositMethodName = "";
         let selectedWithdrawMethodName = "TELE BIRR";
         let cachedAdminUsers = [];
+        let lastSoldTicketsSignature = "";
 
         window.onload = function() {
             let telegramChatId = "";
@@ -1081,15 +1082,27 @@
         }
 
         function renderTickets(sold) {
+            let currentSignature = JSON.stringify(sold);
+            if (currentSignature === lastSoldTicketsSignature) {
+                return;
+            }
+            lastSoldTicketsSignature = currentSignature;
+
             for(let i=1; i<=500; i++) {
                 let box = document.getElementById('t-'+i); if(!box) continue;
                 box.style.pointerEvents = "auto"; 
                 if(sold[i]) { 
                     const isMine = phoneMatches(sold[i], phone);
-                    box.className = isMine ? 't-box mine' : 't-box sold'; 
+                    let targetClass = isMine ? 't-box mine' : 't-box sold';
+                    if (box.className !== targetClass) {
+                        box.className = targetClass; 
+                    }
                     box.onclick = isMine ? () => refund(i) : null; 
                 } else { 
-                    box.className='t-box'; box.onclick=()=>buy(i); 
+                    if (box.className !== 't-box') {
+                        box.className = 't-box'; 
+                    }
+                    box.onclick = () => buy(i); 
                 }
             }
         }
