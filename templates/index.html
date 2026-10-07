@@ -1113,7 +1113,6 @@
                     clientBalance = parseFloat(d.balance);
                     document.getElementById('balance').innerText = clientBalance.toFixed(0) + " ETB";
                 }
-                silentBackgroundSync();
             })
             .catch(() => { isProcessingBuy = false; }); 
         }
@@ -1122,7 +1121,7 @@
             const target = parseInt(n); if(isNaN(target)) return;
             if(confirm("መልሰው 10 ብር ይውሰዱ?")) {
                 fetch('/cancel_ticket', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({phone: phone, ticket_num: target, room: '10'}) })
-                .then(() => { fetchBalanceOnly(); silentBackgroundSync(); }); 
+                .then(() => { fetchBalanceOnly(); }); 
             }
         }
         
@@ -1201,8 +1200,6 @@
                 if(!d.success) { 
                     alert(d.msg); 
                     if(bBtn) bBtn.disabled = false; 
-                } else {
-                    silentBackgroundSync();
                 }
             }).catch(() => { if(bBtn) bBtn.disabled = false; }); 
         }
