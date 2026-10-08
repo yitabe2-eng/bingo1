@@ -1,1 +1,41 @@
+<!DOCTYPE html>
+<html lang="am">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BeshBingo - Master Bonus</title>
+    <style>
+        body { background-color: #121212; color: #fff; font-family: sans-serif; text-align: center; padding: 40px; }
+        .card { background: #1e1e1e; padding: 25px; border-radius: 10px; border: 1px solid #f39c12; display: inline-block; max-width: 350px; }
+        button { background: #f39c12; color: #000; border: none; padding: 12px 25px; font-size: 16px; border-radius: 5px; cursor: pointer; font-weight: bold; margin-top: 15px; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2>🎁 የማስተር ኪይ ቦነስ ሰሌዳ</h2>
+        <p>ቀሪ ባላንስ: <span id="balance">0</span> ETB</p>
+        <button onclick="claimBonus()">ቦነሱን ውሰድ (Claim)</button>
+        <p id="msg" style="margin-top: 15px; color: #2ecc71; font-weight: bold;"></p>
+    </div>
 
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        let userPhone = urlParams.get('phone') || localStorage.getItem('user_phone') || "";
+
+        function claimBonus() {
+            fetch('/claim_master_bonus', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ phone: userPhone })
+            })
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('msg').innerText = data.msg;
+                if (data.success) {
+                    document.getElementById('balance').innerText = data.balance;
+                }
+            });
+        }
+    </script>
+</body>
+</html>
