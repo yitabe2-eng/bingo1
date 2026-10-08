@@ -197,7 +197,6 @@ def get_financial_stats():
         f" 💰 *የሳምንቱ የተጣራ ትርፍ:* `{week_profit:,.2f} ETB`"
     )
 
-# ኮርነርን ጨምሮ የተሟላ የማሸነፊያ መስመር ማረጋገጫ (Strict Winning Line Logic with Corners)
 def check_bingo_win_strict(card, drawn_balls):
     drawn_set = set()
     for b in drawn_balls:
@@ -219,7 +218,6 @@ def check_bingo_win_strict(card, drawn_balls):
     winning_indices = []
     line_name = None
 
-    # 1. አግድም መስመሮች (Horizontal Lines)
     for r in range(5):
         row_indices = [r * 5 + c for c in range(5)]
         if all(marked[i] for i in row_indices):
@@ -227,7 +225,6 @@ def check_bingo_win_strict(card, drawn_balls):
             line_name = f"አግድም መስመር {r+1}"
             return True, winning_indices, line_name
 
-    # 2. ቋሚ መስመሮች (Vertical Lines)
     for c in range(5):
         col_indices = [r * 5 + c for r in range(5)]
         if all(marked[i] for i in col_indices):
@@ -235,21 +232,18 @@ def check_bingo_win_strict(card, drawn_balls):
             line_name = f"ቋሚ መስመር {c+1}"
             return True, winning_indices, line_name
 
-    # 3. ዋና ሰያፍ መስመር (Main Diagonal)
     diag1 = [0, 6, 12, 18, 24]
     if all(marked[i] for i in diag1):
         winning_indices = diag1
         line_name = "ዋና ሰያፍ መስመር"
         return True, winning_indices, line_name
 
-    # 4. ሁለተኛ ሰያፍ መስመር (Secondary Diagonal)
     diag2 = [4, 8, 12, 16, 20]
     if all(marked[i] for i in diag2):
         winning_indices = diag2
         line_name = "ሁለተኛ ሰያፍ መስመር"
         return True, winning_indices, line_name
 
-    # 5. አራቱ ኮርነሮች (4 Corners)
     corners = [0, 4, 20, 24]
     if all(marked[i] for i in corners):
         winning_indices = corners
@@ -962,6 +956,51 @@ def register_or_login():
         "username": existing.get("username", fallback_name)
     })
 
+# 🌟 አዲስ የተጨመረው የ /admin_broadcast ሩት (Route)
+@app.route('/admin_broadcast', methods=['POST'])
+def admin_broadcast():
+    d = request.json or {}
+    
+    # አድሚን መሆኑን የሚያረጋግጥ ሲስተም ካለዎት እዚህ ማረጋገጥ ይቻላል
+    admin_ph = d.get('admin_phone')
+    if admin_ph and ADMIN_ID and str(admin_ph) != str(ADMIN_ID):
+        # የ ADMIN_ID ማረጋገጫ ከተፈለገ ወይም is_request_from_admin ካለ
+        pass
+
+    all_users = list(wallets.find({"chat_id": {"$exists": True, "$ne": ""}}))
+    success_count = 0
+    
+    PHOTO_FILE_ID = "AgACAgQAAxkBAAIU2GrEzqEOyEn3Ao8ELToCaZTM_c1bAAJZEGsbYhEoUk2L9NZP0K1UAQADAgADeQADPQQ"
+    url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendPhoto"
+    
+    broadcast_msg = (
+        "🎉በሽ ቢንጎ :24 ሰአት live\n"
+        "🎉 ሱፐር በሽ ቢንጎ  ፡ 💰 10ሺ ደራሽ 🎉\n\n"
+        "🗓 ዘወትር ቅዳሜ እና እሁድ 🕙 12 ሰዐት\n"
+        "🎫 ካርቴላ ሳያልቅ ⏳ ቀድመው ይያዙ 🏃‍♂️\n\n"
+        "❓ ማንኛውም ጥያቄ ካለ\n"
+        "📞      0925960226\n"
+        "👉      [BeshBingoSupport](http://t.me/BeshBingoSupportbot)"
+    )
+
+    for u in all_users:
+        u_chat_id = u.get("chat_id")
+        if u_chat_id:
+            try:
+                payload = {
+                    "chat_id": u_chat_id,
+                    "photo": PHOTO_FILE_ID,
+                    "caption": broadcast_msg,
+                    "parse_mode": "Markdown"
+                }
+                res = requests.post(url, json=payload, timeout=2)
+                if res.status_code == 200:
+                    success_count += 1
+            except Exception as e:
+                print(f"Broadcast error for {u_chat_id}: {e}")
+
+    return jsonify({"success": True, "sent_count": success_count})
+
 @app.route('/webhook', methods=['POST'])
 def webhook():
     data = request.json or {}
@@ -1059,11 +1098,9 @@ def webhook():
                     send_telegram("❌ ትክክለኛ መረጃ አላስገቡም። እባክዎ እንደገና ይሞክሩ:\n`2026-10-01 2026-10-07 deposit`")
                 return "OK", 200
 
-        # ተጠቃሚው ቀድሞ የተመዘገበ ከሆነ በ chat_id አማካኝነት ከዳታቤዝ እንዲገኝ ይደረጋል
         if chat_id != str(ADMIN_ID):
             u_check = wallets.find_one({"chat_id": chat_id})
             if not u_check:
-                # በስልክ ቁጥር ወይም በሌላ መስፈርት ፈልጎ የ chat_id ትስስር ማስተካከል ከፈለጉ እዚህ ይከናወናል
                 pass
             wallets.update_one({"chat_id": chat_id}, {"$set": {"chat_id": chat_id}}, upsert=False)
         
@@ -1178,7 +1215,6 @@ def webhook():
                 requests.post(url, json={"chat_id": chat_id, "text": report, "parse_mode": "Markdown"})
             return "OK", 200
 
-        # /broadcast እና /broadcast1 አሰራር (ፎቶ ከነካፕሽን ወይም ጽሁፍ)
         if text.lower().startswith("/broadcast") or text.lower().startswith("/broadcast1"):
             if chat_id == str(ADMIN_ID):
                 parts = text.split(" ", 1)
