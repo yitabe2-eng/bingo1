@@ -956,17 +956,16 @@ def register_or_login():
         "username": existing.get("username", fallback_name)
     })
 
-# 🌟 አዲስ የተጨመረው የ /admin_broadcast ሩት (Route)
+# 🌟 አድሚን ዳሽቦርድ ሲጫን PHOTO_FILE_ID እና ካፕሽኑን ለሁሉም ተጠቃሚዎች የሚልክበት ትክክለኛ ሩት
 @app.route('/admin_broadcast', methods=['POST'])
 def admin_broadcast():
     d = request.json or {}
     
-    # አድሚን መሆኑን የሚያረጋግጥ ሲስተም ካለዎት እዚህ ማረጋገጥ ይቻላል
     admin_ph = d.get('admin_phone')
     if admin_ph and ADMIN_ID and str(admin_ph) != str(ADMIN_ID):
-        # የ ADMIN_ID ማረጋገጫ ከተፈለገ ወይም is_request_from_admin ካለ
-        pass
-
+        return jsonify({"success": False, "msg": "ፈቃድ የለዎትም!"}), 403
+    
+    # ቴሌግራም chat_id ያላቸውን ተጠቃሚዎች ብቻ መምረጥ (የተመዘገቡ)
     all_users = list(wallets.find({"chat_id": {"$exists": True, "$ne": ""}}))
     success_count = 0
     
@@ -1009,6 +1008,15 @@ def webhook():
         msg = data["message"]
         chat_id = str(msg.get("chat", {}).get("id", ""))
         text = msg.get("text", "")
+        
+        # ተጠቃሚው ቦቱ ውስጥ ሲገባ ወይም መልእክት ሲልክ chat_id እና ስልኩ በራስ-ሰር እንዲያዝ መፈተሽ
+        # (በ /start ጊዜ ከሱፐር ወይም ከሌላ ሩም ሲመጡም ሆነ ሲመዝገቡ)
+        if chat_id != str(ADMIN_ID):
+            wallets.update_one(
+                {"chat_id": chat_id}, 
+                {"$set": {"chat_id": chat_id}}, 
+                upsert=False
+            )
         
         if chat_id == str(ADMIN_ID):
             state = admin_state.find_one({"chat_id": chat_id})
@@ -1098,12 +1106,6 @@ def webhook():
                     send_telegram("❌ ትክክለኛ መረጃ አላስገቡም። እባክዎ እንደገና ይሞክሩ:\n`2026-10-01 2026-10-07 deposit`")
                 return "OK", 200
 
-        if chat_id != str(ADMIN_ID):
-            u_check = wallets.find_one({"chat_id": chat_id})
-            if not u_check:
-                pass
-            wallets.update_one({"chat_id": chat_id}, {"$set": {"chat_id": chat_id}}, upsert=False)
-        
         if text.lower() == "/balance":
             url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
             u_wallet = wallets.find_one({"chat_id": chat_id})
@@ -1598,7 +1600,7 @@ def webhook():
                         notify_user_balance_update(phone_num, new_bal)
                         requests.post(answer_url, json={"callback_query_id": cq_id, "text": "approved!"})
                     else:
-                        requests.post(answer_url, json={"callback_query_id": cq_id, "text": "❌ የተጠቃሚው ባላንስ በቂ አይደለም!", "show_alert": True})
+                        requests.post(answer_url, json={"callback_query_id": cq_id, "text": "❌ የተጠቃሚው ባላንስ በቂ አይደለም!", "show_alert": true})
                 else:
                     requests.post(answer_url, json={"callback_query_id": cq_id, "text": "⚠ ይህ ጥያቄ አስቀድሞ ፀድቋል ወይም ተሰርዟል!", "show_alert": True})
             
