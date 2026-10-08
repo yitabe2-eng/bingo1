@@ -737,7 +737,6 @@
                 }
             });
 
-            // 🌟 የ 10 ብር ጨዋታ ቻናል ማዳመጥ (Room 10 Update Listener)
             socket.on('game_update_10', function(d) {
                 applyGameStateData(d);
             });
@@ -1201,16 +1200,29 @@
             wrap.appendChild(grid); document.getElementById('card-area').appendChild(wrap);
         }
 
+        // 🌟 የተስተካከለው የ BINGO ጥያቄ መላኪያ ፋንክሽን (ተጫዋቹ ያቀለማቸውን ቁጥሮች ጨምሮ ይልካል)
         function claim() { 
             const cardArea = document.getElementById('card-area');
             if (!cardArea || cardArea.children.length === 0) { return alert("ካርታዎ ስላልታየ BINGO ማለት አይችሉም!"); }
+
+            const markedCells = [];
+            cardArea.querySelectorAll('.cell.selected').forEach(cell => {
+                let val = cell.innerText.trim();
+                if (val && val !== "FREE" && val !== "★") {
+                    markedCells.push(parseInt(val));
+                }
+            });
 
             const bBtn = document.getElementById('bingo-btn'); if(bBtn) bBtn.disabled = true;
             
             fetch('/claim_bingo', { 
                 method:'POST', 
                 headers:{ 'Content-Type':'application/json' }, 
-                body: JSON.stringify({ phone: phone, room: '10' }) 
+                body: JSON.stringify({ 
+                    phone: phone, 
+                    room: '10',
+                    marked_cells: markedCells 
+                }) 
             })
             .then(r => r.json())
             .then(d => { 
