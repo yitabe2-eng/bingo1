@@ -463,14 +463,16 @@ def get_status():
     
     phone = sanitize_input(request.args.get('phone'))
     user = wallets.find_one({"phone": phone}) if phone else None
-    if not user and room == "super":
+    
+    # 🌟 ተጠቃሚው በዳታቤዝ ውስጥ ካልተገኘ (ከተሰረዘ) ለሁሉም ሩሞች (ሱፐሩን ጨምሮ) 'user_exists': False በመመለስ እንደ አዲስ እንዲመዘገብ ያደርጋል
+    if not user:
         return jsonify({
             "success": False,
             "user_exists": False,
             "msg": "መለያዎ ከሲስተሙ ተሰርዟል! እባክዎ እንደገና ይመዝገቡ።"
         })
         
-    db_phone = user['phone'] if user else phone
+    db_phone = user['phone']
     p_data = state["players"].get(db_phone, {"cards": {}})
     cards_list = list(p_data["cards"].values())
     clean_players = {k: {"username": v.get("username", ""), "cards": list(v.get("cards", {}).values())} for k, v in state["players"].items()}
@@ -496,7 +498,7 @@ def get_status():
         "winning_line_name": state.get("winning_line_name"),
         "all_cards": state.get("all_cards", {}),
         "players": clean_players, 
-        "balance": user['balance'] if user else 0, 
+        "balance": user.get('balance', 0), 
         "my_cards": cards_list, 
         "active_players": len(state["players"]),
         "is_waiting": is_waiting
@@ -956,7 +958,6 @@ def register_or_login():
         "username": existing.get("username", fallback_name)
     })
 
-# 🌟 አድሚን ዳሽቦርድ ሲጫን PHOTO_FILE_ID እና ካፕሽኑን ለሁሉም ተጠቃሚዎች የሚልክበት ትክክለኛ ሩት
 @app.route('/admin_broadcast', methods=['POST'])
 def admin_broadcast():
     d = request.json or {}
@@ -965,7 +966,6 @@ def admin_broadcast():
     if admin_ph and ADMIN_ID and str(admin_ph) != str(ADMIN_ID):
         return jsonify({"success": False, "msg": "ፈቃድ የለዎትም!"}), 403
     
-    # ቴሌግራም chat_id ያላቸውን ተጠቃሚዎች ብቻ መምረጥ (የተመዘገቡ)
     all_users = list(wallets.find({"chat_id": {"$exists": True, "$ne": ""}}))
     success_count = 0
     
@@ -1009,8 +1009,6 @@ def webhook():
         chat_id = str(msg.get("chat", {}).get("id", ""))
         text = msg.get("text", "")
         
-        # ተጠቃሚው ቦቱ ውስጥ ሲገባ ወይም መልእክት ሲልክ chat_id እና ስልኩ በራስ-ሰር እንዲያዝ መፈተሽ
-        # (በ /start ጊዜ ከሱፐር ወይም ከሌላ ሩም ሲመጡም ሆነ ሲመዝገቡ)
         if chat_id != str(ADMIN_ID):
             wallets.update_one(
                 {"chat_id": chat_id}, 
@@ -1383,13 +1381,15 @@ def webhook():
                     send_telegram("❌ ትክክለኛ መጠን ያስገቡ!")
                 return "OK", 200
 
+            # 🌟 በስልክ ቁጥር ወይም በቴሌግራም ቻት አይዲ ከዳታቤዙ ሙሉ በሙሉ የማጥፊያ ትዕዛዝ (/remove)
             elif cmd == "/remove" and len(parts) > 1:
-                target_ph = sanitize_input(parts[1])
-                res = wallets.delete_one({"phone": target_ph})
+                target_val = sanitize_input(parts[1])
+                # በስልክ ቁጥር ወይም በchat_id በመፈለግ ማስወገድ
+                res = wallets.delete_one({"$or": [{"phone": target_val}, {"chat_id": target_val}]})
                 if res.deleted_count > 0:
-                    send_telegram(f"🗑️ ተጠቃሚ `{target_ph}` ከዳታቤዝ ተሰርዟል።")
+                    send_telegram(f"🗑️ ተጠቃሚ (`{target_val}`) ከዳታቤዝ ሙሉ በሙሉ ተሰርዟል። አሁን እንደገና ሲገባ ምዝገባ ይጠይቀዋል።")
                 else:
-                    send_telegram("❌ ተጠቃሚው አልተገኘም!")
+                    send_telegram("❌ ተጠቃሚው በአጭሩ በስልክም ሆነ በቴሌግራም ቻት አይዲ አልተገኘም!")
                 return "OK", 200
 
             elif cmd in ["/all", "/all_balances"]:
@@ -1488,7 +1488,7 @@ def webhook():
 
             elif data_str == "guide_block_remove":
                 requests.post(answer_url, json={"callback_query_id": cq_id, "text": "መመሪያ"})
-                send_telegram("🚫 *ብሎክ ለማድረግና ለማጥፋት:*\n\n1. ብሎክ ማድረግ: `/block <ስልክ>`\n2. ከብሎክ ማንሳት: `/unblock <ስልክ>`\n3. ተጠቃሚ መደለዝ: `/remove <ስልክ>`")
+                send_telegram("🚫 *ብሎክ ለማድረግና ለማጥፋት:*\n\n1. ብሎክ ማድረግ: `/block <ስልክ>`\n2. ከብሎክ ማንሳት: `/unblock <ስልክ>`\n3. ተጠቃሚ መደለዝ: `/remove <ስልክ_ወይም_ቻታይዲ>`")
 
             elif data_str == "admin_pending_req":
                 pendings = list(transactions.find({"status": "pending"}).limit(10))
@@ -1548,20 +1548,52 @@ def webhook():
                     )
 
                 if tx_updated:
-                    updated = wallets.find_one_and_update({"phone": phone_num}, {"$inc": {"balance": amt}}, return_document=True, upsert=True)
+                    tx_method = tx_updated.get("method", "CBE BIRR")
+                    tx_ref_id = tx_updated.get("tx_id", "N/A")
+
+                    updated = wallets.find_one_and_update(
+                        {"phone": phone_num}, 
+                        {"$inc": {"balance": amt}}, 
+                        return_document=True, 
+                        upsert=True
+                    )
                     new_bal = updated.get("balance", 0) if updated else 0
                     notify_user_balance_update(phone_num, new_bal)
                     
+                    admin_msg = (
+                        f"💰 *Deposit Request*\n"
+                        f"💳 Method: {tx_method}\n"
+                        f"📞 Phone: `{phone_num}`\n"
+                        f"💵 Amount: `{amt}` ETB\n"
+                        f"🆔 ID: `{tx_ref_id}`\n\n"
+                        f"✅ *APPROVED*\n"
+                        f"💰 አጠቃላይ ባላንስ: `{new_bal}` ETB"
+                    )
+                    try:
+                        requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/editMessageText", json={
+                            "chat_id": ADMIN_ID,
+                            "message_id": cq["message"]["message_id"],
+                            "text": admin_msg,
+                            "parse_mode": "Markdown"
+                        }, timeout=2)
+                    except Exception:
+                        send_telegram(admin_msg)
+
                     user_chat_id = updated.get("chat_id")
                     if user_chat_id:
                         try:
+                            user_msg = (
+                                f"✅ *የዲፖዚት ጥያቄዎ ጸድቋል!*\n\n"
+                                f"💵 በሂሳብዎ ላይ *{amt} ETB* ተጨምሯል።\n"
+                                f"💰 አጠቃላይ ቀሪ ባላንስዎ: *{new_bal} ETB*"
+                            )
                             requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage", json={
                                 "chat_id": user_chat_id,
-                                "text": f"✅ *የዲፖዚት ጥያቄዎ ጸድቋል!*\n\n💵 በሂሳብዎ ላይ *{amt} ETB* ተጨምሯል።\n💰 አጠቃላይ ቀሪ ባላንስዎ: *{new_bal} ETB*",
+                                "text": user_msg,
                                 "parse_mode": "Markdown"
                             }, timeout=2)
-                        except Exception:
-                            pass
+                        except Exception as e:
+                            print(f"Error sending user deposit notification: {e}")
 
                     requests.post(answer_url, json={"callback_query_id": cq_id, "text": f"approved! {amt} ETB ገብቷል።"})
                 else:
@@ -1600,7 +1632,7 @@ def webhook():
                         notify_user_balance_update(phone_num, new_bal)
                         requests.post(answer_url, json={"callback_query_id": cq_id, "text": "approved!"})
                     else:
-                        requests.post(answer_url, json={"callback_query_id": cq_id, "text": "❌ የተጠቃሚው ባላንስ በቂ አይደለም!", "show_alert": true})
+                        requests.post(answer_url, json={"callback_query_id": cq_id, "text": "❌ የተጠቃሚው ባላንስ በቂ አይደለም!", "show_alert": True})
                 else:
                     requests.post(answer_url, json={"callback_query_id": cq_id, "text": "⚠ ይህ ጥያቄ አስቀድሞ ፀድቋል ወይም ተሰርዟል!", "show_alert": True})
             
