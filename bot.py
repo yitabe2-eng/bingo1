@@ -100,7 +100,7 @@ def set_bot_commands():
     default_commands = [
         {"command": "play", "description": "🎮 ጨዋታ ይምረጡ "},
         {"command": "balance", "description": "💰 ቀሪ (Balance) "},
-        {"command": "history", "description": "የትራንዛክሽን ታሪክ "},
+        {"command": "history", "description": "📥የትራንዛክሽን ታሪክ "},
         {"command": "instruction", "description": "ℹ️ የጨዋታ ህጎች "}
     ]
     try:
@@ -112,7 +112,7 @@ def set_bot_commands():
         admin_commands = [
             {"command": "play", "description": "🎮 play "},
             {"command": "balance", "description": "💰 Balance"},
-            {"command": "history", "description": "History "},
+            {"command": "history", "description": "📥History "},
             {"command": "instruction", "description": "ℹ️ Rule"},
             {"command": "admin", "description": "🛠 Admin"},
             {"command": "pending", "description": "⏳ Approvals"},
