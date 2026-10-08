@@ -118,8 +118,6 @@ def set_bot_commands():
             {"command": "balance", "description": "💰 Balance"},
             {"command": "history", "description": "📥History "},
             {"command": "instruction", "description": "ℹ️ Rule"},
-           
-            
         ]
         payload = {
             "commands": admin_commands,
@@ -199,63 +197,67 @@ def get_financial_stats():
         f" 💰 *የሳምንቱ የተጣራ ትርፍ:* `{week_profit:,.2f} ETB`"
     )
 
-def check_bingo_win_strict(card, drawn_balls):
-    drawn_set = set()
-    for b in drawn_balls:
-        clean_b = re.sub(r'[^0-9]', '', str(b))
-        if clean_b.isdigit():
-            drawn_set.add(int(clean_b))
-
-    marked = []
-    for idx, val in enumerate(card):
-        if idx == 12 or str(val).upper() in ["FREE", "★"] or str(val) == "0":
-            marked.append(True)
-        else:
-            try:
-                num_val = int(re.sub(r'[^0-9]', '', str(val)))
-                marked.append(num_val in drawn_set)
-            except:
-                marked.append(False)
-
-    winning_indices = []
-    line_name = None
-
-    for r in range(5):
-        row_indices = [r * 5 + c for c in range(5)]
-        if all(marked[i] for i in row_indices):
-            winning_indices = row_indices
-            line_name = f"አግድም መስመር {r+1}"
-            return True, winning_indices, line_name
-
-    for c in range(5):
-        col_indices = [r * 5 + c for r in range(5)]
-        if all(marked[i] for i in col_indices):
-            winning_indices = col_indices
-            line_name = f"ቋሚ መስመር {c+1}"
-            return True, winning_indices, line_name
-
-    diag1 = [0, 6, 12, 18, 24]
-    if all(marked[i] for i in diag1):
-        winning_indices = diag1
-        line_name = "ዋና ሰያፍ መስመር"
-        return True, winning_indices, line_name
-
-    diag2 = [4, 8, 12, 16, 20]
-    if all(marked[i] for i in diag2):
-        winning_indices = diag2
-        line_name = "ሁለተኛ ሰያፍ መስመር"
-        return True, winning_indices, line_name
-
-    corners = [0, 4, 20, 24]
-    if all(marked[i] for i in corners):
-        winning_indices = corners
-        line_name = "አራቱ ኮርነሮች"
-        return True, winning_indices, line_name
-
-    return False, [], None
-
 def check_winning_line(card, drawn_numbers, player_marked_numbers=None):
-    return check_bingo_win_strict(card, drawn_numbers)
+    drawn_set = set()
+    for b in drawn_numbers:
+        if len(b) > 1:
+            try:
+                drawn_set.add(int(b[1:]))
+            except ValueError:
+                pass
+    drawn_set.add(0) 
+    marked_set = set(player_marked_numbers) if player_marked_numbers is not None else None
+
+    def is_hit(idx):
+        val = card[idx]
+        if idx == 12 or val == 0 or val == "Besh" or val == "★":
+            return True
+        try:
+            val_int = int(val)
+            if marked_set is not None:
+                return (val_int in drawn_set) and (val_int in marked_set)
+            return val_int in drawn_set
+        except:
+            return False
+
+    all_win_indices = set()
+    line_types = []
+    
+    # 1. ረድፎች (Rows) ማረጋገጥ
+    for i in range(5):
+        row_indices = [i*5 + j for j in range(5)]
+        if all(is_hit(idx) for idx in row_indices):
+            all_win_indices.update(row_indices)
+            line_types.append(f"ረድፍ {i+1}")
+            
+    # 2. አምዶች (Columns) ማረጋገጥ
+    for j in range(5):
+        col_indices = [j + i*5 for i in range(5)]
+        if all(is_hit(idx) for idx in col_indices):
+            all_win_indices.update(col_indices)
+            line_types.append(f"አምድ {j+1}")
+            
+    # 3. ዲያጎናል ↘ ማረጋገጥ
+    diag1_indices = [0, 6, 12, 18, 24]
+    if all(is_hit(idx) for idx in diag1_indices):
+        all_win_indices.update(diag1_indices)
+        line_types.append("ዲያጎናል ↘")
+        
+    # 4. ዲያጎናል ↙ ማረጋገጥ
+    diag2_indices = [4, 8, 12, 16, 20]
+    if all(is_hit(idx) for idx in diag2_indices):
+        all_win_indices.update(diag2_indices)
+        line_types.append("ዲያጎናል ↙")
+        
+    # 5. ኮርነሮች (Corners) ማረጋገጥ
+    corner_indices = [0, 4, 20, 24]
+    if all(is_hit(idx) for idx in corner_indices):
+        all_win_indices.update(corner_indices)
+        line_types.append("ኮርነር (4 ማዕዘኖች)")
+
+    if all_win_indices:
+        return list(all_win_indices), " + ".join(line_types)
+    return None, None
 
 def refund_all_sold_tickets(room_type):
     price = 10 if room_type == "10" else (20 if room_type == "20" else 50)
@@ -626,37 +628,19 @@ def claim_bingo():
     winning_line_type = None
     winning_indices_list = None
     
-    if room == "super":
-        marked_0 = d.get('marked_0', [])
-        marked_1 = d.get('marked_1', [])
-        cards_to_check = p_data["cards"]
-        for t_num, card in cards_to_check.items():
-            card_keys_list = list(cards_to_check.keys())
-            card_index = card_keys_list.index(t_num)
-            current_marked = marked_0 if card_index == 0 else marked_1
-            win_indices, line_type = check_winning_line(card, current_drawn_balls, player_marked_numbers=current_marked)
-            if win_indices is not None:
-                valid_win_found = True
-                winning_ticket_num = str(t_num)
-                winning_card_data = card
-                winning_line_type = line_type
-                winning_indices_list = win_indices
-                break
-        if not valid_win_found:
-            return jsonify({"success": False, "msg": "ቢንጎ ሙሉ በሙሉ አልሞላም (ሙሉ ዝግ ብቻ ነው የሚሰራው)!"})
-    else:
-        for t_num, card in p_data["cards"].items():
-            is_win, win_indices, line_type = check_bingo_win_strict(card, current_drawn_balls)
-            if is_win:
-                valid_win_found = True
-                winning_ticket_num = str(t_num)
-                winning_card_data = card
-                winning_line_type = line_type
-                winning_indices_list = win_indices
-                break 
+    # 🌟 ተጫዋቹ የያዛቸውን ካርቴላዎች (ሁለት ካርቴላዎች ቢኖሩትም ጭምር) አንድ በአንድ ማረጋገጥ
+    for t_num, card in p_data["cards"].items():
+        win_indices, line_type = check_winning_line(card, current_drawn_balls, player_marked_numbers=None)
+        if win_indices is not None:
+            valid_win_found = True
+            winning_ticket_num = str(t_num)
+            winning_card_data = card
+            winning_line_type = line_type
+            winning_indices_list = win_indices
+            break 
             
-        if not valid_win_found:
-            return jsonify({"success": False, "msg": "ቢንጎ አልሞላም!"})
+    if not valid_win_found:
+        return jsonify({"success": False, "msg": "ቢንጎ አልሞላም!"})
         
     claim_info = {
         "phone": db_phone,
@@ -677,27 +661,16 @@ def claim_bingo():
 
             def process_claims_by_ball():
                 global claim_lock_active, pending_claims
-                socketio.sleep(0.2 if room != "super" else 1.5)
+                socketio.sleep(0.2)
 
-                total_pot = state["pot"]
-                total_prize = total_pot * 0.8  
-                house_commission = total_pot * 0.2
-
-                if house_commission > 0 and room != "super":
-                    transactions.insert_one({
-                        "type": "game_commission",
-                        "amount": house_commission,
-                        "pot_amount": total_pot,
-                        "timestamp": datetime.utcnow()
-                    })
-
+                total_prize = state["pot"] * 0.8  
                 num_winners = len(pending_claims[room])
 
                 if num_winners == 1:
-                    winner_display = f"{pending_claims[room][0]['username']} አሸንፏል" if room != "super" else pending_claims[room][0]["username"]
+                    winner_display = f"{pending_claims[room][0]['username']} አሸንፏል"
                 else:
                     winner_names = [c["username"] for c in pending_claims[room]]
-                    winner_display = f"{' & '.join(winner_names)} አሸንፈዋል" if room != "super" else " & ".join(winner_names)
+                    winner_display = f"{' & '.join(winner_names)} አሸንፈዋል"
 
                 state["winner"] = winner_display
                 state["winning_card"] = pending_claims[room][0]["card"]  
@@ -716,12 +689,10 @@ def claim_bingo():
                         if win_res:
                             gevent.spawn(notify_user_balance_update, w["phone"], win_res.get("balance", 0))
                         
-                        w_user_doc = wallets.find_one({"phone": w["phone"]})
-                        agent_info = f"\n📲 የያዘው ኤጀንት: `{w_user_doc.get('referred_by', 'የለም')}`" if w_user_doc and "referred_by" in w_user_doc and room == "super" else ""
-
-                        success_msg = f"🏆 *WINNER (Room {room} ETB)!* \n👤 Name: {w['username']} | 📞 Phone: `{w['phone']}` | 🎫 Ticket: {w['ticket_num']}{agent_info} \n🎯 Winning Ball: {w['winning_ball']} \n💰 Prize Won: {total_prize:.2f} ETB"
+                        success_msg = f"🏆 *WINNER (Room {room})!* \n👤 Name: {w['username']} | 📞 Phone: `{w['phone']}` | 🎫 Ticket: {w['ticket_num']} \n🎯 Winning Ball: {w['winning_ball']} \n💰 Prize Won: {total_prize:.2f} ETB"
                         send_telegram(success_msg)
                     else:
+                        # 🌟 ከአንድ በላይ (ወይም ከሁለት በላይ) አሸናፊዎች ሲኖሩ ሽልማቱን በእኩል ማካፈል
                         share_prize = total_prize / num_winners
                         winner_texts = []
                         for w in pending_claims[room]:
@@ -732,15 +703,9 @@ def claim_bingo():
                             )
                             if w_res:
                                 gevent.spawn(notify_user_balance_update, w["phone"], w_res.get("balance", 0))
-                            if room == "super":
-                                w_user_doc = wallets.find_one({"phone": w["phone"]})
-                                ag_ph = f" (ኤጀንት: `{w_user_doc.get('referred_by')}`)" if w_user_doc and "referred_by" in w_user_doc else ""
-                                winner_texts.append(f"👤 {w['username']} (`{w['phone']}`){ag_ph} - 🎫 {w['ticket_num']}")
-                                
-                        if room == "super":
-                            success_msg = f"🏆 *WINNERS (Shared Prize on Ball {pending_claims[room][0]['winning_ball']})!* \n💰 Total Pot Share: {share_prize:.2f} ETB each ({num_winners} winners)\n" + "\n".join(winner_texts)
-                        else:
-                            success_msg = f"🏆 *WINNERS (Room {room}) Shared!* 💰 {share_prize:.2f} ETB each"
+                            winner_texts.append(f"👤 {w['username']} (`{w['phone']}`) - 🎫 {w['ticket_num']}")
+                        
+                        success_msg = f"🏆 *WINNERS (Shared Prize on Ball {pending_claims[room][0]['winning_ball']})!* \n💰 Total Pot Share: {share_prize:.2f} ETB each ({num_winners} winners)\n" + "\n".join(winner_texts)
                         send_telegram(success_msg)
                         
                     broadcast_game_state(room)
@@ -761,11 +726,13 @@ def claim_bingo():
 
             socketio.start_background_task(process_claims_by_ball)
         else:
-            if not any(c["phone"] == db_phone for c in pending_claims[room]):
+            already_exists = any(c["phone"] == db_phone for c in pending_claims[room])
+            if not already_exists:
                 pending_claims[room].append(claim_info)
 
     elif state["status"] == "result" and claim_lock_active[room]:
-        if not any(c["phone"] == db_phone for c in pending_claims[room]):
+        already_exists = any(c["phone"] == db_phone for c in pending_claims[room])
+        if not already_exists:
             pending_claims[room].append(claim_info)
 
     return jsonify({"success": True})
@@ -958,48 +925,6 @@ def register_or_login():
         "username": existing.get("username", fallback_name)
     })
 
-@app.route('/admin_broadcast', methods=['POST'])
-def admin_broadcast():
-    d = request.json or {}
-    
-    admin_ph = d.get('admin_phone')
-    if admin_ph and ADMIN_ID and str(admin_ph) != str(ADMIN_ID):
-        return jsonify({"success": False, "msg": "ፈቃድ የለዎትም!"}), 403
-    
-    all_users = list(wallets.find({"chat_id": {"$exists": True, "$ne": ""}}))
-    success_count = 0
-    
-    PHOTO_FILE_ID = "AgACAgQAAxkBAAIU2GrEzqEOyEn3Ao8ELToCaZTM_c1bAAJZEGsbYhEoUk2L9NZP0K1UAQADAgADeQADPQQ"
-    url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendPhoto"
-    
-    broadcast_msg = (
-        "🎉በሽ ቢንጎ :24 ሰአት live\n"
-        "🎉 ሱፐር በሽ ቢንጎ  ፡ 💰 10ሺ ደራሽ 🎉\n\n"
-        "🗓 ዘወትር ቅዳሜ እና እሁድ 🕙 12 ሰዐት\n"
-        "🎫 ካርቴላ ሳያልቅ ⏳ ቀድመው ይያዙ 🏃‍♂️\n\n"
-        "❓ ማንኛውም ጥያቄ ካለ\n"
-        "📞      0925960226\n"
-        "👉      [BeshBingoSupport](http://t.me/BeshBingoSupportbot)"
-    )
-
-    for u in all_users:
-        u_chat_id = u.get("chat_id")
-        if u_chat_id:
-            try:
-                payload = {
-                    "chat_id": u_chat_id,
-                    "photo": PHOTO_FILE_ID,
-                    "caption": broadcast_msg,
-                    "parse_mode": "Markdown"
-                }
-                res = requests.post(url, json=payload, timeout=2)
-                if res.status_code == 200:
-                    success_count += 1
-            except Exception as e:
-                print(f"Broadcast error for {u_chat_id}: {e}")
-
-    return jsonify({"success": True, "sent_count": success_count})
-
 @app.route('/webhook', methods=['POST'])
 def webhook():
     data = request.json or {}
@@ -1039,7 +964,6 @@ def webhook():
                 all_users = list(wallets.find({"chat_id": {"$exists": True, "$ne": ""}}))
                 sent_count = 0
                 
-                # 🌟 ፎቶ ብቻ ሲላክ ቋሚውን ካፕሽን በራሱ ላይ ጨምሮ ለአንድ ጊዜ ብቻ እንዲልክ ማድረግ
                 if "photo" in msg:
                     photo_id = msg["photo"][-1]["file_id"]
                     caption = (
@@ -1178,7 +1102,7 @@ def webhook():
                 "|✅ ✅ ✅ ✅ ✅|\n"
                 "+-----+----+-----+\n\n"
                 "💰 **የሽልማት ህግ**\n"
-                "- አሸናፊዎች: ከላይ ከተዘረዘሩት የማሸነፊያ መንገዶች አንዱን ቀድሞ የሚያረጋግጠው ተጫዋች አሸናፊ ይሆናል! (ለሱፐር በሽ ሙሉ ዝግ ብቻ ግዴታ ነው)\n"
+                "- አሸናፊዎች: ከላይ ከተዘረዘሩት የማሸነፊያ መንገዶች አንዱን ቀድሞ የሚያረጋግጠው ተጫዋች አሸናፊ ይሆናል!\n"
                 "- የሽልማት ክፍፍል: ከአንድ በላይ አሸናፊዎች በአንድ ዙር ካሉ የደራሽ (የሽልማት) ገንዘቡ በእኩል መጠን ይከፋፈላሉ።"
             )
             requests.post(url, json={
@@ -1224,7 +1148,6 @@ def webhook():
                 requests.post(url, json={"chat_id": chat_id, "text": report, "parse_mode": "Markdown"})
             return "OK", 200
 
-        # 🌟 /broadcast ትዕዛዝ ሲገባ አድሚኑን ፎቶ ብቻ እንዲልክ መጠየቅ (ድርብ መላክን ማስቀረት)
         if text.lower().startswith("/broadcast") or text.lower().startswith("/broadcast1"):
             if chat_id == str(ADMIN_ID):
                 admin_state.update_one({"chat_id": ADMIN_ID}, {"$set": {"action": "awaiting_broadcast"}}, upsert=True)
