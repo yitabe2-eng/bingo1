@@ -111,13 +111,15 @@ def set_bot_commands():
     if ADMIN_ID:
         admin_commands = [
             {"command": "play", "description": "🎮 play "},
+            {"command": "admin", "description": "🛠 Admin"},
+            {"command": "pending", "description": "⏳ Approvals"},
+            {"command": "agent", "description": "👥 Agent h"}
+            {"command": "daily", "description": "📅 D/W ገቢና ወጪ"},
             {"command": "balance", "description": "💰 Balance"},
             {"command": "history", "description": "📥History "},
             {"command": "instruction", "description": "ℹ️ Rule"},
-            {"command": "admin", "description": "🛠 Admin"},
-            {"command": "pending", "description": "⏳ Approvals"},
-            {"command": "daily", "description": "📅 D/W ገቢና ወጪ"},
-            {"command": "agent", "description": "👥 Agent h"}
+           
+            
         ]
         payload = {
             "commands": admin_commands,
