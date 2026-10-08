@@ -463,8 +463,6 @@ def get_status():
     
     phone = sanitize_input(request.args.get('phone'))
     user = wallets.find_one({"phone": phone}) if phone else None
-    
-    # 🌟 ተጠቃሚው በዳታቤዝ ውስጥ ካልተገኘ (ከተሰረዘ) ለሁሉም ሩሞች (ሱፐሩን ጨምሮ) 'user_exists': False በመመለስ እንደ አዲስ እንዲመዘገብ ያደርጋል
     if not user:
         return jsonify({
             "success": False,
@@ -1039,9 +1037,18 @@ def webhook():
                 all_users = list(wallets.find({"chat_id": {"$exists": True, "$ne": ""}}))
                 sent_count = 0
                 
+                # 🌟 ፎቶ ብቻ ሲላክ ቋሚውን ካፕሽን በራሱ ላይ ጨምሮ ለአንድ ጊዜ ብቻ እንዲልክ ማድረግ
                 if "photo" in msg:
                     photo_id = msg["photo"][-1]["file_id"]
-                    caption = msg.get("caption", "")
+                    caption = (
+                        "🎉በሽ ቢንጎ :24 ሰአት live\n"
+                        "🎉 ሱፐር በሽ ቢንጎ  ፡ 💰 10ሺ ደራሽ 🎉\n\n"
+                        "🗓 ዘወትር ቅዳሜ እና እሁድ 🕙 12 ሰዐት\n"
+                        "🎫 ካርቴላ ሳያልቅ ⏳ ቀድመው ይያዙ 🏃‍♂️\n\n"
+                        "❓ ማንኛውም ጥያቄ ካለ\n"
+                        "📞      0925960226\n"
+                        "👉      [BeshBingoSupport](http://t.me/BeshBingoSupportbot)"
+                    )
                     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendPhoto"
                     for u in all_users:
                         u_chat_id = u.get("chat_id")
@@ -1215,26 +1222,11 @@ def webhook():
                 requests.post(url, json={"chat_id": chat_id, "text": report, "parse_mode": "Markdown"})
             return "OK", 200
 
+        # 🌟 /broadcast ትዕዛዝ ሲገባ አድሚኑን ፎቶ ብቻ እንዲልክ መጠየቅ (ድርብ መላክን ማስቀረት)
         if text.lower().startswith("/broadcast") or text.lower().startswith("/broadcast1"):
             if chat_id == str(ADMIN_ID):
-                parts = text.split(" ", 1)
-                if len(parts) > 1 and not msg.get("photo"):
-                    bc_text = parts[1]
-                    all_users = list(wallets.find({"chat_id": {"$exists": True, "$ne": ""}}))
-                    sent_count = 0
-                    url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
-                    for u in all_users:
-                        u_chat_id = u.get("chat_id")
-                        if u_chat_id:
-                            try:
-                                requests.post(url, json={"chat_id": u_chat_id, "text": bc_text, "parse_mode": "Markdown"}, timeout=2)
-                                sent_count += 1
-                            except:
-                                pass
-                    send_telegram(f"📢 የጽሁፍ ብሮድካስት ለ *{sent_count}* ተጠቃሚዎች በተሳካ ሁኔታ ተልኳል!")
-                else:
-                    admin_state.update_one({"chat_id": ADMIN_ID}, {"$set": {"action": "awaiting_broadcast"}}, upsert=True)
-                    send_telegram("📢 እባክዎ ለሁሉም ተጠቃሚዎች ማስተላለፍ የሚፈልጉትን **ፎቶ (ከነካፕሽን ጋር)** ወይም **ጽሁፍ** አሁን ይላኩ፦")
+                admin_state.update_one({"chat_id": ADMIN_ID}, {"$set": {"action": "awaiting_broadcast"}}, upsert=True)
+                send_telegram("📢 እባክዎ ለሁሉም ተጠቃሚዎች ማስተላለፍ የሚፈልጉትን **ፎቶ ብቻ** (ካፕሽን ሳይጨምሩ) አሁን ይላኩ፦")
             return "OK", 200
 
         if chat_id == str(ADMIN_ID):
@@ -1252,7 +1244,7 @@ def webhook():
                         [{"text": "📋 የሁሉም ተጠቃሚዎች ባላንስ", "callback_data": "admin_show_all_bal"}],
                         [{"text": "➕ ባላንስ ለመጨመር (/add)", "callback_data": "guide_add"}],
                         [{"text": "➖ ባላንስ ለመቀነስ (/sub)", "callback_data": "guide_sub"}],
-                        [{"text": "📢 መልእክት ለማስተላለፍ (/broadcast & /broadcast1)", "callback_data": "guide_broadcast"}],
+                        [{"text": "📢 መልእክት ለማስተላለፍ (/broadcast)", "callback_data": "guide_broadcast"}],
                         [{"text": "🚫 ተጠቃሚ ብሎክ/ማጥፊያ (/block & /remove)", "callback_data": "guide_block_remove"}],
                         [{"text": "🌐 የአድሚን ዌብ ዳሽቦርድ", "url": f"{WEB_APP_URL}/admin_get_users?phone=0945880474"}]
                     ]
@@ -1381,10 +1373,8 @@ def webhook():
                     send_telegram("❌ ትክክለኛ መጠን ያስገቡ!")
                 return "OK", 200
 
-            # 🌟 በስልክ ቁጥር ወይም በቴሌግራም ቻት አይዲ ከዳታቤዙ ሙሉ በሙሉ የማጥፊያ ትዕዛዝ (/remove)
             elif cmd == "/remove" and len(parts) > 1:
                 target_val = sanitize_input(parts[1])
-                # በስልክ ቁጥር ወይም በchat_id በመፈለግ ማስወገድ
                 res = wallets.delete_one({"$or": [{"phone": target_val}, {"chat_id": target_val}]})
                 if res.deleted_count > 0:
                     send_telegram(f"🗑️ ተጠቃሚ (`{target_val}`) ከዳታቤዝ ሙሉ በሙሉ ተሰርዟል። አሁን እንደገና ሲገባ ምዝገባ ይጠይቀዋል።")
@@ -1484,7 +1474,7 @@ def webhook():
 
             elif data_str == "guide_broadcast":
                 requests.post(answer_url, json={"callback_query_id": cq_id, "text": "መመሪያ"})
-                send_telegram("📢 *ለሁሉም መልእክት ለመላክ:*\n\n1. ፎቶ ያለው: `/broadcast`\n2. ጽሁፍ ብቻ: `/broadcast1 <መልእክትዎ>`")
+                send_telegram("📢 *ፎቶ ብቻ በመላክ ለሁሉም ማስታወቂያ ለማስተላለፍ:* \n`/broadcast` የሚለውን ተጠቅመው ፎቶ ብቻ ይላኩ።")
 
             elif data_str == "guide_block_remove":
                 requests.post(answer_url, json={"callback_query_id": cq_id, "text": "መመሪያ"})
@@ -1664,5 +1654,5 @@ def handle_connect():
     broadcast_game_state("50")
     broadcast_game_state("super")
 
-if __name__ == '__main__':
+(if __name__ == '__main__':
     socketio.run(app, host='0.0.0.0', port=int(os.environ.get("PORT", 10000)))
