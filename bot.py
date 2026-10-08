@@ -113,7 +113,7 @@ def set_bot_commands():
             {"command": "play", "description": "🎮 play "},
             {"command": "admin", "description": "🛠 Admin"},
             {"command": "pending", "description": "⏳ Approvals"},
-            {"command": "agent", "description": "👥 Agent h"}
+            {"command": "agent", "description": "👥 Agent h"},
             {"command": "daily", "description": "📅 D/W ገቢና ወጪ"},
             {"command": "balance", "description": "💰 Balance"},
             {"command": "history", "description": "📥History "},
