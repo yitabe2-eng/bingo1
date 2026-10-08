@@ -98,10 +98,10 @@ def set_webhook():
 def set_bot_commands():
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/setMyCommands"
     default_commands = [
-        {"command": "play", "description": "ጨዋታ ይምረጡ 🎮"},
-        {"command": "balance", "description": "የሂሳብሪሣቤ (Balance) ለማየት 💰"},
-        {"command": "history", "description": "የትራንዛክሽን ታሪክ ለማየት"},
-        {"command": "instruction", "description": "ℹ️ የጨዋታ ህጎች እና የማሸነፊያ መንገዶች"}
+        {"command": "play", "description": "🎮 ጨዋታ ይምረጡ "},
+        {"command": "balance", "description": "💰 ቀሪ (Balance) "},
+        {"command": "history", "description": "የትራንዛክሽን ታሪክ "},
+        {"command": "instruction", "description": "ℹ️ የጨዋታ ህጎች "}
     ]
     try:
         requests.post(url, json={"commands": default_commands}, timeout=2)
@@ -110,14 +110,14 @@ def set_bot_commands():
 
     if ADMIN_ID:
         admin_commands = [
-            {"command": "play", "description": "ጨዋታ ይምረጡ 🎮"},
-            {"command": "balance", "description": "የሂሳብሪሣቤ (Balance) ለማየት 💰"},
-            {"command": "history", "description": "የትራንዛክሽን ታሪክ ለማየት"},
-            {"command": "instruction", "description": "ℹ️ የጨዋታ ህጎች እና የማሸነፊያ መንገዶች"},
-            {"command": "admin", "description": "🛠 የአድሚን ማውጫ / Dashboard"},
-            {"command": "pending", "description": "⏳ ጥያቄዎችን ለማፅደቅ (Approvals)"},
-            {"command": "daily", "description": "📅 የእለት/የሳምንት ገቢና ወጪ"},
-            {"command": "agent", "description": "👥 የኤጀንት ስታቲስቲክስ እና ሪፖርት"}
+            {"command": "play", "description": "🎮 play "},
+            {"command": "balance", "description": "💰 Balance"},
+            {"command": "history", "description": "History "},
+            {"command": "instruction", "description": "ℹ️ Rule"},
+            {"command": "admin", "description": "🛠 Admin"},
+            {"command": "pending", "description": "⏳ Approvals"},
+            {"command": "daily", "description": "📅 D/W ገቢና ወጪ"},
+            {"command": "agent", "description": "👥 Agent h"}
         ]
         payload = {
             "commands": admin_commands,
