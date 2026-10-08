@@ -118,6 +118,8 @@ def set_bot_commands():
             {"command": "balance", "description": "💰 Balance"},
             {"command": "history", "description": "📥History "},
             {"command": "instruction", "description": "ℹ️ Rule"},
+           
+            
         ]
         payload = {
             "commands": admin_commands,
@@ -500,31 +502,6 @@ def get_status():
         "my_cards": cards_list, 
         "active_players": len(state["players"]),
         "is_waiting": is_waiting
-    })
-
-# 🌟 የማስተር ኪይ ሁኔታን በ ሰርቨር በኩል ማረጋገጫ (Master Key API Route)
-@app.route('/check_master_key', methods=['POST'])
-def check_master_key():
-    data = request.json or {}
-    ph = sanitize_input(data.get('phone'))
-    if not ph:
-        return jsonify({"success": False, "msg": "ስልክ ቁጥር አልተገኘም"})
-    
-    user = wallets.find_one({"phone": ph})
-    if not user:
-        return jsonify({"success": False, "msg": "ተጠቃሚው አልተገኘም"})
-    
-    # 🌟 እዚህ ላይ የቦነስ / ማስተር ኪይ መከፈቻ ሁኔታዎችን ማስተካከል ይቻላል (ለምሳሌ ቀሪ ባላንስ ወይም የተወሰነ ገደብ)
-    # ለምሳሌ: ባላንሱ ከ 0 በላይ ከሆነ ወይም የተወሰነ ሁኔታ ካሟላ ማስተር ኪይ እንዲታይ ማድረግ ይቻላል
-    balance = user.get('balance', 0)
-    
-    # ለሙከራ እንዲመች (ወይም በልዩ ሁኔታ) ማስተር ኪይ እንዲከፈት ሁኔታው እዚህ ይጻፋል
-    master_unlocked = True  # እንደፍላጎትዎ True ወይም False ማድረግ ይችላሉ
-    
-    return jsonify({
-        "success": True,
-        "master_unlocked": master_unlocked,
-        "msg": "🗝️ ማስተር ኪይ (Master Key) ተከፍቷል!"
     })
 
 @app.route('/buy_specific_ticket', methods=['POST'])
@@ -1062,6 +1039,7 @@ def webhook():
                 all_users = list(wallets.find({"chat_id": {"$exists": True, "$ne": ""}}))
                 sent_count = 0
                 
+                # 🌟 ፎቶ ብቻ ሲላክ ቋሚውን ካፕሽን በራሱ ላይ ጨምሮ ለአንድ ጊዜ ብቻ እንዲልክ ማድረግ
                 if "photo" in msg:
                     photo_id = msg["photo"][-1]["file_id"]
                     caption = (
@@ -1246,6 +1224,7 @@ def webhook():
                 requests.post(url, json={"chat_id": chat_id, "text": report, "parse_mode": "Markdown"})
             return "OK", 200
 
+        # 🌟 /broadcast ትዕዛዝ ሲገባ አድሚኑን ፎቶ ብቻ እንዲልክ መጠየቅ (ድርብ መላክን ማስቀረት)
         if text.lower().startswith("/broadcast") or text.lower().startswith("/broadcast1"):
             if chat_id == str(ADMIN_ID):
                 admin_state.update_one({"chat_id": ADMIN_ID}, {"$set": {"action": "awaiting_broadcast"}}, upsert=True)
