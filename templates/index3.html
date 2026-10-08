@@ -27,6 +27,36 @@
             width: 100vw; 
             height: 100vh; 
         }
+        
+        #auth-ui {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+            background: radial-gradient(circle at center, #1e293b, #050a18);
+        }
+        .auth-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 2px solid var(--gold);
+            border-radius: 20px;
+            padding: 30px 20px;
+            width: 100%;
+            max-width: 360px;
+            box-sizing: border-box;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+        }
+        .auth-card h2 { color: var(--gold); margin-top: 0; font-size: 1.6rem; letter-spacing: 1px; }
+        .auth-card p { color: #94a3b8; font-size: 0.9rem; margin-bottom: 20px; }
+        .input-group { width: 100%; text-align: left; margin-bottom: 15px; }
+        .input-group label { display: block; font-size: 0.85rem; color: var(--gold); margin-bottom: 5px; font-weight: bold; }
+        .auth-input { padding: 14px; width: 100%; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2); box-sizing: border-box; font-size: 1rem; background: #fff; color: #000; font-weight: bold; }
+        .auth-input:focus { border-color: var(--gold); outline: none; }
+        .btn-login { width: 100%; padding: 14px; background: linear-gradient(135deg, var(--green), #00cc6a); color: #000; border: none; border-radius: 10px; font-weight: 900; font-size: 1.1rem; cursor: pointer; text-transform: uppercase; margin-top: 10px; box-shadow: 0 4px 15px rgba(0, 255, 136, 0.3); transition: 0.2s; }
+        .btn-login:disabled { background: #555; cursor: not-allowed; opacity: 0.6; box-shadow: none; }
+        .btn-login:active { transform: scale(0.98); }
 
         #main-app-content {
             display: flex;
@@ -98,7 +128,7 @@
         #timer { font-size: 2rem; font-weight: 900; color: var(--gold); text-align: center; line-height: 1; }
         .buy-notice { font-size: 0.95rem; font-weight: 900; color: var(--green); background: rgba(0, 255, 136, 0.1); padding: 8px 12px; border-radius: 8px; border: 2px dashed var(--green); text-align: center; min-width: 140px; box-sizing: border-box; }
 
-        /* ከ index (4).html የተወሰደው የ 10 አምዶች (repeat(10, 1fr)) የካርቴላ አቀማመጥ እና ሳይዝ ስታንዳርድ[cite: 6] */
+        /* ከ index (4).html የተወሰደው ትክክለኛ የ 1000 ካርቴላዎች አቀማመጥ (grid-500)[cite: 6] */
         .grid-500 { display: grid; grid-template-columns: repeat(10, 1fr); gap: 4px; flex: 1; overflow-y: auto; background: #000; padding: 10px; margin: 5px 10px 10px 10px; border-radius: 10px; box-sizing: border-box; }
         .t-box { background: #fff; color: #000; font-size: 0.75rem; padding: 8px 0; font-weight: bold; border-radius: 4px; cursor: pointer; box-sizing: border-box; border: 1px solid transparent; }
         .t-box.mine { background: var(--gold) !important; color: #000 !important; box-shadow: inset 0 0 0 2px #ffffff; }
@@ -260,7 +290,27 @@
 </head>
 <body>
 
-    <div id="main-app-content">
+    <!-- የመጀመሪያው ሬጅስትሬሽን/አውትቲኬሽን ፎርም (ከ index (4).html የተወሰደ)[cite: 6] -->
+    <div id="auth-ui">
+        <div class="auth-card">
+            <h2>ተመዝገብ</h2>
+            <p>ወደ ጨዋታው ለመግባት መረጃዎን ያስገቡ</p>
+            
+            <div class="input-group">
+                <label>የተጫዋች ስም</label>
+                <input type="text" id="reg-username" class="auth-input" placeholder="ስምዎን ያስገቡ...">
+            </div>
+
+            <div class="input-group">
+                <label>የስልክ ቁጥር</label>
+                <input type="tel" id="reg-phone" class="auth-input" placeholder="09... ወይም 07...">
+            </div>
+
+            <button id="auth-submit-btn" class="btn-login" onclick="registerUser()">🚀 ወደ ጨዋታው ግባ</button>
+        </div>
+    </div>
+
+    <div id="main-app-content" style="display: none;">
         <audio id="win-horn" src="https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3" preload="auto"></audio>
         
         <div class="header-banner">
@@ -290,7 +340,7 @@
                 <div class="buy-notice">🎟️ ካርቴላ ይግዙ (50 ETB)</div>
             </div>
 
-            <!-- የካርቴላዎች ብዛት 1000 እና አቀማመጡ ከ index (4).html የተወሰደ -->
+            <!-- የ 1000 ካርቴላዎች ማሳያ ግሪድ -->
             <div class="grid-500" id="ticket-area"></div>
         </div>
 
@@ -388,7 +438,7 @@
             <input type="number" id="da" min="50" placeholder="Amount (ETB)">
             <input type="text" id="di" placeholder="Transaction ID">
             <button class="btn-main btn-deposit" style="width:100%; padding:12px; margin-top:5px;" onclick="subD()">SUBMIT</button>
-            <button onclick="closeDepositForm()" style="color:#94a3b8; background:none; border:none; margin-top:15px; cursor:pointer; font-weight:bold;">CANCEL</button>
+            <button onclick="closeDepositForm()" style="color:#94a3b8; background:none; border:none; margin-top:15px; cursor:pointer; font-weight:bold;">CLOSE</button>
         </div>
     </div>
 
@@ -409,62 +459,106 @@
     </div>
 
     <script>
-        let phone = "";
-        let username = "";
+        let phone = localStorage.getItem('global_bingo_phone');
+        let username = localStorage.getItem('global_bingo_username');
         let announced = false, lastBall = "--", clientBalance = 0;
         let isProcessingBuy = false;
         let socket = null;
         let latestDrawnBallsGlobal = []; 
         let globalMyCardsData = []; 
-        const roomType = "super";
+        const roomType = "super"; // ለሁሉም ሩሞች ተመሳሳይ ዳታቤዝ እንዲጠቀሙ ተስማሚ ሩም ስም
 
         window.onload = function() {
             let tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
             if (tg) { tg.expand(); }
 
             let telegramUser = tg && tg.initDataUnsafe && tg.initDataUnsafe.user ? tg.initDataUnsafe.user : null;
-            
-            let savedPhone = localStorage.getItem('global_bingo_phone');
-            let savedName = localStorage.getItem('global_bingo_username');
+            let telegramChatId = telegramUser ? telegramUser.id : "";
 
-            if (savedPhone) {
-                phone = savedPhone;
-                username = savedName || "User";
-                authenticateAndStart(phone, username, telegramUser ? telegramUser.id : "");
-            } else if (telegramUser) {
-                phone = telegramUser.phone_number || ("tg_" + telegramUser.id);
-                username = telegramUser.first_name || "User";
-                localStorage.setItem('global_bingo_phone', phone);
-                localStorage.setItem('global_bingo_username', username);
-                authenticateAndStart(phone, username, telegramUser.id);
-            } else {
-                phone = "0900000000";
-                username = "GuestUser";
-                localStorage.setItem('global_bingo_phone', phone);
-                localStorage.setItem('global_bingo_username', username);
-                authenticateAndStart(phone, username, "");
+            // ተጠቃሚው በቦቱ (https://t.me/beshbingo1bot) የተመዘገበ ከሆነ የቴሌግራም ID-ውን በመጠቀም አውቶማቲክ እንዲገባ ይደረጋል
+            if (telegramUser && telegramUser.id) {
+                let tgAuthPhone = telegramUser.phone_number || ("tg_id_" + telegramUser.id);
+                let tgName = telegramUser.first_name || "User";
+
+                // ከዚህ ቀደም በlocalStorage ካለ ይያዛል ካለፈ በቴሌግራም መረጃ ይመዝገባል
+                if (!phone) {
+                    phone = tgAuthPhone;
+                    username = tgName;
+                    localStorage.setItem('global_bingo_phone', phone);
+                    localStorage.setItem('global_bingo_username', username);
+                }
+
+                verifyAndLoginUser(phone, username, telegramChatId);
+            } 
+            else if (phone && phone.trim() !== "") {
+                // በ localStorage የተያዘ ስልክ ካለ በቀጥታ ይገባል
+                verifyAndLoginUser(phone, username || "User", "");
+            } 
+            else {
+                // የመጀመሪያ ጊዜ ተጠቃሚ ከሆነ ሬጅስትሬሽን ፎርሙን ያሳየዋል (ከ index (4).html አሰራር ጋር የተመሳሰለ)[cite: 6]
+                showAuthUI();
             }
         }
 
-        function authenticateAndStart(userPhone, userName, chatId) {
+        function showAuthUI() {
+            document.getElementById('auth-ui').style.display = 'flex';
+            document.getElementById('main-app-content').style.display = 'none';
+        }
+
+        function registerUser() {
+            let inputName = document.getElementById('reg-username').value.trim();
+            let inputPhone = document.getElementById('reg-phone').value.trim();
+            let submitBtn = document.getElementById('auth-submit-btn');
+
+            if (inputName.length < 2) return alert("እባክዎ ትክክለኛ ስም ያስገቡ!");
+            const cleanPhone = inputPhone.replace(/[^0-9+]/g, '');
+            if (cleanPhone.length < 9) return alert("እባክዎ ትክክለኛ ስልክ ቁጥር ያስገቡ!");
+
+            if(submitBtn) submitBtn.disabled = true;
+
+            let telegramChatId = "";
+            if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe) {
+                telegramChatId = window.Telegram.WebApp.initDataUnsafe.user?.id || "";
+            }
+
+            verifyAndLoginUser(cleanPhone, inputName, telegramChatId, true);
+        }
+
+        function verifyAndLoginUser(userPhone, userName, chatId, isManualReg = false) {
             fetch('/register_or_login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ phone: userPhone, username: userName, chat_id: chatId })
             })
             .then(res => res.json())
-            .then(d => {
-                if (d.success) {
+            .then(data => {
+                if (data.success) {
+                    localStorage.setItem('global_bingo_phone', userPhone);
+                    localStorage.setItem('global_bingo_username', userName);
+                    phone = userPhone;
+                    username = userName;
                     showGameUI();
                 } else {
-                    alert(d.msg || "የግንኙነት ስህተት!");
+                    if (isManualReg) {
+                        alert(data.msg || "የምዝገባ ስህተት አጋጥሟል!");
+                        let submitBtn = document.getElementById('auth-submit-btn');
+                        if(submitBtn) submitBtn.disabled = false;
+                    } else {
+                        showAuthUI();
+                    }
                 }
-            }).catch(() => {
+            })
+            .catch(() => {
+                localStorage.setItem('global_bingo_phone', userPhone);
+                localStorage.setItem('global_bingo_username', userName);
+                phone = userPhone;
+                username = userName;
                 showGameUI();
             });
         }
 
         function showGameUI() {
+            document.getElementById('auth-ui').style.display = 'none';
             document.getElementById('main-app-content').style.display = 'flex';
             fetchBalanceOnly();
             initWebSocket();
@@ -599,7 +693,7 @@
         function closeWithdrawForm() { document.getElementById('withdraw-form-m').style.display = 'none'; }
         function copyNum(n) { navigator.clipboard.writeText(n); alert("Copied: " + n); }
 
-        // ከ index (4).html የተወሰደው ትክክለኛ የ 1000 ካርቴላዎች አቀማመጥ እና ሳይዝ (grid-500[cite: 6])
+        // ከ index (4).html የተወሰደው ትክክለኛ የ 1000 ካርቴላዎች አቀማመጥ እና ሳይዝ (grid-500)[cite: 6]
         function initTicketsOnce() {
             const area = document.getElementById('ticket-area');
             if(area && area.children.length === 0) { 
