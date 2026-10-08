@@ -373,12 +373,6 @@
                 <button class="btn-main btn-withdraw" onclick="openWithdrawSelection()">📤 WITHDRAW</button>
                 <button class="btn-main btn-how-to" onclick="openM('guide-m')">📖 GUIDE</button>
             </div>
-
-            <!-- ማስተር ኪይ የሚታይበት ቦታ (Master Key Container) -->
-            <div id="master-key-container" style="display:none; background: #1e1e1e; border: 2px solid var(--gold); padding: 10px; border-radius: 10px; margin: 10px auto; text-align: center; max-width: 90%;">
-                <span style="font-size: 28px; cursor: pointer;" onclick="openBonusPage()">🗝️</span>
-                <p style="color: var(--gold); font-size: 13px; font-weight: bold; margin: 5px 0 0 0;">ማስተር ኪይ ተከፍቷል! (በ15 ደቂቃ ውስጥ ይጠቀሙ)</p>
-            </div>
             
             <div class="timer-container">
                 <div id="timer">30</div>
@@ -595,7 +589,6 @@
         setInterval(() => {
             if (phone && document.getElementById('main-app-content').style.display !== 'none') {
                 silentBackgroundSync();
-                checkMasterKey(); // 🌟 የማስተር ኪይ ሁኔታን በየጊዜው መፈተሻ
             }
         }, 2000);
 
@@ -666,7 +659,6 @@
             checkAdminAccess(phone);
             fetchBalanceOnly();
             initWebSocket();
-            checkMasterKey(); // 🌟 ገና ሲገባ የማስተር ኪይ ሁኔታን ማረጋገጫ
         }
 
         function fetchBalanceOnly() {
@@ -705,44 +697,6 @@
             .then(d => {
                 applyGameStateData(d);
             }).catch(() => {});
-            checkMasterKey();
-        }
-
-        // 🌟 የማስተር ኪይ ሁኔታን ከ ሰርቨር የሚያረጋግጥ ፈንክሽን
-        function checkMasterKey() {
-            if (!phone) return;
-            
-            fetch('/check_master_key', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ phone: phone })
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    const container = document.getElementById('master-key-container');
-                    if (container) {
-                        if (data.master_unlocked) {
-                            container.style.display = 'block';
-                            
-                            // ኖቲፊኬሽን ለአንድ ጊዜ ብቅ እንዲል ማድረግ
-                            if (!localStorage.getItem('notified_key_' + phone)) {
-                                alert(data.msg);
-                                localStorage.setItem('notified_key_' + phone, 'true');
-                            }
-                        } else {
-                            container.style.display = 'none';
-                            localStorage.removeItem('notified_key_' + phone);
-                        }
-                    }
-                }
-            })
-            .catch(err => console.error(err));
-        }
-
-        // 🌟 ወደ ቦነስ ገጽ የሚወስድ ፈንክሽን (ተመሳሳይ አካውንት ይዞ)
-        function openBonusPage() {
-            window.location.href = `/bonus.html?phone=${phone}`;
         }
 
         function initWebSocket() {
@@ -783,6 +737,7 @@
                 }
             });
 
+            // 🌟 የ 10 ብር ጨዋታ ቻናል ማዳመጥ (Room 10 Update Listener)
             socket.on('game_update_10', function(d) {
                 applyGameStateData(d);
             });
