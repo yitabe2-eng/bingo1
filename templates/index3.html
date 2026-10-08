@@ -128,7 +128,7 @@
         #timer { font-size: 2rem; font-weight: 900; color: var(--gold); text-align: center; line-height: 1; }
         .buy-notice { font-size: 0.95rem; font-weight: 900; color: var(--green); background: rgba(0, 255, 136, 0.1); padding: 8px 12px; border-radius: 8px; border: 2px dashed var(--green); text-align: center; min-width: 140px; box-sizing: border-box; }
 
-        /* ከ index (4).html የተወሰደው ትክክለኛ የ 1000 ካርቴላዎች አቀማመጥ (grid-500)[cite: 6] */
+        /* ከ index (4).html የተወሰደው ትክክለኛ የ 10 አምድ ግሪድ አቀማመጥ እና ሳይዝ (grid-500)[cite: 6] */
         .grid-500 { display: grid; grid-template-columns: repeat(10, 1fr); gap: 4px; flex: 1; overflow-y: auto; background: #000; padding: 10px; margin: 5px 10px 10px 10px; border-radius: 10px; box-sizing: border-box; }
         .t-box { background: #fff; color: #000; font-size: 0.75rem; padding: 8px 0; font-weight: bold; border-radius: 4px; cursor: pointer; box-sizing: border-box; border: 1px solid transparent; }
         .t-box.mine { background: var(--gold) !important; color: #000 !important; box-shadow: inset 0 0 0 2px #ffffff; }
@@ -290,7 +290,7 @@
 </head>
 <body>
 
-    <!-- የመጀመሪያው ሬጅስትሬሽን/አውትቲኬሽን ፎርም (ከ index (4).html የተወሰደ)[cite: 6] -->
+    <!-- የመጀመሪያው የምዝገባ/ሎጊን ፎርም (ከ index (4).html የተወሰደ)[cite: 6] -->
     <div id="auth-ui">
         <div class="auth-card">
             <h2>ተመዝገብ</h2>
@@ -340,7 +340,7 @@
                 <div class="buy-notice">🎟️ ካርቴላ ይግዙ (50 ETB)</div>
             </div>
 
-            <!-- የ 1000 ካርቴላዎች ማሳያ ግሪድ -->
+            <!-- የ 1000 ካርቴላዎች ማሳያ ግሪድ (ከ index (4).html አቀማመጥ ጋር የተመሳሰለ)[cite: 6] -->
             <div class="grid-500" id="ticket-area"></div>
         </div>
 
@@ -438,7 +438,7 @@
             <input type="number" id="da" min="50" placeholder="Amount (ETB)">
             <input type="text" id="di" placeholder="Transaction ID">
             <button class="btn-main btn-deposit" style="width:100%; padding:12px; margin-top:5px;" onclick="subD()">SUBMIT</button>
-            <button onclick="closeDepositForm()" style="color:#94a3b8; background:none; border:none; margin-top:15px; cursor:pointer; font-weight:bold;">CLOSE</button>
+            <button onclick="closeDepositForm()" style="color:#94a3b8; background:none; border:none; margin-top:15px; cursor:pointer; font-weight:bold;">CANCEL</button>
         </div>
     </div>
 
@@ -459,43 +459,45 @@
     </div>
 
     <script>
-        let phone = localStorage.getItem('global_bingo_phone');
-        let username = localStorage.getItem('global_bingo_username');
+        let phone = localStorage.getItem('phone');
+        let username = localStorage.getItem('username');
         let announced = false, lastBall = "--", clientBalance = 0;
         let isProcessingBuy = false;
         let socket = null;
         let latestDrawnBallsGlobal = []; 
         let globalMyCardsData = []; 
-        const roomType = "super"; // ለሁሉም ሩሞች ተመሳሳይ ዳታቤዝ እንዲጠቀሙ ተስማሚ ሩም ስም
+        const roomType = "super"; // ከሌሎች ሩሞች ጋር ተመሳሳይ ዳታቤዝ እንዲ share ለማድረግ
 
         window.onload = function() {
-            let tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
-            if (tg) { tg.expand(); }
+            let telegramChatId = "";
+            if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe) {
+                telegramChatId = window.Telegram.WebApp.initDataUnsafe.user?.id || "";
+            }
 
-            let telegramUser = tg && tg.initDataUnsafe && tg.initDataUnsafe.user ? tg.initDataUnsafe.user : null;
-            let telegramChatId = telegramUser ? telegramUser.id : "";
-
-            // ተጠቃሚው በቦቱ (https://t.me/beshbingo1bot) የተመዘገበ ከሆነ የቴሌግራም ID-ውን በመጠቀም አውቶማቲክ እንዲገባ ይደረጋል
-            if (telegramUser && telegramUser.id) {
-                let tgAuthPhone = telegramUser.phone_number || ("tg_id_" + telegramUser.id);
-                let tgName = telegramUser.first_name || "User";
-
-                // ከዚህ ቀደም በlocalStorage ካለ ይያዛል ካለፈ በቴሌግራም መረጃ ይመዝገባል
-                if (!phone) {
-                    phone = tgAuthPhone;
-                    username = tgName;
-                    localStorage.setItem('global_bingo_phone', phone);
-                    localStorage.setItem('global_bingo_username', username);
-                }
-
-                verifyAndLoginUser(phone, username, telegramChatId);
-            } 
-            else if (phone && phone.trim() !== "") {
-                // በ localStorage የተያዘ ስልክ ካለ በቀጥታ ይገባል
-                verifyAndLoginUser(phone, username || "User", "");
-            } 
-            else {
-                // የመጀመሪያ ጊዜ ተጠቃሚ ከሆነ ሬጅስትሬሽን ፎርሙን ያሳየዋል (ከ index (4).html አሰራር ጋር የተመሳሰለ)[cite: 6]
+            if (phone && phone.trim() !== "") {
+                fetch(`/register_or_login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        phone: phone, 
+                        username: localStorage.getItem('username') || "User",
+                        chat_id: telegramChatId 
+                    })
+                })
+                .then(res => res.json())
+                .then(d => {
+                    if (d.success) {
+                        showGameUI();
+                    } else {
+                        localStorage.removeItem('phone');
+                        localStorage.removeItem('username');
+                        showAuthUI();
+                    }
+                })
+                .catch(() => {
+                    showGameUI();
+                });
+            } else {
                 showAuthUI();
             }
         }
@@ -521,45 +523,36 @@
                 telegramChatId = window.Telegram.WebApp.initDataUnsafe.user?.id || "";
             }
 
-            verifyAndLoginUser(cleanPhone, inputName, telegramChatId, true);
-        }
-
-        function verifyAndLoginUser(userPhone, userName, chatId, isManualReg = false) {
             fetch('/register_or_login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ phone: userPhone, username: userName, chat_id: chatId })
+                body: JSON.stringify({ phone: cleanPhone, username: inputName, chat_id: telegramChatId })
             })
             .then(res => res.json())
             .then(data => {
                 if (data.success) {
-                    localStorage.setItem('global_bingo_phone', userPhone);
-                    localStorage.setItem('global_bingo_username', userName);
-                    phone = userPhone;
-                    username = userName;
+                    localStorage.setItem('phone', cleanPhone);
+                    localStorage.setItem('username', inputName);
+                    phone = cleanPhone;
+                    username = inputName;
                     showGameUI();
                 } else {
-                    if (isManualReg) {
-                        alert(data.msg || "የምዝገባ ስህተት አጋጥሟል!");
-                        let submitBtn = document.getElementById('auth-submit-btn');
-                        if(submitBtn) submitBtn.disabled = false;
-                    } else {
-                        showAuthUI();
-                    }
+                    alert(data.msg || "የምዝገባ ስህተት አጋጥሟል!");
+                    if(submitBtn) submitBtn.disabled = false;
                 }
             })
             .catch(() => {
-                localStorage.setItem('global_bingo_phone', userPhone);
-                localStorage.setItem('global_bingo_username', userName);
-                phone = userPhone;
-                username = userName;
+                localStorage.setItem('phone', cleanPhone);
+                localStorage.setItem('username', inputName);
+                phone = cleanPhone;
+                username = inputName;
                 showGameUI();
             });
         }
 
         function showGameUI() {
             document.getElementById('auth-ui').style.display = 'none';
-            document.getElementById('main-app-content').style.display = 'flex';
+            document.getElementById('main-app-content').style.display = 'flex'; 
             fetchBalanceOnly();
             initWebSocket();
         }
