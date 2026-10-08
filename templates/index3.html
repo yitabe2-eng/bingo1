@@ -27,36 +27,6 @@
             width: 100vw; 
             height: 100vh; 
         }
-        
-        #auth-ui {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            padding: 20px;
-            box-sizing: border-box;
-            background: radial-gradient(circle at center, #1e293b, #050a18);
-        }
-        .auth-card {
-            background: rgba(255, 255, 255, 0.03);
-            border: 2px solid var(--gold);
-            border-radius: 20px;
-            padding: 30px 20px;
-            width: 100%;
-            max-width: 360px;
-            box-sizing: border-box;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
-        }
-        .auth-card h2 { color: var(--gold); margin-top: 0; font-size: 1.6rem; letter-spacing: 1px; }
-        .auth-card p { color: #94a3b8; font-size: 0.9rem; margin-bottom: 20px; }
-        .input-group { width: 100%; text-align: left; margin-bottom: 15px; }
-        .input-group label { display: block; font-size: 0.85rem; color: var(--gold); margin-bottom: 5px; font-weight: bold; }
-        .auth-input { padding: 14px; width: 100%; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2); box-sizing: border-box; font-size: 1rem; background: #fff; color: #000; font-weight: bold; }
-        .auth-input:focus { border-color: var(--gold); outline: none; }
-        .btn-login { width: 100%; padding: 14px; background: linear-gradient(135deg, var(--green), #00cc6a); color: #000; border: none; border-radius: 10px; font-weight: 900; font-size: 1.1rem; cursor: pointer; text-transform: uppercase; margin-top: 10px; box-shadow: 0 4px 15px rgba(0, 255, 136, 0.3); transition: 0.2s; }
-        .btn-login:disabled { background: #555; cursor: not-allowed; opacity: 0.6; box-shadow: none; }
-        .btn-login:active { transform: scale(0.98); }
 
         #main-app-content {
             display: flex;
@@ -80,11 +50,7 @@
         }
         .header-banner h1 { margin: 0; font-size: 1.1rem; color: var(--gold); letter-spacing: 1px; }
         
-        .header-btns {
-            display: flex;
-            gap: 6px;
-            align-items: center;
-        }
+        .header-btns { display: flex; gap: 6px; align-items: center; }
 
         #inline-notification {
             font-size: 0.7rem;
@@ -96,7 +62,6 @@
             border-radius: 6px;
             display: none;
             white-space: nowrap;
-            animation: fadeInOut 0.4s ease;
         }
 
         .btn-top-refresh {
@@ -133,6 +98,7 @@
         #timer { font-size: 2rem; font-weight: 900; color: var(--gold); text-align: center; line-height: 1; }
         .buy-notice { font-size: 0.95rem; font-weight: 900; color: var(--green); background: rgba(0, 255, 136, 0.1); padding: 8px 12px; border-radius: 8px; border: 2px dashed var(--green); text-align: center; min-width: 140px; box-sizing: border-box; }
 
+        /* ከ index (4).html የተወሰደው የ 10 አምዶች (repeat(10, 1fr)) የካርቴላ አቀማመጥ እና ሳይዝ ስታንዳርድ[cite: 6] */
         .grid-500 { display: grid; grid-template-columns: repeat(10, 1fr); gap: 4px; flex: 1; overflow-y: auto; background: #000; padding: 10px; margin: 5px 10px 10px 10px; border-radius: 10px; box-sizing: border-box; }
         .t-box { background: #fff; color: #000; font-size: 0.75rem; padding: 8px 0; font-weight: bold; border-radius: 4px; cursor: pointer; box-sizing: border-box; border: 1px solid transparent; }
         .t-box.mine { background: var(--gold) !important; color: #000 !important; box-shadow: inset 0 0 0 2px #ffffff; }
@@ -164,13 +130,7 @@
         .ball-section-wrapper { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; margin-bottom: 5px; }
         .ball-row { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; }
         #ball-circle { width: 55px; height: 55px; background: radial-gradient(circle, #fff, var(--gold)); color: #000; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; font-weight: 900; border: 3px solid #1e293b; box-sizing: border-box; flex-shrink: 0; }
-        #ball-prep-countdown { font-size: 0.9rem; font-weight: 900; color: var(--orange); background: rgba(255, 136, 0, 0.15); padding: 6px 12px; border-radius: 8px; border: 2px dashed var(--orange); text-align: center; }
-        .game-start-alert { font-size: 0.85rem; font-weight: bold; color: var(--gold); background: rgba(255, 204, 0, 0.1); padding: 4px 15px; border-radius: 15px; border: 1px solid var(--gold); letter-spacing: 1px; }
-
-        #recent-balls-container { display: flex; gap: 5px; align-items: center; }
-        .recent-ball { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: bold; color: #000; background: radial-gradient(circle, #fff, #cbd5e1); border: 2px solid #475569; box-shadow: 0 2px 4px rgba(0,0,0,0.3); }
-        .opacity-50-ball { opacity: 0.50; }
-
+        
         .game-layout {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -253,8 +213,7 @@
 
         .winner-modal { display: none; position: fixed; inset: 0; background: linear-gradient(180deg, rgba(5,10,24,0.98), rgba(30,41,59,0.98)); z-index: 3000; flex-direction: column; align-items: center; justify-content: center; padding: 15px; }
         .winner-box { background: #ffffff; color: #1e293b; width: 92%; max-width: 360px; border-radius: 28px; padding: 20px 15px; box-sizing: border-box; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); border: 4px solid var(--gold); text-align: center; }
-        .trophy-icon { font-size: 2.5rem; margin-bottom: 5px; animation: bounce 1s infinite alternate; }
-        @keyframes bounce { from { transform: translateY(0); } to { transform: translateY(-10px); } }
+        .trophy-icon { font-size: 2.5rem; margin-bottom: 5px; }
         .winner-name-text { font-size: 1.2rem; font-weight: 900; margin: 5px 0; color: #10b981; word-break: break-word; }
         .prize-pool-card { background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 15px; padding: 8px 12px; margin: 10px auto; width: 85%; }
         .prize-pool-card span { display: block; font-weight: 800; color: #64748b; letter-spacing: 1px; text-transform: uppercase; font-size: 0.8rem; border-bottom: 1px dashed rgba(255,255,255,0.2); padding-bottom: 2px; }
@@ -285,12 +244,6 @@
             gap: 12px;
             align-items: center;
         }
-        .waiting-box-btns {
-            display: flex;
-            gap: 10px;
-            width: 100%;
-            justify-content: center;
-        }
         
         .deposit-guide-box {
             background: rgba(255, 255, 255, 0.05);
@@ -307,26 +260,7 @@
 </head>
 <body>
 
-    <div id="auth-ui">
-        <div class="auth-card">
-            <h2>ተመዝገብ</h2>
-            <p>ወደ ጨዋታው ለመግባት መረጃዎን ያስገቡ</p>
-            
-            <div class="input-group">
-                <label>የተጫዋች ስም</label>
-                <input type="text" id="reg-username" class="auth-input" placeholder="ስምዎን ያስገቡ...">
-            </div>
-
-            <div class="input-group">
-                <label>የስልክ ቁጥር</label>
-                <input type="tel" id="reg-phone" class="auth-input" placeholder="09... ወይም 07...">
-            </div>
-
-            <button id="auth-submit-btn" class="btn-login" onclick="registerUser()">🚀 ወደ ጨዋታው ግባ</button>
-        </div>
-    </div>
-
-    <div id="main-app-content" style="display: none;">
+    <div id="main-app-content">
         <audio id="win-horn" src="https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3" preload="auto"></audio>
         
         <div class="header-banner">
@@ -356,6 +290,7 @@
                 <div class="buy-notice">🎟️ ካርቴላ ይግዙ (50 ETB)</div>
             </div>
 
+            <!-- የካርቴላዎች ብዛት 1000 እና አቀማመጡ ከ index (4).html የተወሰደ -->
             <div class="grid-500" id="ticket-area"></div>
         </div>
 
@@ -367,11 +302,9 @@
             </div>
 
             <div class="ball-section-wrapper">
-                <div id="start-alert-msg" class="game-start-alert" style="display:none;">🔴 ጨዋታው ሊጀምር ነው...</div>
                 <div class="ball-row">
                     <div id="recent-balls-container"></div>
                     <div id="ball-circle">--</div>
-                    <div id="ball-prep-countdown" style="display:none;">ዝግጅት፦ 3</div>
                 </div>
             </div>
 
@@ -389,6 +322,7 @@
         </div>
     </div>
 
+    <!-- ሞዳሎች -->
     <div id="guide-m" class="modal">
         <div class="modal-content">
             <h2 style="color:var(--gold); text-align:center; margin-top:0;">📖 የጨዋታ መመሪያ</h2>
@@ -415,7 +349,7 @@
 
     <div id="withdraw-form-m" class="modal">
         <div class="modal-content" style="text-align:center;">
-            <h2 id="withdraw-method-title" style="color:var(--orange); margin-top:0;">WITHDRAW</h2>
+            <h2 style="color:var(--orange); margin-top:0;">WITHDRAW</h2>
             <input type="number" id="wa" min="51" placeholder="Amount (ETB)">
             <button class="btn-main btn-withdraw" style="width:100%; padding:12px;" onclick="subW()">CONFIRM</button>
             <button onclick="closeWithdrawForm()" style="color:#94a3b8; background:none; border:none; margin-top:15px; cursor:pointer; font-weight:bold;">CLOSE</button>
@@ -445,7 +379,7 @@
 
     <div id="dep-form-m" class="modal">
         <div class="modal-content" style="text-align:center;">
-            <h2 id="dep-method-title" style="color:var(--green); margin-top:0;">DEPOSIT</h2>
+            <h2 style="color:var(--green); margin-top:0;">DEPOSIT</h2>
             <div class="deposit-guide-box">
                 <b>📌 የክፍያ መመሪያ:</b><br>
                 በተሰጠው አካውንት ገንዘብ ከላኩ በኋላ <b>Transaction ID</b> ያስገቡ。<br>
@@ -475,72 +409,62 @@
     </div>
 
     <script>
-        let phone = localStorage.getItem('superbesh_phone');
-        let username = localStorage.getItem('superbesh_username');
+        let phone = "";
+        let username = "";
         let announced = false, lastBall = "--", clientBalance = 0;
         let isProcessingBuy = false;
         let socket = null;
         let latestDrawnBallsGlobal = []; 
         let globalMyCardsData = []; 
-        let selectedDepositMethodName = "";
-        let selectedWithdrawMethodName = "TELE BIRR";
         const roomType = "super";
 
         window.onload = function() {
-            let telegramChatId = "";
-            if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe) {
-                telegramChatId = window.Telegram.WebApp.initDataUnsafe.user?.id || "";
-            }
+            let tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
+            if (tg) { tg.expand(); }
 
-            if (phone && phone.trim() !== "") {
-                fetch(`/register_or_login`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ phone: phone, username: username || "User", chat_id: telegramChatId })
-                })
-                .then(res => res.json())
-                .then(d => {
-                    if (d.success) { showGameUI(); } 
-                    else { localStorage.removeItem('superbesh_phone'); showAuthUI(); }
-                }).catch(() => { showGameUI(); });
-            } else { showAuthUI(); }
+            let telegramUser = tg && tg.initDataUnsafe && tg.initDataUnsafe.user ? tg.initDataUnsafe.user : null;
+            
+            let savedPhone = localStorage.getItem('global_bingo_phone');
+            let savedName = localStorage.getItem('global_bingo_username');
+
+            if (savedPhone) {
+                phone = savedPhone;
+                username = savedName || "User";
+                authenticateAndStart(phone, username, telegramUser ? telegramUser.id : "");
+            } else if (telegramUser) {
+                phone = telegramUser.phone_number || ("tg_" + telegramUser.id);
+                username = telegramUser.first_name || "User";
+                localStorage.setItem('global_bingo_phone', phone);
+                localStorage.setItem('global_bingo_username', username);
+                authenticateAndStart(phone, username, telegramUser.id);
+            } else {
+                phone = "0900000000";
+                username = "GuestUser";
+                localStorage.setItem('global_bingo_phone', phone);
+                localStorage.setItem('global_bingo_username', username);
+                authenticateAndStart(phone, username, "");
+            }
         }
 
-        function showAuthUI() {
-            document.getElementById('auth-ui').style.display = 'flex';
-            document.getElementById('main-app-content').style.display = 'none';
-        }
-
-        function registerUser() {
-            let inputName = document.getElementById('reg-username').value.trim();
-            let inputPhone = document.getElementById('reg-phone').value.trim();
-            if (inputName.length < 2) return alert("እባክዎ ትክክለኛ ስም ያስገቡ!");
-            const cleanPhone = inputPhone.replace(/[^0-9+]/g, '');
-            if (cleanPhone.length < 9) return alert("እባክዎ ትክክለኛ ስልክ ቁጥር ያስገቡ!");
-
-            let telegramChatId = "";
-            if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe) {
-                telegramChatId = window.Telegram.WebApp.initDataUnsafe.user?.id || "";
-            }
-
+        function authenticateAndStart(userPhone, userName, chatId) {
             fetch('/register_or_login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ phone: cleanPhone, username: inputName, chat_id: telegramChatId })
+                body: JSON.stringify({ phone: userPhone, username: userName, chat_id: chatId })
             })
             .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    localStorage.setItem('superbesh_phone', cleanPhone);
-                    localStorage.setItem('superbesh_username', inputName);
-                    phone = cleanPhone; username = inputName;
+            .then(d => {
+                if (d.success) {
                     showGameUI();
-                } else { alert(data.msg || "የምዝገባ ስህተት!"); }
+                } else {
+                    alert(d.msg || "የግንኙነት ስህተት!");
+                }
+            }).catch(() => {
+                showGameUI();
             });
         }
 
         function showGameUI() {
-            document.getElementById('auth-ui').style.display = 'none';
             document.getElementById('main-app-content').style.display = 'flex';
             fetchBalanceOnly();
             initWebSocket();
@@ -675,11 +599,12 @@
         function closeWithdrawForm() { document.getElementById('withdraw-form-m').style.display = 'none'; }
         function copyNum(n) { navigator.clipboard.writeText(n); alert("Copied: " + n); }
 
+        // ከ index (4).html የተወሰደው ትክክለኛ የ 1000 ካርቴላዎች አቀማመጥ እና ሳይዝ (grid-500[cite: 6])
         function initTicketsOnce() {
             const area = document.getElementById('ticket-area');
             if(area && area.children.length === 0) { 
                 const fragment = document.createDocumentFragment();
-                for(let i=1; i<=100; i++) { 
+                for(let i=1; i<=1000; i++) { 
                     let div=document.createElement('div'); div.className='t-box'; div.innerText=i; div.id='t-'+i; fragment.appendChild(div); 
                 } 
                 area.appendChild(fragment);
@@ -687,7 +612,7 @@
         }
 
         function renderTickets(sold) {
-            for(let i=1; i<=100; i++) {
+            for(let i=1; i<=1000; i++) {
                 let box = document.getElementById('t-'+i); if(!box) continue;
                 box.style.pointerEvents = "auto"; 
                 if(sold[i]) { 
