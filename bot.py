@@ -197,6 +197,7 @@ def get_financial_stats():
         f" 💰 *የሳምንቱ የተጣራ ትርፍ:* `{week_profit:,.2f} ETB`"
     )
 
+# 🌟 የተስተካከለው የድል ማረጋገጫ ተግባር (ተጫዋቹ ያቀለማቸውን ቁጥሮች ከመጡት ኳሶች ጋር ያነጻጽራል)
 def check_winning_line(card, drawn_numbers, player_marked_numbers=None):
     drawn_set = set()
     for b in drawn_numbers:
@@ -206,7 +207,14 @@ def check_winning_line(card, drawn_numbers, player_marked_numbers=None):
             except ValueError:
                 pass
     drawn_set.add(0) 
-    marked_set = set(player_marked_numbers) if player_marked_numbers is not None else None
+    
+    marked_set = set()
+    if player_marked_numbers is not None:
+        for m in player_marked_numbers:
+            try:
+                marked_set.add(int(m))
+            except ValueError:
+                pass
 
     def is_hit(idx):
         val = card[idx]
@@ -214,42 +222,37 @@ def check_winning_line(card, drawn_numbers, player_marked_numbers=None):
             return True
         try:
             val_int = int(val)
-            if marked_set is not None:
-                return (val_int in drawn_set) and (val_int in marked_set)
-            return val_int in drawn_set
+            if (val_int not in drawn_set) or (val_int not in marked_set):
+                return False
+            return True
         except:
             return False
 
     all_win_indices = set()
     line_types = []
     
-    # 1. ረድፎች (Rows) ማረጋገጥ
     for i in range(5):
         row_indices = [i*5 + j for j in range(5)]
         if all(is_hit(idx) for idx in row_indices):
             all_win_indices.update(row_indices)
             line_types.append(f"ረድፍ {i+1}")
             
-    # 2. አምዶች (Columns) ማረጋገጥ
     for j in range(5):
         col_indices = [j + i*5 for i in range(5)]
         if all(is_hit(idx) for idx in col_indices):
             all_win_indices.update(col_indices)
             line_types.append(f"አምድ {j+1}")
             
-    # 3. ዲያጎናል ↘ ማረጋገጥ
     diag1_indices = [0, 6, 12, 18, 24]
     if all(is_hit(idx) for idx in diag1_indices):
         all_win_indices.update(diag1_indices)
         line_types.append("ዲያጎናል ↘")
         
-    # 4. ዲያጎናል ↙ ማረጋገጥ
     diag2_indices = [4, 8, 12, 16, 20]
     if all(is_hit(idx) for idx in diag2_indices):
         all_win_indices.update(diag2_indices)
         line_types.append("ዲያጎናል ↙")
         
-    # 5. ኮርነሮች (Corners) ማረጋገጥ
     corner_indices = [0, 4, 20, 24]
     if all(is_hit(idx) for idx in corner_indices):
         all_win_indices.update(corner_indices)
@@ -598,12 +601,16 @@ def cancel_ticket():
         return jsonify({"success": True})
     return jsonify({"success": False})
 
+# 🌟 የተስተካከለው የ BINGO ማረጋገጫ ሩት (የተጫዋቹን የተመረጡ ቁጥሮች marked_cells ተቀብሎ ያረጋግጣል)
 @app.route('/claim_bingo', methods=['POST'])
 def claim_bingo():
     global claim_lock_active, pending_claims
     d = request.json or {}
     ph = sanitize_input(d.get('phone'))
     room = str(d.get('room', '10'))
+    
+    client_marked_cells = d.get('marked_cells', [])
+    
     state = game_states.get(room, game_states["10"])
     
     user_info = wallets.find_one({"phone": ph})
@@ -628,9 +635,8 @@ def claim_bingo():
     winning_line_type = None
     winning_indices_list = None
     
-    # 🌟 ተጫዋቹ የያዛቸውን ካርቴላዎች (ሁለት ካርቴላዎች ቢኖሩትም ጭምር) አንድ በአንድ ማረጋገጥ
     for t_num, card in p_data["cards"].items():
-        win_indices, line_type = check_winning_line(card, current_drawn_balls, player_marked_numbers=None)
+        win_indices, line_type = check_winning_line(card, current_drawn_balls, player_marked_numbers=client_marked_cells)
         if win_indices is not None:
             valid_win_found = True
             winning_ticket_num = str(t_num)
@@ -640,7 +646,7 @@ def claim_bingo():
             break 
             
     if not valid_win_found:
-        return jsonify({"success": False, "msg": "ቢንጎ አልሞላም!"})
+        return jsonify({"success": False, "msg": "ቢንጎ አልሞላም ወይም ቁጥሮቹን በትክክል አላቀለሙም!"})
         
     claim_info = {
         "phone": db_phone,
@@ -692,7 +698,6 @@ def claim_bingo():
                         success_msg = f"🏆 *WINNER (Room {room})!* \n👤 Name: {w['username']} | 📞 Phone: `{w['phone']}` | 🎫 Ticket: {w['ticket_num']} \n🎯 Winning Ball: {w['winning_ball']} \n💰 Prize Won: {total_prize:.2f} ETB"
                         send_telegram(success_msg)
                     else:
-                        # 🌟 ከአንድ በላይ (ወይም ከሁለት በላይ) አሸናፊዎች ሲኖሩ ሽልማቱን በእኩል ማካፈል
                         share_prize = total_prize / num_winners
                         winner_texts = []
                         for w in pending_claims[room]:
