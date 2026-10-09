@@ -517,7 +517,7 @@
             </div>
         </div>
         
-        <!-- ሎቢ ላይ የሚታየው ስታቲስቲክስ (DERASH, SOLD, PLAYERS, BALANCE) -->
+        <!-- 1. የጨዋታ ሎቢ (Lobby Interface) Stats Bar (DERASH, SOLD, PLAYERS, BALANCE) -->
         <div class="stats" id="lobby-stats">
             <div>DERASH<b id="prize">0 ETB</b></div>
             <div>SOLD<b id="sold-count-header">0</b></div>
@@ -558,7 +558,7 @@
             </div>
 
             <div class="game-right-panel">
-                <!-- ጨዋታ ውስጥ የሚታየው ስታቲስቲክስ (DERASH, BALLS, PLAYERS - Balance የለውም) -->
+                <!-- 2. የጨዋታ ውስጥ ገጽ (Game Play Interface) Stats Bar (DERASH, BALLS, PLAYERS ብቻ - Balance እና Sold የሉም) -->
                 <div class="stats" id="game-stats" style="width: 100%; margin: 0 0 4px 0; box-sizing: border-box;">
                     <div>DERASH<b id="game-prize">0 ETB</b></div>
                     <div>BALLS<b id="ball-count-header">0/75</b></div>
@@ -929,23 +929,25 @@
             if (!d) return;
             let finalPrize = Math.floor((parseFloat(d.pot) || 0) * 0.8);
             
-            // ሎቢ እና ጨዋታ ውስጥ ያሉ Derash እና Players ማዘመን
+            // የሎቢ እና የጨዋታ ውስጥ ደርሽ (DERASH) ማዘመን
             document.getElementById('prize').innerText = finalPrize + " ETB";
             document.getElementById('game-prize').innerText = finalPrize + " ETB";
             
+            // የተጫዋቾች ቁጥር ማዘመን
             let activePlayersCount = parseInt(d.active_players) || 0;
             document.getElementById('p-count').innerText = activePlayersCount;
             document.getElementById('game-p-count').innerText = activePlayersCount;
             
             document.getElementById('timer').innerText = d.timer;
             
-            // የተሸጡ ካርቴላዎች ብዛት ማስላት (SOLD)
+            // SOLD (የተሸጡ ካርቴላዎች ብዛት በ 10 ብር እየተቆጠረ)
             let soldCount = 0;
             if (d.sold_tickets) {
                 soldCount = Object.keys(d.sold_tickets).length;
             }
             document.getElementById('sold-count-header').innerText = soldCount;
 
+            // BALLS (እስካሁን የወጡ ኳሶች ከ 75)
             let drawnCount = (d.drawn_balls && Array.isArray(d.drawn_balls)) ? d.drawn_balls.length : 0;
             document.getElementById('ball-count-header').innerText = `${drawnCount}/75`;
             
