@@ -249,23 +249,30 @@
             gap: 6px;
         }
 
+        /* 3ቱ ያለፉ ኳሶች እና ትልቁ ኳስ ጎን ለጎን (ሆሪዞንታል) እንዲደረደሩ የተደረገበት ክፍል */
         .top-balls-row {
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 5px;
+            gap: 6px;
             width: 100%;
             margin-top: 2px;
         }
 
+        #recent-balls-container {
+            display: flex;
+            gap: 4px;
+            flex-direction: row; /* ሆሪዞንታል አሰላለፍ */
+        }
+
         .recent-ball {
-            width: 32px;
-            height: 32px;
+            width: 30px;
+            height: 30px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 0.7rem;
+            font-size: 0.65rem;
             font-weight: bold;
             color: #fff;
             background: #3b82f6;
@@ -442,7 +449,6 @@
             </div>
         </div>
         
-        <!-- ሎቢ ላይ ከ players ቀጥሎ balance እንዲታይ ተደርጓል[cite: 7] -->
         <div class="stats" id="lobby-stats">
             <div>DERASH<b id="prize">0 ETB</b></div>
             <div>BALLS<b id="ball-count-header">0/75</b></div>
@@ -466,7 +472,6 @@
             <div class="grid-500" id="ticket-area"></div>
         </div>
 
-        <!-- ጌም ዩአይ ላይ ባላንስ አልተጨመረም -->
         <div id="game-ui" style="display:none;">
             <div class="game-left-panel">
                 <div class="board-header-top"><div>B</div><div>I</div><div>N</div><div>G</div><div>O</div></div>
