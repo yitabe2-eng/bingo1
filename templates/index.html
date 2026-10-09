@@ -29,7 +29,7 @@
         }
         
         #auth-ui {
-            display: none; /* በነባሪ ተደብቆ እንዲቆይ ተደርጓል */
+            display: none;
             flex-direction: column;
             align-items: center;
             justify-content: center;
@@ -259,13 +259,16 @@
             gap: 4px;
         }
 
+        /* ኳስ መውጫ ክቦቹ ወደ ላይ ከፍ እንዲሉ እና ቦታ እንዲሰጡ ተደርጓል[cite: 16] */
         .top-balls-row {
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 8px;
             width: 100%;
-            margin-top: 2px;
+            margin-top: 1px;
+            margin-bottom: 2px;
+            flex-shrink: 0;
         }
 
         #recent-balls-container {
@@ -275,8 +278,8 @@
         }
 
         .recent-ball {
-            width: 34px;
-            height: 34px;
+            width: 32px;
+            height: 32px;
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -295,15 +298,15 @@
         .opacity-50-ball { opacity: 0.5; }
 
         #ball-circle {
-            width: 78px;
-            height: 78px;
+            width: 72px;
+            height: 72px;
             background: #ef4444;
             color: white;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.45rem;
+            font-size: 1.35rem;
             font-weight: 900;
             border: 3.5px solid #ffffff;
             box-shadow: 0 4px 15px rgba(239, 68, 68, 0.5);
@@ -344,23 +347,27 @@
             line-height: 1.1;
         }
 
+        /* ሁለት ካርዶች ሲገዙ ስክሮል አድርጎ ሁለቱንም በግልጽ እንዲያሳይ ቁመቱ ተስተካክሏል[cite: 16] */
         #card-area {
             width: 100%;
             display: flex;
             flex-direction: column;
             gap: 6px;
             overflow-y: auto;
-            max-height: 255px;
+            flex: 1;
+            max-height: calc(100vh - 120px);
+            padding-bottom: 4px;
         }
 
         .bingo-card-wrapper {
             background: #ffffff;
             border-radius: 10px;
-            padding: 6px;
+            padding: 5px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
             width: 100%;
             box-sizing: border-box;
             border: 2px solid #cbd5e1;
+            flex-shrink: 0;
         }
 
         .bingo-card-header {
@@ -368,8 +375,8 @@
             grid-template-columns: repeat(5, 1fr);
             color: #fff;
             font-weight: 900;
-            font-size: 0.85rem;
-            padding: 7px 0;
+            font-size: 0.8rem;
+            padding: 5px 0;
             border-radius: 6px 6px 0 0;
             text-align: center;
             margin-bottom: 2px;
@@ -393,32 +400,32 @@
         .cell { 
             background: #ffffff; 
             color: #0f172a; 
-            height: 30px; 
+            height: 27px; 
             display: flex; 
             align-items: center; 
             justify-content: center; 
             font-weight: 900; 
-            font-size: 0.95rem; 
+            font-size: 0.9rem; 
             cursor: pointer; 
             border-radius: 4px;
             border: 1px solid #cbd5e1;
         }
         .cell.selected { background: var(--gold) !important; color: #000 !important; border-color: #d97706; }
-        .cell.free { background: #2563eb !important; color: white; font-size: 0.75rem; }
+        .cell.free { background: #2563eb !important; color: white; font-size: 0.7rem; }
         
         .bingo-btn { 
             width: 100%; 
-            padding: 9px 0; 
+            padding: 7px 0; 
             background: linear-gradient(135deg, #3b82f6, #1d4ed8); 
             color: white; 
-            font-size: 1.15rem; 
+            font-size: 1.05rem; 
             font-weight: 900; 
             border-radius: 0 0 8px 8px; 
             border: none; 
             cursor: pointer; 
             text-transform: uppercase; 
             box-shadow: 0 4px 10px rgba(37, 99, 235, 0.3); 
-            margin-top: 4px;
+            margin-top: 3px;
             letter-spacing: 2px;
             display: flex;
             align-items: center;
@@ -1001,10 +1008,8 @@
 
                 if (myCards.length > 0) {
                     statusCenterBox.style.display = 'none';
-                    if (cardArea.children.length === 0 || cardArea.querySelector('.status-center-box')) {
-                        cardArea.innerHTML = "";
-                        myCards.forEach((cObj, i) => { renderCard(cObj.matrix, i, cObj.id); }); 
-                    }
+                    cardArea.innerHTML = "";
+                    myCards.forEach((cObj, i) => { renderCard(cObj.matrix, i, cObj.id); }); 
                 } else {
                     statusCenterBox.style.display = 'flex';
                     cardArea.innerHTML = "";
@@ -1255,175 +1260,4 @@
         function refund(n) { 
             const target = parseInt(n); if(isNaN(target)) return;
             if(confirm("መልሰው 10 ብር ይውሰዱ?")) {
-                fetch('/cancel_ticket', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({phone: phone, ticket_num: target, room: '10'}) })
-                .then(() => { fetchBalanceOnly(); silentBackgroundSync(); }); 
-            }
-        }
-        
-        function renderMainBoard(drawn) {
-            const board = document.getElementById('main-board');
-            if(board.children.length === 0) { 
-                for(let col=0; col<5; col++) {
-                    let colDiv = document.createElement('div'); colDiv.className = 'board-column';
-                    let start = col * 15 + 1;
-                    for(let i=start; i<=start+14; i++) {
-                        let d = document.createElement('div'); d.className = 'ball-dot'; d.id = 'b-' + i; d.innerText = i;
-                        colDiv.appendChild(d);
-                    }
-                    board.appendChild(colDiv);
-                }
-            }
-            for(let i=1; i<=75; i++) {
-                let el = document.getElementById('b-'+i);
-                if(el) el.className = 'ball-dot';
-            }
-            drawn.forEach(b => { 
-                let num = parseInt(String(b).replace(/[^0-9]/g, '')); 
-                if(!isNaN(num)) { 
-                    let el = document.getElementById('b-'+num); 
-                    if(el) el.className = 'ball-dot active'; 
-                } 
-            });
-        }
-
-        function handleCellClickCrossMatch(targetNumVal, clickedCellEl) {
-            if(isNaN(targetNumVal)) return;
-            let ballFound = false;
-            if (latestDrawnBallsGlobal && latestDrawnBallsGlobal.length > 0) {
-                for (let k = 0; k < latestDrawnBallsGlobal.length; k++) {
-                    let bNum = parseInt(latestDrawnBallsGlobal[k].replace(/[^0-9]/g, ''));
-                    if (bNum === targetNumVal) { ballFound = true; break; }
-                }
-            }
-            if (!ballFound) {
-                alert("❌ ይህ ቁጥር ገና አልወጣም! ቁጥሩ ሳይወጣ ማቅለም አይቻልም!");
-                return;
-            }
-            if (!clickedCellEl.classList.contains('selected')) {
-                clickedCellEl.classList.add('selected');
-            } else {
-                clickedCellEl.classList.remove('selected');
-            }
-        }
-
-        function renderCard(card, index, cardId) {
-            const wrap = document.createElement('div'); 
-            wrap.className = 'bingo-card-wrapper';
-            
-            wrap.innerHTML = `
-                <div class="bingo-card-header">
-                    <div>B</div><div>I</div><div>N</div><div>G</div><div>O</div>
-                </div>
-            `;
-            
-            const grid = document.createElement('div'); 
-            grid.className = 'bingo-card';
-            
-            card.forEach((n, i) => {
-                const cell = document.createElement('div'); 
-                let cleanVal = n;
-                if(i === 12 || parseInt(cleanVal) === 0) { 
-                    cell.className = "cell free selected"; 
-                    cell.innerText = "★"; 
-                } else { 
-                    let numVal = parseInt(cleanVal); 
-                    cell.className = "cell"; 
-                    cell.innerText = cleanVal; 
-                    cell.onclick = () => { handleCellClickCrossMatch(numVal, cell); } 
-                }
-                grid.appendChild(cell);
-            });
-            wrap.appendChild(grid);
-
-            const bingoBtn = document.createElement('button');
-            bingoBtn.className = 'bingo-btn';
-            bingoBtn.id = 'bingo-btn-' + cardId;
-            bingoBtn.innerHTML = `BINGO! <span style="font-size:0.75rem; opacity:0.8; font-weight:normal;">#${cardId || ''}</span>`;
-            bingoBtn.onclick = () => claimSpecificCard(cardId, wrap, bingoBtn);
-            wrap.appendChild(bingoBtn);
-
-            document.getElementById('card-area').appendChild(wrap);
-        }
-
-        function claimSpecificCard(targetCardId, cardWrapEl, btnEl) {
-            const markedCells = [];
-            cardWrapEl.querySelectorAll('.cell.selected').forEach(cell => {
-                let val = cell.innerText.trim();
-                if (val && val !== "FREE" && val !== "★") {
-                    markedCells.push(parseInt(val));
-                }
-            });
-
-            btnEl.disabled = true;
-            
-            fetch('/claim_bingo', { 
-                method:'POST', 
-                headers:{ 'Content-Type':'application/json' }, 
-                body: JSON.stringify({ phone: phone, room: '10', ticket_num: targetCardId, marked_cells: markedCells }) 
-            })
-            .then(r => r.json())
-            .then(d => { 
-                if(!d.success) { 
-                    alert(d.msg); 
-                    btnEl.disabled = false; 
-                } else {
-                    silentBackgroundSync();
-                }
-            }).catch(() => { btnEl.disabled = false; }); 
-        }
-        
-        function subD() {
-            let amt = parseInt(document.getElementById('da').value);
-            let tid = document.getElementById('di').value.trim();
-            if(!amt || amt < 10 || !tid || tid.length < 4) return alert("ትክክለኛ መረጃ ያስገቡ!");
-            
-            fetch('/request_deposit', { 
-                method:'POST', headers:{'Content-Type':'application/json'}, 
-                body:JSON.stringify({phone: phone, amount: amt, transaction_id: tid, method: selectedDepositMethodName}) 
-            })
-            .then(res => res.json())
-            .then(d => { 
-                closeDepositForm(); 
-                alert(d.msg || "የዲፖዚት ጥያቄዎ ተልኳል!"); 
-                fetchBalanceOnly(); 
-            })
-            .catch(() => {});
-        }
-
-        function subW() {
-            let amt = parseFloat(document.getElementById('wa').value);
-            if(!amt || amt < 51) return alert("ቢያንስ 51 ETB ማውጣት ይችላሉ!");
-            if(amt > clientBalance) return alert("በቂ ባላንስ የለዎትም!");
-            
-            fetch('/request_withdrawal', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ phone: phone, amount: amt, method: selectedWithdrawMethodName }) 
-            })
-            .then(r => r.json())
-            .then(res => { 
-                closeWithdrawForm(); 
-                alert(res.msg || "የማውጣት ጥያቄዎ ተልኳል!"); 
-                fetchBalanceOnly(); 
-            })
-            .catch(() => {});
-        }
-
-        function subTransfer() {
-            let receiverPh = document.getElementById('trans-phone').value.trim();
-            let amt = parseFloat(document.getElementById('trans-amount').value);
-            if(!receiverPh || isNaN(amt) || amt <= 0) return alert("እባክዎ ትክክለኛ ስልክ ቁጥር እና የብር መጠን ያስገቡ!");
-            
-            fetch('/request_transfer', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ phone: phone, receiver_phone: receiverPh, amount: amt })
-            })
-            .then(r => r.json())
-            .then(res => {
-                closeM('trans-m');
-                alert(res.msg || "ተከናውኗል!");
-            })
-            .catch(() => {});
-        }
-    </script>
-</body>
-</html>
+                fetch('/cancel_ticket', { method:'POST', headers:{'
