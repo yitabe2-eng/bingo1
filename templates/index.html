@@ -29,7 +29,7 @@
         }
         
         #auth-ui {
-            display: flex;
+            display: none; /* በነባሪ ተደብቆ እንዲቆይ ተደርጓል */
             flex-direction: column;
             align-items: center;
             justify-content: center;
@@ -274,7 +274,6 @@
             flex-direction: row;
         }
 
-        /* 3ኛ ጥያቄ: የ 3ቱ ትናንሽ ክቦች መጠን ከፍ እንዲል ተደርጓል (ከ 26px ወደ 34px) */
         .recent-ball {
             width: 34px;
             height: 34px;
@@ -295,7 +294,6 @@
         .recent-ball:nth-child(3) { background: #10b981; }
         .opacity-50-ball { opacity: 0.5; }
 
-        /* 3ኛ ጥያቄ: ትልቁ የኳስ መውጫ ክብ መጠን ከፍ እንዲል ተደርጓል (ከ 65px ወደ 78px) */
         #ball-circle {
             width: 78px;
             height: 78px;
@@ -408,7 +406,6 @@
         .cell.selected { background: var(--gold) !important; color: #000 !important; border-color: #d97706; }
         .cell.free { background: #2563eb !important; color: white; font-size: 0.75rem; }
         
-        /* 2ኛ ጥያቄ: BINGO! በተን ጽሁፍ ዲዛይን እና አቀማመጥ ልክ እንደ ሁለተኛው ምስል ተስተካክሏል */
         .bingo-btn { 
             width: 100%; 
             padding: 9px 0; 
@@ -700,6 +697,14 @@
             let telegramChatId = "";
             if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe) {
                 telegramChatId = window.Telegram.WebApp.initDataUnsafe.user?.id || "";
+                if (!phone && window.Telegram.WebApp.initDataUnsafe.user?.phone) {
+                    phone = window.Telegram.WebApp.initDataUnsafe.user.phone;
+                    localStorage.setItem('phone', phone);
+                }
+                if (!username && window.Telegram.WebApp.initDataUnsafe.user?.first_name) {
+                    username = window.Telegram.WebApp.initDataUnsafe.user.first_name;
+                    localStorage.setItem('username', username);
+                }
             }
 
             if (phone && phone.trim() !== "") {
@@ -708,7 +713,7 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ 
                         phone: phone, 
-                        username: localStorage.getItem('username') || "User",
+                        username: username || "User",
                         chat_id: telegramChatId 
                     })
                 })
@@ -717,8 +722,6 @@
                     if (d.success) {
                         showGameUI();
                     } else {
-                        localStorage.removeItem('phone');
-                        localStorage.removeItem('username');
                         showAuthUI();
                     }
                 })
@@ -1018,3 +1021,409 @@
                 document.getElementById('w-prize-pool').innerText = finalPrize + " ETB";
                 
                 let ticketNum = d.winning_ticket_num ? String(d.winning_ticket_num) : "100";
+                document.getElementById('w-card-number').innerText = `CARD #${ticketNum}`;
+                document.getElementById('w-card-owner').innerText = winnerName;
+                
+                let timerVal = parseInt(d.timer);
+                document.getElementById('w-next-timer').innerText = isNaN(timerVal) ? "10s" : timerVal + "s";
+
+                let patternNameEl = document.getElementById('w-pattern-name');
+                if (patternNameEl) {
+                    patternNameEl.innerText = d.winning_line_name ? `🎉 ያሸነፈበት መስመር፦ ${d.winning_line_name}` : "🎉 BINGO!";
+                }
+
+                const gridCells = document.getElementById('w-grid-cells');
+                gridCells.innerHTML = ""; 
+
+                let winCard = d.winning_card;
+                if (!winCard && d.all_cards && d.all_cards[ticketNum]) {
+                    winCard = d.all_cards[ticketNum];
+                }
+
+                if (Array.isArray(winCard)) {
+                    let drawnSet = new Set();
+                    if (d.drawn_balls && Array.isArray(d.drawn_balls)) { 
+                        d.drawn_balls.forEach(b => { 
+                            let numOnly = String(b).replace(/[^0-9]/g, ''); 
+                            if(numOnly) drawnSet.add(parseInt(numOnly)); 
+                        }); 
+                    }
+                    
+                    let winIdxs = new Set();
+                    if (d.winning_indices && Array.isArray(d.winning_indices)) {
+                        d.winning_indices.forEach(idx => winIdxs.add(idx));
+                    }
+
+                    winCard.forEach((n, idx) => {
+                        let cell = document.createElement('div'); 
+                        let cleanNum = n;
+                        
+                        if(idx === 12 || cleanNum === "FREE" || cleanNum === "★" || parseInt(cleanNum) === 0) {
+                            cell.className = "w-cell-modern free"; 
+                            cell.innerText = "★";
+                            if(winIdxs.has(idx)) cell.className += " hit";
+                        } else {
+                            let numVal = parseInt(cleanNum); 
+                            cell.innerText = cleanNum;
+                            
+                            if (winIdxs.has(idx)) { 
+                                cell.className = "w-cell-modern hit"; 
+                            } else if (drawnSet.has(numVal)) { 
+                                cell.className = "w-cell-modern drawn"; 
+                            } else { 
+                                cell.className = "w-cell-modern"; 
+                            }
+                        }
+                        gridCells.appendChild(cell);
+                    });
+                }
+                if(!announced) { try { document.getElementById('win-horn').play(); } catch(e){} announced = true; }
+            }
+        }
+
+        function openM(id) { document.getElementById(id).style.display='flex'; }
+        function closeM(id) { document.getElementById(id).style.display='none'; }
+        
+        function openAdminDashboard() {
+            document.getElementById('admin-m').style.display = 'flex';
+            fetchAdminData();
+        }
+
+        function fetchAdminData() {
+            fetch(`/admin_get_users?phone=${encodeURIComponent(phone)}`)
+            .then(res => res.json())
+            .then(data => {
+                if(data.success) {
+                    cachedAdminUsers = data.users || [];
+                    renderAdminUsers(cachedAdminUsers);
+                    document.getElementById('admin-stats-summary').innerText = `👥 ጠቅላላ ተጠቃሚዎች: ${data.total_users} | 💰 አጠቃላይ ሲስተም ባላንስ: ${data.total_balance} ETB`;
+                } else {
+                    alert(data.msg || "ፈቃድ የለዎትም!");
+                    closeM('admin-m');
+                }
+            }).catch(() => { alert("ዳታ ማምጣት አልተቻለም!"); });
+        }
+
+        function renderAdminUsers(users) {
+            const tbody = document.getElementById('admin-users-tbody');
+            tbody.innerHTML = "";
+            if(users.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; color:#94a3b8;">ምንም ተጠቃሚ አልተገኘም</td></tr>`;
+                return;
+            }
+            users.forEach(u => {
+                let tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><b>${u.name || u.username}</b><br><span style="color:#94a3b8; font-size:0.7rem;">${u.phone}</span></td>
+                    <td style="color:var(--gold); font-weight:bold;">${u.balance} ETB</td>
+                    <td>
+                        <button class="btn-adm-action btn-adm-add" onclick="adminModBalance('${u.phone}', 'add')">+ብር</button>
+                        <button class="btn-adm-action btn-adm-sub" onclick="adminModBalance('${u.phone}', 'sub')">-ብር</button>
+                        <button class="btn-adm-action btn-adm-del" onclick="adminRemoveUser('${u.phone}')">ሰርዝ</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function filterAdminUsers() {
+            let query = document.getElementById('admin-search').value.toLowerCase();
+            let filtered = cachedAdminUsers.filter(u => String(u.phone).toLowerCase().includes(query) || String(u.name || u.username).toLowerCase().includes(query));
+            renderAdminUsers(filtered);
+        }
+
+        function adminModBalance(targetPhone, actionType) {
+            let titleText = actionType === 'add' ? "የሚጨመረውን የብር መጠን ያስገቡ:" : "የሚቀነሰውን የብር መጠን ያስገቡ:";
+            let amountStr = prompt(titleText);
+            if(!amountStr) return;
+            let amount = parseFloat(amountStr);
+            if(isNaN(amount) || amount <= 0) return alert("እባክዎ ትክክለኛ መጠን ያስገቡ!");
+
+            let endpoint = actionType === 'add' ? '/admin_add_balance' : '/admin_sub_balance';
+            fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ admin_phone: phone, target_phone: targetPhone, amount: amount })
+            })
+            .then(res => res.json())
+            .then(d => {
+                if(d.success) { alert(d.msg); fetchAdminData(); } else { alert(d.msg || "ስህተት አጋጥሟል!"); }
+            }).catch(() => {});
+        }
+
+        function adminRemoveUser(targetPhone) {
+            if(!confirm(`እርግጠኛ ኖት ተጠቃሚውን (${targetPhone}) ከዳታቤዝ መሰረዝ ይፈልጋሉ?`)) return;
+            fetch('/admin_remove_user', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ admin_phone: phone, target_phone: targetPhone })
+            })
+            .then(res => res.json())
+            .then(d => {
+                if(d.success) { alert("ተጠቃሚው ተሰርዟል!"); fetchAdminData(); } else { alert(d.msg || "ስህተት!"); }
+            }).catch(() => {});
+        }
+
+        function sendAdminBroadcast() {
+            let msgText = document.getElementById('admin-broadcast-msg').value.trim();
+            if(!msgText) return alert("እባክዎ የመልዕክት ጽሁፍ ያስገቡ!");
+            if(!confirm("ይህንን መልዕክት ለሁሉም ተጠቃሚዎች መላክ ይፈልጋሉ?")) return;
+
+            fetch('/admin_broadcast', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ admin_phone: phone, message: msgText })
+            })
+            .then(res => res.json())
+            .then(d => {
+                if(d.success) { alert(`ብሮድካስት ተጠናቋል! የተሳካላቸው: ${d.success_count}`); document.getElementById('admin-broadcast-msg').value = ""; } else { alert(d.msg || "ስህተት!"); }
+            }).catch(() => {});
+        }
+
+        function openDepositSelection() { document.getElementById('dep-selection-m').style.display = 'flex'; }
+        function selectDepositMethod(methodName) {
+            selectedDepositMethodName = methodName;
+            document.getElementById('dep-selection-m').style.display = 'none';
+            document.getElementById('dep-method-name').innerText = methodName;
+            document.getElementById('dep-form-m').style.display = 'flex';
+        }
+        function closeDepositForm() {
+            document.getElementById('dep-form-m').style.display = 'none';
+            document.getElementById('da').value = '';
+            document.getElementById('di').value = '';
+        }
+
+        function openWithdrawSelection() { document.getElementById('withdraw-selection-m').style.display = 'flex'; }
+        function selectWithdrawMethod(methodName) {
+            selectedWithdrawMethodName = methodName;
+            document.getElementById('withdraw-selection-m').style.display = 'none';
+            document.getElementById('withdraw-method-name').innerText = methodName;
+            document.getElementById('withdraw-form-m').style.display = 'flex';
+        }
+        function closeWithdrawForm() {
+            document.getElementById('withdraw-form-m').style.display = 'none';
+            document.getElementById('wa').value = '';
+        }
+
+        function copyNum(n) { navigator.clipboard.writeText(n); alert("Copied: " + n); }
+
+        function initTicketsOnce() {
+            const area = document.getElementById('ticket-area');
+            if(area && area.children.length === 0) { 
+                const fragment = document.createDocumentFragment();
+                for(let i=1; i<=500; i++) { 
+                    let div=document.createElement('div'); div.className='t-box'; div.innerText=i; div.id='t-'+i; fragment.appendChild(div); 
+                } 
+                area.appendChild(fragment);
+            }
+        }
+
+        function renderTickets(sold) {
+            for(let i=1; i<=500; i++) {
+                let box = document.getElementById('t-'+i); if(!box) continue;
+                box.style.pointerEvents = "auto"; 
+                if(sold[i]) { 
+                    const isMine = phoneMatches(sold[i], phone);
+                    box.className = isMine ? 't-box mine' : 't-box sold'; 
+                    box.onclick = isMine ? () => refund(i) : null; 
+                } else { 
+                    box.className='t-box'; box.onclick=()=>buy(i); 
+                }
+            }
+        }
+
+        function buy(n) { 
+            if (isProcessingBuy) return;
+            const target = parseInt(n); if(isNaN(target)) return;
+            if (document.querySelectorAll('.t-box.mine').length >= 2) return alert("ከ 2 ካርተላ በላይ መግዛት አይቻልም!");
+            isProcessingBuy = true;
+            let box = document.getElementById('t-'+target);
+            if (box) { box.className = 't-box mine'; box.style.pointerEvents = 'none'; }
+            
+            fetch('/buy_specific_ticket', {
+                method:'POST', headers:{'Content-Type':'application/json'}, 
+                body:JSON.stringify({phone: phone, ticket_num: target, username: username, room: '10'})
+            })
+            .then(res => res.json())
+            .then(d => { 
+                isProcessingBuy = false; 
+                silentBackgroundSync();
+            })
+            .catch(() => { isProcessingBuy = false; }); 
+        }
+
+        function refund(n) { 
+            const target = parseInt(n); if(isNaN(target)) return;
+            if(confirm("መልሰው 10 ብር ይውሰዱ?")) {
+                fetch('/cancel_ticket', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({phone: phone, ticket_num: target, room: '10'}) })
+                .then(() => { fetchBalanceOnly(); silentBackgroundSync(); }); 
+            }
+        }
+        
+        function renderMainBoard(drawn) {
+            const board = document.getElementById('main-board');
+            if(board.children.length === 0) { 
+                for(let col=0; col<5; col++) {
+                    let colDiv = document.createElement('div'); colDiv.className = 'board-column';
+                    let start = col * 15 + 1;
+                    for(let i=start; i<=start+14; i++) {
+                        let d = document.createElement('div'); d.className = 'ball-dot'; d.id = 'b-' + i; d.innerText = i;
+                        colDiv.appendChild(d);
+                    }
+                    board.appendChild(colDiv);
+                }
+            }
+            for(let i=1; i<=75; i++) {
+                let el = document.getElementById('b-'+i);
+                if(el) el.className = 'ball-dot';
+            }
+            drawn.forEach(b => { 
+                let num = parseInt(String(b).replace(/[^0-9]/g, '')); 
+                if(!isNaN(num)) { 
+                    let el = document.getElementById('b-'+num); 
+                    if(el) el.className = 'ball-dot active'; 
+                } 
+            });
+        }
+
+        function handleCellClickCrossMatch(targetNumVal, clickedCellEl) {
+            if(isNaN(targetNumVal)) return;
+            let ballFound = false;
+            if (latestDrawnBallsGlobal && latestDrawnBallsGlobal.length > 0) {
+                for (let k = 0; k < latestDrawnBallsGlobal.length; k++) {
+                    let bNum = parseInt(latestDrawnBallsGlobal[k].replace(/[^0-9]/g, ''));
+                    if (bNum === targetNumVal) { ballFound = true; break; }
+                }
+            }
+            if (!ballFound) {
+                alert("❌ ይህ ቁጥር ገና አልወጣም! ቁጥሩ ሳይወጣ ማቅለም አይቻልም!");
+                return;
+            }
+            if (!clickedCellEl.classList.contains('selected')) {
+                clickedCellEl.classList.add('selected');
+            } else {
+                clickedCellEl.classList.remove('selected');
+            }
+        }
+
+        function renderCard(card, index, cardId) {
+            const wrap = document.createElement('div'); 
+            wrap.className = 'bingo-card-wrapper';
+            
+            wrap.innerHTML = `
+                <div class="bingo-card-header">
+                    <div>B</div><div>I</div><div>N</div><div>G</div><div>O</div>
+                </div>
+            `;
+            
+            const grid = document.createElement('div'); 
+            grid.className = 'bingo-card';
+            
+            card.forEach((n, i) => {
+                const cell = document.createElement('div'); 
+                let cleanVal = n;
+                if(i === 12 || parseInt(cleanVal) === 0) { 
+                    cell.className = "cell free selected"; 
+                    cell.innerText = "★"; 
+                } else { 
+                    let numVal = parseInt(cleanVal); 
+                    cell.className = "cell"; 
+                    cell.innerText = cleanVal; 
+                    cell.onclick = () => { handleCellClickCrossMatch(numVal, cell); } 
+                }
+                grid.appendChild(cell);
+            });
+            wrap.appendChild(grid);
+
+            const bingoBtn = document.createElement('button');
+            bingoBtn.className = 'bingo-btn';
+            bingoBtn.id = 'bingo-btn-' + cardId;
+            bingoBtn.innerHTML = `BINGO! <span style="font-size:0.75rem; opacity:0.8; font-weight:normal;">#${cardId || ''}</span>`;
+            bingoBtn.onclick = () => claimSpecificCard(cardId, wrap, bingoBtn);
+            wrap.appendChild(bingoBtn);
+
+            document.getElementById('card-area').appendChild(wrap);
+        }
+
+        function claimSpecificCard(targetCardId, cardWrapEl, btnEl) {
+            const markedCells = [];
+            cardWrapEl.querySelectorAll('.cell.selected').forEach(cell => {
+                let val = cell.innerText.trim();
+                if (val && val !== "FREE" && val !== "★") {
+                    markedCells.push(parseInt(val));
+                }
+            });
+
+            btnEl.disabled = true;
+            
+            fetch('/claim_bingo', { 
+                method:'POST', 
+                headers:{ 'Content-Type':'application/json' }, 
+                body: JSON.stringify({ phone: phone, room: '10', ticket_num: targetCardId, marked_cells: markedCells }) 
+            })
+            .then(r => r.json())
+            .then(d => { 
+                if(!d.success) { 
+                    alert(d.msg); 
+                    btnEl.disabled = false; 
+                } else {
+                    silentBackgroundSync();
+                }
+            }).catch(() => { btnEl.disabled = false; }); 
+        }
+        
+        function subD() {
+            let amt = parseInt(document.getElementById('da').value);
+            let tid = document.getElementById('di').value.trim();
+            if(!amt || amt < 10 || !tid || tid.length < 4) return alert("ትክክለኛ መረጃ ያስገቡ!");
+            
+            fetch('/request_deposit', { 
+                method:'POST', headers:{'Content-Type':'application/json'}, 
+                body:JSON.stringify({phone: phone, amount: amt, transaction_id: tid, method: selectedDepositMethodName}) 
+            })
+            .then(res => res.json())
+            .then(d => { 
+                closeDepositForm(); 
+                alert(d.msg || "የዲፖዚት ጥያቄዎ ተልኳል!"); 
+                fetchBalanceOnly(); 
+            })
+            .catch(() => {});
+        }
+
+        function subW() {
+            let amt = parseFloat(document.getElementById('wa').value);
+            if(!amt || amt < 51) return alert("ቢያንስ 51 ETB ማውጣት ይችላሉ!");
+            if(amt > clientBalance) return alert("በቂ ባላንስ የለዎትም!");
+            
+            fetch('/request_withdrawal', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ phone: phone, amount: amt, method: selectedWithdrawMethodName }) 
+            })
+            .then(r => r.json())
+            .then(res => { 
+                closeWithdrawForm(); 
+                alert(res.msg || "የማውጣት ጥያቄዎ ተልኳል!"); 
+                fetchBalanceOnly(); 
+            })
+            .catch(() => {});
+        }
+
+        function subTransfer() {
+            let receiverPh = document.getElementById('trans-phone').value.trim();
+            let amt = parseFloat(document.getElementById('trans-amount').value);
+            if(!receiverPh || isNaN(amt) || amt <= 0) return alert("እባክዎ ትክክለኛ ስልክ ቁጥር እና የብር መጠን ያስገቡ!");
+            
+            fetch('/request_transfer', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ phone: phone, receiver_phone: receiverPh, amount: amt })
+            })
+            .then(r => r.json())
+            .then(res => {
+                closeM('trans-m');
+                alert(res.msg || "ተከናውኗል!");
+            })
+            .catch(() => {});
+        }
+    </script>
+</body>
+</html>
