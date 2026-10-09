@@ -206,11 +206,11 @@
             gap: 2px;
         }
 
-        /* የቦክሶቹ ቁመት እኩል እንዲጨምር እና ቁጥሮቹ ሳይዛቡ ግልጽ እንዲሆኑ የተደረገ */
+        /* 4ኛ ጥያቄ: ማይን ቦርድ ላይ ያሉት ቁጥሮች ሳይዝ እና ውፍረት እንዲጨምር ተደርጓል */
         .ball-dot {
             flex: 1;
             min-height: 0;
-            font-size: 0.72rem;
+            font-size: 0.85rem;
             background: #f8fafc;
             display: flex;
             align-items: center;
@@ -228,21 +228,22 @@
             border-color: #16a34a;
         }
 
+        /* 1ኛ ጥያቄ: ROOM 10 የሚለው ቁመት በእጥፍ ጨምሯል */
         .room-footer-bar {
             display: flex;
             align-items: center;
             justify-content: space-between;
             background: #1e293b;
             color: white;
-            padding: 4px 8px;
+            padding: 12px 10px;
             border-radius: 4px;
             margin-top: 2px;
             font-weight: bold;
-            font-size: 0.75rem;
+            font-size: 0.9rem;
             flex-shrink: 0;
         }
         .room-footer-bar span {
-            font-size: 0.65rem;
+            font-size: 0.8rem;
             letter-spacing: 1px;
             color: #94a3b8;
         }
@@ -363,14 +364,15 @@
             border: 2px solid #cbd5e1;
         }
 
+        /* 2ኛ ጥያቄ: B-I-N-G-O ፊደላት ያሉበት ቦክስ ቁመት ጨምሯል */
         .bingo-card-header {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
             color: #fff;
             font-weight: 900;
-            font-size: 0.7rem;
-            padding: 3px 0;
-            border-radius: 4px 4px 0 0;
+            font-size: 0.85rem;
+            padding: 7px 0;
+            border-radius: 6px 6px 0 0;
             text-align: center;
             margin-bottom: 2px;
         }
@@ -405,12 +407,13 @@
         .cell.selected { background: var(--gold) !important; color: #000 !important; border-color: #d97706; }
         .cell.free { background: #2563eb !important; color: white; font-size: 0.65rem; }
         
+        /* 3ኛ ጥያቄ: የቢንጎ ጽሁፍ ትንሽ እንዲጨምር ተደርጓል */
         #bingo-btn { 
             width: 100%; 
-            padding: 8px 0; 
+            padding: 11px 0; 
             background: linear-gradient(135deg, #2563eb, #1d4ed8); 
             color: white; 
-            font-size: 0.95rem; 
+            font-size: 1.15rem; 
             font-weight: 900; 
             border-radius: 6px; 
             border: none; 
@@ -418,7 +421,7 @@
             text-transform: uppercase; 
             box-shadow: 0 4px 10px rgba(37, 99, 235, 0.3); 
             margin-top: 4px;
-            letter-spacing: 1px;
+            letter-spacing: 1.5px;
         }
         #bingo-btn:disabled { background: #555 !important; color: #aaa !important; cursor: not-allowed; box-shadow: none; }
         
@@ -542,7 +545,8 @@
             <div class="game-right-panel">
                 <div class="top-balls-row">
                     <div id="recent-balls-container"></div>
-                    <div id="ball-circle">--</div>
+                    <!-- 5ኛ ጥያቄ: ኳስ መውጫዋ ትልቁ ላይ የመጀመሪያ ኳስ እስከሚጠራ ድረስ የ 3 ሰከንድ ቆጠራ እንዲኖር ተደርጓል -->
+                    <div id="ball-circle">3</div>
                 </div>
 
                 <div class="status-center-box" id="status-center-box">
@@ -684,6 +688,7 @@
         let selectedDepositMethodName = "";
         let selectedWithdrawMethodName = "TELE BIRR";
         let cachedAdminUsers = [];
+        let countdownInterval = null;
 
         window.onload = function() {
             let telegramChatId = "";
@@ -918,6 +923,7 @@
                 lastBall = "--";
                 latestDrawnBallsGlobal = [];
                 globalMyCardsData = [];
+                if (countdownInterval) { clearInterval(countdownInterval); countdownInterval = null; }
                 initTicketsOnce(); 
                 if (!isProcessingBuy) { renderTickets(d.sold_tickets || {}); }
             } 
@@ -927,8 +933,29 @@
                 document.getElementById('result-ui').style.display='none';
                 
                 let secureBall = d.current_ball || "--";
-                document.getElementById('ball-circle').innerText = secureBall;
-                if (secureBall !== lastBall && secureBall !== "--") { lastBall = secureBall; }
+                
+                // 5ኛ ጥያቄ: ጨዋታው ሲጀምር 3 ሰከንድ ቆጥሮ የመጀመሪያውን ኳስ እንዲያሳይ ማድረግ
+                if (secureBall !== lastBall && secureBall !== "--") {
+                    lastBall = secureBall;
+                    if (countdownInterval) { clearInterval(countdownInterval); countdownInterval = null; }
+                    document.getElementById('ball-circle').innerText = secureBall;
+                } else if (secureBall === "--" || !secureBall) {
+                    if (!countdownInterval) {
+                        let count = 3;
+                        document.getElementById('ball-circle').innerText = count;
+                        countdownInterval = setInterval(() => {
+                            count--;
+                            if (count > 0) {
+                                document.getElementById('ball-circle').innerText = count;
+                            } else {
+                                clearInterval(countdownInterval);
+                                countdownInterval = null;
+                            }
+                        }, 1000);
+                    }
+                } else {
+                    document.getElementById('ball-circle').innerText = secureBall;
+                }
                 
                 latestDrawnBallsGlobal = d.drawn_balls || [];
                 renderMainBoard(latestDrawnBallsGlobal);
@@ -1302,7 +1329,7 @@
 
             const bingoBtn = document.createElement('button');
             bingoBtn.id = 'bingo-btn';
-            bingoBtn.innerHTML = `BINGO! <span style="font-size:0.65rem; opacity:0.8; font-weight:normal;">#${cardId || ''}</span>`;
+            bingoBtn.innerHTML = `BINGO! <span style="font-size:0.75rem; opacity:0.8; font-weight:normal;">#${cardId || ''}</span>`;
             bingoBtn.onclick = claim;
             wrap.appendChild(bingoBtn);
 
@@ -1327,7 +1354,7 @@
             fetch('/claim_bingo', { 
                 method:'POST', 
                 headers:{ 'Content-Type':'application/json' }, 
-                body: JSON.stringify({ phone: phone, room: '10', marked_nested: markedCells }) 
+                body: JSON.stringify({ phone: phone, room: '10', marked_cells: markedCells }) 
             })
             .then(r => r.json())
             .then(d => { 
