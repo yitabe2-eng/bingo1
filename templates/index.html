@@ -149,7 +149,7 @@
         .t-box.mine { background: var(--gold) !important; color: #000 !important; box-shadow: inset 0 0 0 2px #ffffff; }
         .t-box.sold { background: #333; color: #666; cursor: not-allowed; }
 
-        /* Game UI እንደ ምስሉ በትክክል እንዲስተካከል የተደረገ */
+        /* Game UI: Main Board 40% እና Card 60% እንዲይዙ የተደረገ */
         #game-ui {
             flex: 1;
             display: flex;
@@ -163,7 +163,7 @@
         }
 
         .game-left-panel {
-            flex: 1.15;
+            flex: 0 0 40%; /* 40% ስፋት */
             display: flex;
             flex-direction: column;
             background: #ffffff;
@@ -173,9 +173,9 @@
             overflow: hidden;
             box-sizing: border-box;
             border: 1px solid #cbd5e1;
+            height: 100%; /* እስከ ታች room 10 ድረስ ቁመቱን እንዲሞላ */
         }
 
-        /* ምስሉ ላይ እንዳለው የ B I N GO ከለሮች (B=Blue, I=Red, N=Gold/Yellow, G=Green, O=Purple) */
         .board-header-top {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
@@ -243,7 +243,7 @@
         }
 
         .game-right-panel {
-            flex: 1.1;
+            flex: 0 0 60%; /* 60% ስፋት */
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -345,36 +345,79 @@
             flex-direction: column;
             gap: 4px;
             overflow-y: auto;
-            max-height: 180px;
+            max-height: 230px;
         }
+
+        /* ካርዱ እና BINGO ቁልፍ አንድ ላይ የተጣበቁበት ኮንቴነር (እንዳሰኙት የተስተካከለ)[cite: 10] */
+        .bingo-card-wrapper {
+            background: #ffffff;
+            border-radius: 10px;
+            padding: 6px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            width: 100%;
+            box-sizing: border-box;
+            border: 2px solid #cbd5e1;
+        }
+
+        .bingo-card-header {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            color: #fff;
+            font-weight: 900;
+            font-size: 0.7rem;
+            padding: 3px 0;
+            border-radius: 4px 4px 0 0;
+            text-align: center;
+            margin-bottom: 2px;
+        }
+        .bingo-card-header div:nth-child(1) { background: #2563eb; }
+        .bingo-card-header div:nth-child(2) { background: #ef4444; }
+        .bingo-card-header div:nth-child(3) { background: #eab308; color: #000; }
+        .bingo-card-header div:nth-child(4) { background: #10b981; }
+        .bingo-card-header div:nth-child(5) { background: #9333ea; }
 
         .bingo-card { 
             display: grid; 
             grid-template-columns: repeat(5, 1fr); 
             gap: 2px; 
-            background: #334155; 
-            padding: 3px; 
-            border-radius: 0 0 5px 5px; 
+            background: #ffffff; 
+            padding: 2px; 
             width: 100%; 
             box-sizing: border-box;
         }
         .cell { 
-            background: #fff; 
+            background: #ffffff; 
             color: #000; 
-            height: 24px; 
+            height: 28px; 
             display: flex; 
             align-items: center; 
             justify-content: center; 
             font-weight: 800; 
-            font-size: 0.65rem; 
+            font-size: 0.75rem; 
             cursor: pointer; 
-            border-radius: 2px;
+            border-radius: 4px;
+            border: 1px solid #cbd5e1;
         }
-        .cell.selected { background: var(--gold) !important; color: #000 !important; }
-        .cell.free { background: var(--red) !important; color: white; font-size: 0.5rem; }
+        .cell.selected { background: var(--gold) !important; color: #000 !important; border-color: #d97706; }
+        .cell.free { background: #2563eb !important; color: white; font-size: 0.6rem; }
         
-        #bingo-btn { width: 100%; padding: 8px 0; background: var(--red); color: white; font-size: 0.9rem; font-weight: 900; border-radius: 8px; border: 1px solid white; cursor: pointer; text-transform: uppercase; box-shadow: 0 4px 10px rgba(255, 62, 62, 0.3); }
-        #bingo-btn:disabled { background: #555 !important; border-color: #888 !important; color: #aaa !important; cursor: not-allowed; box-shadow: none; }
+        /* BINGO ቁልፍ ከካርዱ ጋር ተጣብቆ ከታች እንዲቀመጥ ተደርጓል[cite: 10] */
+        #bingo-btn { 
+            width: 100%; 
+            padding: 8px 0; 
+            background: linear-gradient(135deg, #2563eb, #1d4ed8); 
+            color: white; 
+            font-size: 0.95rem; 
+            font-weight: 900; 
+            border-radius: 6px; 
+            border: none; 
+            cursor: pointer; 
+            text-transform: uppercase; 
+            box-shadow: 0 4px 10px rgba(37, 99, 235, 0.3); 
+            margin-top: 4px;
+            letter-spacing: 1px;
+        }
+        #bingo-btn:disabled { background: #555 !important; color: #aaa !important; cursor: not-allowed; box-shadow: none; }
         
         .modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index:2000; flex-direction:column; align-items:center; justify-content:center; padding: 20px; }
         .modal-content { background: #1e293b; padding: 20px; border-radius: 15px; width: 92%; max-width: 360px; text-align: left; max-height: 85vh; overflow-y: auto; }
@@ -478,7 +521,7 @@
             <div class="grid-500" id="ticket-area"></div>
         </div>
 
-        <!-- ጌም ዩአይ ከምስሉ ጋር 100% ተመሳሳይ እንዲሆን የተስተካከለ[cite: 9] -->
+        <!-- ጌም ዩአይ: Main Board 40% እና Card 60%[cite: 10] -->
         <div id="game-ui" style="display:none;">
             <div class="game-left-panel">
                 <div class="board-header-top">
@@ -508,7 +551,6 @@
                 </div>
 
                 <div id="card-area"></div>
-                <button id="bingo-btn" onclick="claim()" style="display:none;">BINGO!</button>
             </div>
         </div>
     </div>
@@ -870,10 +912,8 @@
                 document.getElementById('w-grid-cells').innerHTML = ""; 
                 document.getElementById("recent-balls-container").innerHTML = ""; 
                 document.getElementById('ball-count-header').innerText = "0/75";
-                document.getElementById('bingo-btn').style.display = 'none';
                 document.getElementById('status-center-box').style.display = 'flex';
                 if (announced) { announced = false; }
-                const bBtn = document.getElementById('bingo-btn'); if(bBtn) bBtn.disabled = false;
                 lastBall = "--";
                 latestDrawnBallsGlobal = [];
                 globalMyCardsData = [];
@@ -921,19 +961,16 @@
                 globalMyCardsData = myCards;
 
                 const cardArea = document.getElementById('card-area');
-                const bingoBtn = document.getElementById('bingo-btn');
                 const statusCenterBox = document.getElementById('status-center-box');
 
                 if (myCards.length > 0) {
                     statusCenterBox.style.display = 'none';
-                    bingoBtn.style.display = 'block';
                     if (cardArea.children.length === 0 || cardArea.querySelector('.status-center-box')) {
                         cardArea.innerHTML = "";
-                        myCards.forEach((cObj, i) => { renderCard(cObj.matrix, i); }); 
+                        myCards.forEach((cObj, i) => { renderCard(cObj.matrix, i, cObj.id); }); 
                     }
                 } else {
                     statusCenterBox.style.display = 'flex';
-                    bingoBtn.style.display = 'none';
                     cardArea.innerHTML = "";
                 }
             } 
@@ -1233,16 +1270,25 @@
             }
         }
 
-        function renderCard(card) {
-            const wrap = document.createElement('div'); wrap.style.margin="0 auto"; wrap.style.width="100%";
-            wrap.innerHTML = `<div style="display:grid;grid-template-columns:repeat(5,1fr);background:var(--orange);font-weight:900;padding:2px;font-size:0.65rem;border-radius:4px 4px 0 0;text-align:center;"><div>B</div><div>I</div><div>N</div><div>G</div><div>O</div></div>`;
-            const grid = document.createElement('div'); grid.className='bingo-card';
+        function renderCard(card, index, cardId) {
+            const wrap = document.createElement('div'); 
+            wrap.className = 'bingo-card-wrapper';
+            
+            wrap.innerHTML = `
+                <div class="bingo-card-header">
+                    <div>B</div><div>I</div><div>N</div><div>G</div><div>O</div>
+                </div>
+            `;
+            
+            const grid = document.createElement('div'); 
+            grid.className = 'bingo-card';
             
             card.forEach((n, i) => {
-                const cell=document.createElement('div'); let cleanVal = n;
+                const cell = document.createElement('div'); 
+                let cleanVal = n;
                 if(i === 12 || parseInt(cleanVal) === 0) { 
-                    cell.className="cell free selected"; 
-                    cell.innerText="FREE"; 
+                    cell.className = "cell free selected"; 
+                    cell.innerText = "★"; 
                 } else { 
                     let numVal = parseInt(cleanVal); 
                     cell.className = "cell"; 
@@ -1251,7 +1297,16 @@
                 }
                 grid.appendChild(cell);
             });
-            wrap.appendChild(grid); document.getElementById('card-area').appendChild(wrap);
+            wrap.appendChild(grid);
+
+            // BINGO ቁልፍ ከካርዱ ጋር ተጣብቆ በታችኛው ክፍል እንዲቀመጥ ተደርጓል[cite: 10]
+            const bingoBtn = document.createElement('button');
+            bingoBtn.id = 'bingo-btn';
+            bingoBtn.innerHTML = `BINGO! <span style="font-size:0.65rem; opacity:0.8; font-weight:normal;">#${cardId || ''}</span>`;
+            bingoBtn.onclick = claim;
+            wrap.appendChild(bingoBtn);
+
+            document.getElementById('card-area').appendChild(wrap);
         }
 
         function claim() { 
@@ -1266,7 +1321,8 @@
                 }
             });
 
-            const bBtn = document.getElementById('bingo-btn'); if(bBtn) bBtn.disabled = true;
+            const bBtns = document.querySelectorAll('#bingo-btn'); 
+            bBtns.forEach(btn => btn.disabled = true);
             
             fetch('/claim_bingo', { 
                 method:'POST', 
@@ -1277,11 +1333,11 @@
             .then(d => { 
                 if(!d.success) { 
                     alert(d.msg); 
-                    if(bBtn) bBtn.disabled = false; 
+                    bBtns.forEach(btn => btn.disabled = false); 
                 } else {
                     silentBackgroundSync();
                 }
-            }).catch(() => { if(bBtn) bBtn.disabled = false; }); 
+            }).catch(() => { bBtns.forEach(btn => btn.disabled = false); }); 
         }
         
         function subD() {
