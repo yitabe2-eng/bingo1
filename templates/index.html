@@ -29,7 +29,7 @@
         }
         
         #auth-ui {
-            display: none;
+            display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
@@ -37,6 +37,9 @@
             padding: 20px;
             box-sizing: border-box;
             background: radial-gradient(circle at center, #1e293b, #050a18);
+            position: absolute;
+            inset: 0;
+            z-index: 9999;
         }
         .auth-card {
             background: rgba(255, 255, 255, 0.03);
@@ -59,13 +62,15 @@
         .btn-login:active { transform: scale(0.98); }
 
         #main-app-content {
-            display: flex;
+            display: none;
             flex-direction: column;
             height: 100vh;
             width: 100vw;
             box-sizing: border-box;
             overflow: hidden;
             background: #0b132b;
+            position: absolute;
+            inset: 0;
         }
 
         .header-banner { 
@@ -259,7 +264,6 @@
             gap: 4px;
         }
 
-        /* ኳስ መውጫ ክቦቹ ወደ ላይ ከፍ እንዲሉ እና ቦታ እንዲሰጡ ተደርጓል[cite: 16] */
         .top-balls-row {
             display: flex;
             align-items: center;
@@ -347,7 +351,6 @@
             line-height: 1.1;
         }
 
-        /* ሁለት ካርዶች ሲገዙ ስክሮል አድርጎ ሁለቱንም በግልጽ እንዲያሳይ ቁመቱ ተስተካክሏል[cite: 16] */
         #card-area {
             width: 100%;
             display: flex;
@@ -502,7 +505,7 @@
         </div>
     </div>
 
-    <div id="main-app-content" style="display: none;">
+    <div id="main-app-content">
         <audio id="win-horn" src="https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3" preload="auto"></audio>
         
         <div class="header-banner">
@@ -701,41 +704,45 @@
         let countdownInterval = null;
 
         window.onload = function() {
-            let telegramChatId = "";
-            if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe) {
-                telegramChatId = window.Telegram.WebApp.initDataUnsafe.user?.id || "";
-                if (!phone && window.Telegram.WebApp.initDataUnsafe.user?.phone) {
-                    phone = window.Telegram.WebApp.initDataUnsafe.user.phone;
-                    localStorage.setItem('phone', phone);
-                }
-                if (!username && window.Telegram.WebApp.initDataUnsafe.user?.first_name) {
-                    username = window.Telegram.WebApp.initDataUnsafe.user.first_name;
-                    localStorage.setItem('username', username);
-                }
-            }
-
-            if (phone && phone.trim() !== "") {
-                fetch(`/register_or_login`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        phone: phone, 
-                        username: username || "User",
-                        chat_id: telegramChatId 
-                    })
-                })
-                .then(res => res.json())
-                .then(d => {
-                    if (d.success) {
-                        showGameUI();
-                    } else {
-                        showAuthUI();
+            try {
+                let telegramChatId = "";
+                if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe) {
+                    telegramChatId = window.Telegram.WebApp.initDataUnsafe.user?.id || "";
+                    if (!phone && window.Telegram.WebApp.initDataUnsafe.user?.phone) {
+                        phone = window.Telegram.WebApp.initDataUnsafe.user.phone;
+                        localStorage.setItem('phone', phone);
                     }
-                })
-                .catch(() => {
-                    showGameUI();
-                });
-            } else {
+                    if (!username && window.Telegram.WebApp.initDataUnsafe.user?.first_name) {
+                        username = window.Telegram.WebApp.initDataUnsafe.user.first_name;
+                        localStorage.setItem('username', username);
+                    }
+                }
+
+                if (phone && phone.trim() !== "") {
+                    fetch(`/register_or_login`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            phone: phone, 
+                            username: username || "User",
+                            chat_id: telegramChatId 
+                        })
+                    })
+                    .then(res => res.json())
+                    .then(d => {
+                        if (d && d.success) {
+                            showGameUI();
+                        } else {
+                            showAuthUI();
+                        }
+                    })
+                    .catch(() => {
+                        showGameUI(); // ሰርቨር ባይኖርም እንኳን በሎካል ስቶሬጅ ዱካ ወደ ጨዋታው እንዲገባ ይደረጋል
+                    });
+                } else {
+                    showAuthUI();
+                }
+            } catch(e) {
                 showAuthUI();
             }
         }
@@ -743,6 +750,14 @@
         function showAuthUI() {
             document.getElementById('auth-ui').style.display = 'flex';
             document.getElementById('main-app-content').style.display = 'none';
+        }
+
+        function showGameUI() {
+            document.getElementById('auth-ui').style.display = 'none';
+            document.getElementById('main-app-content').style.display = 'flex'; 
+            checkAdminAccess(phone);
+            fetchBalanceOnly();
+            initWebSocket();
         }
 
         document.addEventListener("visibilitychange", function() {
@@ -798,7 +813,7 @@
             })
             .then(res => res.json())
             .then(data => {
-                if (data.success) {
+                if (data && data.success) {
                     localStorage.setItem('phone', cleanPhone);
                     localStorage.setItem('username', inputName);
                     phone = cleanPhone;
@@ -818,20 +833,12 @@
             });
         }
 
-        function showGameUI() {
-            document.getElementById('auth-ui').style.display = 'none';
-            document.getElementById('main-app-content').style.display = 'flex'; 
-            checkAdminAccess(phone);
-            fetchBalanceOnly();
-            initWebSocket();
-        }
-
         function fetchBalanceOnly() {
             if (!phone) return;
             fetch(`/get_status?phone=${encodeURIComponent(phone)}&room=10`)
             .then(r => r.json())
             .then(d => {
-                if (d.balance !== undefined && d.balance !== null) {
+                if (d && d.balance !== undefined && d.balance !== null) {
                     clientBalance = parseFloat(d.balance) || 0;
                     document.getElementById('balance').innerText = clientBalance.toFixed(0) + " ETB";
                 }
@@ -903,7 +910,7 @@
                     headers: { 'Content-Type': 'application/json' }
                 });
                 const result = await response.json();
-                if (result.success !== false && result.balance !== undefined && result.balance !== null) {
+                if (result && result.success !== false && result.balance !== undefined && result.balance !== null) {
                     clientBalance = parseFloat(result.balance) || 0;
                     document.getElementById('balance').innerText = clientBalance.toFixed(0) + " ETB";
                 }
@@ -1098,12 +1105,12 @@
             fetch(`/admin_get_users?phone=${encodeURIComponent(phone)}`)
             .then(res => res.json())
             .then(data => {
-                if(data.success) {
+                if(data && data.success) {
                     cachedAdminUsers = data.users || [];
                     renderAdminUsers(cachedAdminUsers);
                     document.getElementById('admin-stats-summary').innerText = `👥 ጠቅላላ ተጠቃሚዎች: ${data.total_users} | 💰 አጠቃላይ ሲስተም ባላንስ: ${data.total_balance} ETB`;
                 } else {
-                    alert(data.msg || "ፈቃድ የለዎትም!");
+                    alert(data?.msg || "ፈቃድ የለዎትም!");
                     closeM('admin-m');
                 }
             }).catch(() => { alert("ዳታ ማምጣት አልተቻለም!"); });
@@ -1112,7 +1119,7 @@
         function renderAdminUsers(users) {
             const tbody = document.getElementById('admin-users-tbody');
             tbody.innerHTML = "";
-            if(users.length === 0) {
+            if(!users || users.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; color:#94a3b8;">ምንም ተጠቃሚ አልተገኘም</td></tr>`;
                 return;
             }
@@ -1152,7 +1159,7 @@
             })
             .then(res => res.json())
             .then(d => {
-                if(d.success) { alert(d.msg); fetchAdminData(); } else { alert(d.msg || "ስህተት አጋጥሟል!"); }
+                if(d && d.success) { alert(d.msg); fetchAdminData(); } else { alert(d?.msg || "ስህተት አጋጥሟል!"); }
             }).catch(() => {});
         }
 
@@ -1165,7 +1172,7 @@
             })
             .then(res => res.json())
             .then(d => {
-                if(d.success) { alert("ተጠቃሚው ተሰርዟል!"); fetchAdminData(); } else { alert(d.msg || "ስህተት!"); }
+                if(d && d.success) { alert("ተጠቃሚው ተሰርዟል!"); fetchAdminData(); } else { alert(d?.msg || "ስህተት!"); }
             }).catch(() => {});
         }
 
@@ -1181,7 +1188,7 @@
             })
             .then(res => res.json())
             .then(d => {
-                if(d.success) { alert(`ብሮድካስት ተጠናቋል! የተሳካላቸው: ${d.success_count}`); document.getElementById('admin-broadcast-msg').value = ""; } else { alert(d.msg || "ስህተት!"); }
+                if(d && d.success) { alert(`ብሮድካስት ተጠናቋል! የተሳካላቸው: ${d.success_count}`); document.getElementById('admin-broadcast-msg').value = ""; } else { alert(d?.msg || "ስህተት!"); }
             }).catch(() => {});
         }
 
@@ -1227,7 +1234,7 @@
             for(let i=1; i<=500; i++) {
                 let box = document.getElementById('t-'+i); if(!box) continue;
                 box.style.pointerEvents = "auto"; 
-                if(sold[i]) { 
+                if(sold && sold[i]) { 
                     const isMine = phoneMatches(sold[i], phone);
                     box.className = isMine ? 't-box mine' : 't-box sold'; 
                     box.onclick = isMine ? () => refund(i) : null; 
@@ -1260,4 +1267,177 @@
         function refund(n) { 
             const target = parseInt(n); if(isNaN(target)) return;
             if(confirm("መልሰው 10 ብር ይውሰዱ?")) {
-                fetch('/cancel_ticket', { method:'POST', headers:{'
+                fetch('/cancel_ticket', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({phone: phone, ticket_num: target, room: '10'}) })
+                .then(() => { fetchBalanceOnly(); silentBackgroundSync(); }); 
+            }
+        }
+        
+        function renderMainBoard(drawn) {
+            const board = document.getElementById('main-board');
+            if(board.children.length === 0) { 
+                for(let col=0; col<5; col++) {
+                    let colDiv = document.createElement('div'); colDiv.className = 'board-column';
+                    let start = col * 15 + 1;
+                    for(let i=start; i<=start+14; i++) {
+                        let d = document.createElement('div'); d.className = 'ball-dot'; d.id = 'b-' + i; d.innerText = i;
+                        colDiv.appendChild(d);
+                    }
+                    board.appendChild(colDiv);
+                }
+            }
+            for(let i=1; i<=75; i++) {
+                let el = document.getElementById('b-'+i);
+                if(el) el.className = 'ball-dot';
+            }
+            if(drawn && Array.isArray(drawn)) {
+                drawn.forEach(b => { 
+                    let num = parseInt(String(b).replace(/[^0-9]/g, '')); 
+                    if(!isNaN(num)) { 
+                        let el = document.getElementById('b-'+num); 
+                        if(el) el.className = 'ball-dot active'; 
+                    } 
+                });
+            }
+        }
+
+        function handleCellClickCrossMatch(targetNumVal, clickedCellEl) {
+            if(isNaN(targetNumVal)) return;
+            let ballFound = false;
+            if (latestDrawnBallsGlobal && latestDrawnBallsGlobal.length > 0) {
+                for (let k = 0; k < latestDrawnBallsGlobal.length; k++) {
+                    let bNum = parseInt(latestDrawnBallsGlobal[k].replace(/[^0-9]/g, ''));
+                    if (bNum === targetNumVal) { ballFound = true; break; }
+                }
+            }
+            if (!ballFound) {
+                alert("❌ ይህ ቁጥር ገና አልወጣም! ቁጥሩ ሳይወጣ ማቅለም አይቻልም!");
+                return;
+            }
+            if (!clickedCellEl.classList.contains('selected')) {
+                clickedCellEl.classList.add('selected');
+            } else {
+                clickedCellEl.classList.remove('selected');
+            }
+        }
+
+        function renderCard(card, index, cardId) {
+            const wrap = document.createElement('div'); 
+            wrap.className = 'bingo-card-wrapper';
+            
+            wrap.innerHTML = `
+                <div class="bingo-card-header">
+                    <div>B</div><div>I</div><div>N</div><div>G</div><div>O</div>
+                </div>
+            `;
+            
+            const grid = document.createElement('div'); 
+            grid.className = 'bingo-card';
+            
+            card.forEach((n, i) => {
+                const cell = document.createElement('div'); 
+                let cleanVal = n;
+                if(i === 12 || parseInt(cleanVal) === 0) { 
+                    cell.className = "cell free selected"; 
+                    cell.innerText = "★"; 
+                } else { 
+                    let numVal = parseInt(cleanVal); 
+                    cell.className = "cell"; 
+                    cell.innerText = cleanVal; 
+                    cell.onclick = () => { handleCellClickCrossMatch(numVal, cell); } 
+                }
+                grid.appendChild(cell);
+            });
+            wrap.appendChild(grid);
+
+            const bingoBtn = document.createElement('button');
+            bingoBtn.className = 'bingo-btn';
+            bingoBtn.id = 'bingo-btn-' + cardId;
+            bingoBtn.innerHTML = `BINGO! <span style="font-size:0.75rem; opacity:0.8; font-weight:normal;">#${cardId || ''}</span>`;
+            bingoBtn.onclick = () => claimSpecificCard(cardId, wrap, bingoBtn);
+            wrap.appendChild(bingoBtn);
+
+            document.getElementById('card-area').appendChild(wrap);
+        }
+
+        function claimSpecificCard(targetCardId, cardWrapEl, btnEl) {
+            const markedCells = [];
+            cardWrapEl.querySelectorAll('.cell.selected').forEach(cell => {
+                let val = cell.innerText.trim();
+                if (val && val !== "FREE" && val !== "★") {
+                    markedCells.push(parseInt(val));
+                }
+            });
+
+            btnEl.disabled = true;
+            
+            fetch('/claim_bingo', { 
+                method:'POST', 
+                headers:{ 'Content-Type':'application/json' }, 
+                body: JSON.stringify({ phone: phone, room: '10', ticket_num: targetCardId, marked_cells: markedCells }) 
+            })
+            .then(r => r.json())
+            .then(d => { 
+                if(!d || !d.success) { 
+                    alert(d?.msg || "ስህተት አጋጥሟል!"); 
+                    btnEl.disabled = false; 
+                } else {
+                    silentBackgroundSync();
+                }
+            }).catch(() => { btnEl.disabled = false; }); 
+        }
+        
+        function subD() {
+            let amt = parseInt(document.getElementById('da').value);
+            let tid = document.getElementById('di').value.trim();
+            if(!amt || amt < 10 || !tid || tid.length < 4) return alert("ትክክለኛ መረጃ ያስገቡ!");
+            
+            fetch('/request_deposit', { 
+                method:'POST', headers:{'Content-Type':'application/json'}, 
+                body:JSON.stringify({phone: phone, amount: amt, transaction_id: tid, method: selectedDepositMethodName}) 
+            })
+            .then(res => res.json())
+            .then(d => { 
+                closeDepositForm(); 
+                alert(d?.msg || "የዲፖዚት ጥያቄዎ ተልኳል!"); 
+                fetchBalanceOnly(); 
+            })
+            .catch(() => {});
+        }
+
+        function subW() {
+            let amt = parseFloat(document.getElementById('wa').value);
+            if(!amt || amt < 51) return alert("ቢያንስ 51 ETB ማውጣት ይችላሉ!");
+            if(amt > clientBalance) return alert("በቂ ባላንስ የለዎትም!");
+            
+            fetch('/request_withdrawal', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ phone: phone, amount: amt, method: selectedWithdrawMethodName }) 
+            })
+            .then(r => r.json())
+            .then(res => { 
+                closeWithdrawForm(); 
+                alert(res?.msg || "የማውጣት ጥያቄዎ ተልኳል!"); 
+                fetchBalanceOnly(); 
+            })
+            .catch(() => {});
+        }
+
+        function subTransfer() {
+            let receiverPh = document.getElementById('trans-phone').value.trim();
+            let amt = parseFloat(document.getElementById('trans-amount').value);
+            if(!receiverPh || isNaN(amt) || amt <= 0) return alert("እባክዎ ትክክለኛ ስልክ ቁጥር እና የብር መጠን ያስገቡ!");
+            
+            fetch('/request_transfer', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ phone: phone, receiver_phone: receiverPh, amount: amt })
+            })
+            .then(r => r.json())
+            .then(res => {
+                closeM('trans-m');
+                alert(res?.msg || "ተከናውኗል!");
+            })
+            .catch(() => {});
+        }
+    </script>
+</body>
+</html>
