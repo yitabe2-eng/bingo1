@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>BESH BINGO - 20 ETB ROOM</title>
+    <title>SUPERBESH BINGO - 50 ETB ROOM</title>
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     
@@ -352,7 +352,7 @@
         <audio id="win-horn" src="https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3" preload="auto"></audio>
         
         <div class="header-banner">
-            <h1>BESH BINGO</h1>
+            <h1>SUPERBESH BINGO</h1>
             <div class="header-btns">
                 <div id="inline-notification"></div>
                 <button id="admin-dashboard-btn" class="btn-top-admin" onclick="openAdminDashboard()">🛡️ ADMIN</button>
@@ -376,7 +376,7 @@
             
             <div class="timer-container">
                 <div id="timer">30</div>
-                <div class="buy-notice">🎟️ ካርቴላ ይግዙ (20 ETB)</div>
+                <div class="buy-notice">🎟️ ካርቴላ ይግዙ (50 ETB)</div>
             </div>
 
             <div class="grid-500" id="ticket-area"></div>
@@ -663,7 +663,7 @@
 
         function fetchBalanceOnly() {
             if (!phone) return;
-            fetch(`/get_status?phone=${encodeURIComponent(phone)}&room=20`)
+            fetch(`/get_status?phone=${encodeURIComponent(phone)}&room=50`)
             .then(r => r.json())
             .then(d => {
                 if (d.balance !== undefined && d.balance !== null) {
@@ -675,7 +675,7 @@
 
         function silentBackgroundSync() {
             if (!phone) return;
-            fetch(`/get_status?phone=${encodeURIComponent(phone)}&room=20`)
+            fetch(`/get_status?phone=${encodeURIComponent(phone)}&room=50`)
             .then(r => r.json())
             .then(d => {
                 applyGameStateData(d);
@@ -692,7 +692,7 @@
             } else {
                 initWebSocket();
             }
-            fetch(`/get_status?phone=${encodeURIComponent(phone)}&room=20`)
+            fetch(`/get_status?phone=${encodeURIComponent(phone)}&room=50`)
             .then(r => r.json())
             .then(d => {
                 applyGameStateData(d);
@@ -726,26 +726,22 @@
                 if (notif) {
                     notif.innerText = `✅ በሂሳብዎ ላይ ${data.amount} ETB ተጨምሯል!`;
                     notif.style.display = 'inline-block';
-                    
-                    setTimeout(() => {
-                        notif.style.display = 'none';
-                    }, (data.duration || 3) * 1000);
+                    setTimeout(() => { notif.style.display = 'none'; }, (data.duration || 3) * 1000);
                 }
-                
                 if (data && phoneMatches(data.phone, phone)) {
                     refreshUserBalance(data.phone);
                 }
             });
 
-            // 🌟 የ 20 ብር ጨዋታ ቻናል ማዳመጥ (Room 20 Update Listener)
-            socket.on('game_update_20', function(d) {
+            // 🌟 የ 50 ብር ጨዋታ ቻናል ማዳመጥ (Room 50 Update Listener)
+            socket.on('game_update_50', function(d) {
                 applyGameStateData(d);
             });
         }
 
         async function refreshUserBalance(userPhone) {
             try {
-                const response = await fetch(`/get_status?phone=${userPhone}&room=20`, {
+                const response = await fetch(`/get_status?phone=${userPhone}&room=50`, {
                     method: 'GET',
                     headers: { 'Content-Type': 'application/json' }
                 });
@@ -1120,7 +1116,7 @@
             
             fetch('/buy_specific_ticket', {
                 method:'POST', headers:{'Content-Type':'application/json'}, 
-                body:JSON.stringify({phone: phone, ticket_num: target, username: username, room: '20'})
+                body:JSON.stringify({phone: phone, ticket_num: target, username: username, room: '50'})
             })
             .then(res => res.json())
             .then(d => { 
@@ -1136,8 +1132,8 @@
 
         function refund(n) { 
             const target = parseInt(n); if(isNaN(target)) return;
-            if(confirm("መልሰው 20 ብር ይውሰዱ?")) {
-                fetch('/cancel_ticket', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({phone: phone, ticket_num: target, room: '20'}) })
+            if(confirm("መልሰው 50 ብር ይውሰዱ?")) {
+                fetch('/cancel_ticket', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({phone: phone, ticket_num: target, room: '50'}) })
                 .then(() => { fetchBalanceOnly(); silentBackgroundSync(); }); 
             }
         }
@@ -1210,7 +1206,7 @@
             fetch('/claim_bingo', { 
                 method:'POST', 
                 headers:{ 'Content-Type':'application/json' }, 
-                body: JSON.stringify({ phone: phone, room: '20' }) 
+                body: JSON.stringify({ phone: phone, room: '50' }) 
             })
             .then(r => r.json())
             .then(d => { 
