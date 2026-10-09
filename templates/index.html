@@ -218,6 +218,20 @@
             gap: 4px;
         }
 
+        .game-stats-bar {
+            display: flex;
+            justify-content: space-around;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.05);
+            padding: 4px 0;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            font-weight: bold;
+            color: #64748b;
+        }
+        .game-stats-bar div { text-align: center; }
+        .game-stats-bar b { display: block; font-size: 0.85rem; color: #d97706; }
+
         .top-balls-row {
             display: flex;
             align-items: center;
@@ -497,6 +511,13 @@
             </div>
 
             <div class="game-right-panel">
+                <!-- Game Stats Bar: DERASH, BALLS, PLAYERS -->
+                <div class="game-stats-bar">
+                    <div>DERASH<b id="game-prize">0 ETB</b></div>
+                    <div>BALLS<b id="game-balls-count">0/75</b></div>
+                    <div>PLAYERS<b id="game-p-count">0</b></div>
+                </div>
+
                 <div class="top-balls-row">
                     <div id="recent-balls-container"></div>
                     <div id="ball-circle">3</div>
@@ -858,12 +879,14 @@
             if (!d) return;
             let finalPrize = Math.floor((parseFloat(d.pot) || 0) * 0.8);
             
-            document.getElementById('timer').innerText = d.timer;
+            // Update game stats bar values
+            document.getElementById('game-prize').innerText = finalPrize + " ETB";
+            let drawnCount = d.drawn_balls ? d.drawn_balls.length : 0;
+            document.getElementById('game-balls-count').innerText = drawnCount + "/75";
+            let activePlayersCount = parseInt(d.active_players) || 0;
+            document.getElementById('game-p-count').innerText = activePlayersCount;
             
-            let soldCount = 0;
-            if (d.sold_tickets) {
-                soldCount = Object.keys(d.sold_tickets).length;
-            }
+            document.getElementById('timer').innerText = d.timer;
             
             if (d.balance !== undefined && d.balance !== null) {
                 clientBalance = parseFloat(d.balance) || 0;
