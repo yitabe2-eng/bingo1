@@ -517,7 +517,7 @@
             </div>
         </div>
         
-        <!-- 1. Lobby Interface Stats Bar (DERASH, SOLD, PLAYERS, BALANCE) -->
+        <!-- Lobby Interface Stats Bar (DERASH, SOLD, PLAYERS, BALANCE) - በሎቢ ላይ ብቻ ይታያል -->
         <div class="stats" id="lobby-stats">
             <div>DERASH<b id="prize">0 ETB</b></div>
             <div>SOLD<b id="sold-count-header">0</b></div>
@@ -558,13 +558,7 @@
             </div>
 
             <div class="game-right-panel">
-                <!-- 2. Game Play Interface Stats Bar (DERASH, BALLS, PLAYERS) -->
-                <div class="stats" id="game-stats" style="width: 100%; margin: 0 0 4px 0; box-sizing: border-box;">
-                    <div>DERASH<b id="game-prize">0 ETB</b></div>
-                    <div>BALLS<b id="ball-count-header">0/75</b></div>
-                    <div>PLAYERS<b id="game-p-count">0</b></div>
-                </div>
-
+                <!-- Game Play Interface - ከላይ የነበረው ስታቲስቲክስ ባር ሙሉ በሙሉ ጠፍቷል -->
                 <div class="top-balls-row">
                     <div id="recent-balls-container"></div>
                     <div id="ball-circle">3</div>
@@ -930,11 +924,9 @@
             let finalPrize = Math.floor((parseFloat(d.pot) || 0) * 0.8);
             
             document.getElementById('prize').innerText = finalPrize + " ETB";
-            document.getElementById('game-prize').innerText = finalPrize + " ETB";
             
             let activePlayersCount = parseInt(d.active_players) || 0;
             document.getElementById('p-count').innerText = activePlayersCount;
-            document.getElementById('game-p-count').innerText = activePlayersCount;
             
             document.getElementById('timer').innerText = d.timer;
             
@@ -943,9 +935,6 @@
                 soldCount = Object.keys(d.sold_tickets).length;
             }
             document.getElementById('sold-count-header').innerText = soldCount;
-
-            let drawnCount = (d.drawn_balls && Array.isArray(d.drawn_balls)) ? d.drawn_balls.length : 0;
-            document.getElementById('ball-count-header').innerText = `${drawnCount}/75`;
             
             if (d.balance !== undefined && d.balance !== null) {
                 clientBalance = parseFloat(d.balance) || 0;
