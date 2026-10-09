@@ -149,43 +149,49 @@
         .t-box.mine { background: var(--gold) !important; color: #000 !important; box-shadow: inset 0 0 0 2px #ffffff; }
         .t-box.sold { background: #333; color: #666; cursor: not-allowed; }
 
+        /* Game UI እንደ ምስሉ በትክክል እንዲስተካከል የተደረገ */
         #game-ui {
             flex: 1;
             display: flex;
             flex-direction: row;
             overflow: hidden;
-            padding: 6px;
+            padding: 4px 6px 6px 6px;
             box-sizing: border-box;
-            gap: 8px;
+            gap: 6px;
             background: #e2e8f0;
             color: #1e293b;
         }
 
         .game-left-panel {
-            flex: 1.2;
+            flex: 1.15;
             display: flex;
             flex-direction: column;
             background: #ffffff;
-            border-radius: 10px;
-            padding: 5px;
+            border-radius: 8px;
+            padding: 4px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
             overflow: hidden;
             box-sizing: border-box;
             border: 1px solid #cbd5e1;
         }
 
+        /* ምስሉ ላይ እንዳለው የ B I N GO ከለሮች (B=Blue, I=Red, N=Gold/Yellow, G=Green, O=Purple) */
         .board-header-top {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
-            background: var(--gold);
-            color: #000;
+            color: #fff;
             font-weight: 900;
             font-size: 0.75rem;
-            padding: 3px 0;
-            border-radius: 5px;
+            padding: 4px 0;
+            border-radius: 4px 4px 0 0;
             text-align: center;
-            margin-bottom: 3px;
+            margin-bottom: 2px;
         }
+        .board-header-top div:nth-child(1) { background: #2563eb; } /* B */
+        .board-header-top div:nth-child(2) { background: #ef4444; } /* I */
+        .board-header-top div:nth-child(3) { background: #eab308; color: #000; } /* N */
+        .board-header-top div:nth-child(4) { background: #10b981; } /* G */
+        .board-header-top div:nth-child(5) { background: #9333ea; } /* O */
 
         .main-board-vertical {
             display: grid;
@@ -203,19 +209,19 @@
 
         .ball-dot {
             font-size: 0.65rem;
-            background: #f1f5f9;
-            padding: 3px 0;
-            color: #475569;
-            border-radius: 3px;
+            background: #f8fafc;
+            padding: 2px 0;
+            color: #334155;
+            border-radius: 2px;
             text-align: center;
             font-weight: bold;
             border: 1px solid #e2e8f0;
         }
         .ball-dot.active {
-            background: var(--gold) !important;
-            color: #000 !important;
+            background: #22c55e !important;
+            color: #ffffff !important;
             font-weight: 900;
-            border-color: #d97706;
+            border-color: #16a34a;
         }
 
         .room-footer-bar {
@@ -224,14 +230,14 @@
             justify-content: space-between;
             background: #1e293b;
             color: white;
-            padding: 5px 8px;
-            border-radius: 5px;
-            margin-top: 3px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            margin-top: 2px;
             font-weight: bold;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
         }
         .room-footer-bar span {
-            font-size: 0.7rem;
+            font-size: 0.65rem;
             letter-spacing: 1px;
             color: #94a3b8;
         }
@@ -246,10 +252,9 @@
             padding: 2px;
             box-sizing: border-box;
             overflow: hidden;
-            gap: 6px;
+            gap: 4px;
         }
 
-        /* 3ቱ ያለፉ ኳሶች እና ትልቁ ኳስ ጎን ለጎን (ሆሪዞንታል) እንዲደረደሩ የተደረገበት ክፍል */
         .top-balls-row {
             display: flex;
             align-items: center;
@@ -262,41 +267,41 @@
         #recent-balls-container {
             display: flex;
             gap: 4px;
-            flex-direction: row; /* ሆሪዞንታል አሰላለፍ */
+            flex-direction: row;
         }
 
         .recent-ball {
-            width: 30px;
-            height: 30px;
+            width: 26px;
+            height: 26px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 0.65rem;
+            font-size: 0.6rem;
             font-weight: bold;
             color: #fff;
             background: #3b82f6;
             box-shadow: 0 2px 4px rgba(0,0,0,0.2);
             flex-shrink: 0;
         }
-        .recent-ball:nth-child(1) { background: #ef4444; }
-        .recent-ball:nth-child(2) { background: #2563eb; }
-        .recent-ball:nth-child(3) { background: #7c3aed; }
+        .recent-ball:nth-child(1) { background: #10b981; }
+        .recent-ball:nth-child(2) { background: #9333ea; }
+        .recent-ball:nth-child(3) { background: #10b981; }
         .opacity-50-ball { opacity: 0.5; }
 
         #ball-circle {
-            width: 55px;
-            height: 55px;
-            background: #10b981;
+            width: 65px;
+            height: 65px;
+            background: #ef4444;
             color: white;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1rem;
+            font-size: 1.1rem;
             font-weight: 900;
             border: 3px solid #ffffff;
-            box-shadow: 0 4px 10px rgba(16, 185, 129, 0.4);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
             flex-shrink: 0;
             text-align: center;
             line-height: 1;
@@ -309,29 +314,29 @@
             align-items: center;
             justify-content: center;
             text-align: center;
-            padding: 8px;
+            padding: 6px;
             background: rgba(255, 255, 255, 0.6);
-            border-radius: 10px;
+            border-radius: 8px;
             width: 100%;
             box-sizing: border-box;
             border: 1px dashed #cbd5e1;
         }
         .status-center-box .hourglass {
-            font-size: 1.8rem;
-            margin-bottom: 4px;
+            font-size: 1.6rem;
+            margin-bottom: 2px;
         }
         .status-center-box h4 {
-            margin: 0 0 3px 0;
-            font-size: 0.8rem;
+            margin: 0 0 2px 0;
+            font-size: 0.75rem;
             color: #0f172a;
             font-style: italic;
             font-weight: 900;
         }
         .status-center-box p {
             margin: 0;
-            font-size: 0.65rem;
+            font-size: 0.6rem;
             color: #64748b;
-            line-height: 1.2;
+            line-height: 1.1;
         }
 
         #card-area {
@@ -340,7 +345,7 @@
             flex-direction: column;
             gap: 4px;
             overflow-y: auto;
-            max-height: 190px;
+            max-height: 180px;
         }
 
         .bingo-card { 
@@ -356,19 +361,19 @@
         .cell { 
             background: #fff; 
             color: #000; 
-            height: 26px; 
+            height: 24px; 
             display: flex; 
             align-items: center; 
             justify-content: center; 
             font-weight: 800; 
-            font-size: 0.7rem; 
+            font-size: 0.65rem; 
             cursor: pointer; 
             border-radius: 2px;
         }
         .cell.selected { background: var(--gold) !important; color: #000 !important; }
-        .cell.free { background: var(--red) !important; color: white; font-size: 0.55rem; }
+        .cell.free { background: var(--red) !important; color: white; font-size: 0.5rem; }
         
-        #bingo-btn { width: 100%; padding: 9px 0; background: var(--red); color: white; font-size: 0.95rem; font-weight: 900; border-radius: 8px; border: 1px solid white; cursor: pointer; text-transform: uppercase; box-shadow: 0 4px 10px rgba(255, 62, 62, 0.3); }
+        #bingo-btn { width: 100%; padding: 8px 0; background: var(--red); color: white; font-size: 0.9rem; font-weight: 900; border-radius: 8px; border: 1px solid white; cursor: pointer; text-transform: uppercase; box-shadow: 0 4px 10px rgba(255, 62, 62, 0.3); }
         #bingo-btn:disabled { background: #555 !important; border-color: #888 !important; color: #aaa !important; cursor: not-allowed; box-shadow: none; }
         
         .modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index:2000; flex-direction:column; align-items:center; justify-content:center; padding: 20px; }
@@ -449,6 +454,7 @@
             </div>
         </div>
         
+        <!-- ባላንስ የሚታየው በካርቴላ መግዣው ሎቢ ስታትስቲካዊ ባር ላይ ብቻ ነው[cite: 7, 9] -->
         <div class="stats" id="lobby-stats">
             <div>DERASH<b id="prize">0 ETB</b></div>
             <div>BALLS<b id="ball-count-header">0/75</b></div>
@@ -472,9 +478,16 @@
             <div class="grid-500" id="ticket-area"></div>
         </div>
 
+        <!-- ጌም ዩአይ ከምስሉ ጋር 100% ተመሳሳይ እንዲሆን የተስተካከለ[cite: 9] -->
         <div id="game-ui" style="display:none;">
             <div class="game-left-panel">
-                <div class="board-header-top"><div>B</div><div>I</div><div>N</div><div>G</div><div>O</div></div>
+                <div class="board-header-top">
+                    <div>B</div>
+                    <div>I</div>
+                    <div>N</div>
+                    <div>G</div>
+                    <div>O</div>
+                </div>
                 <div class="main-board-vertical" id="main-board"></div>
                 <div class="room-footer-bar">
                     <span>ROOM</span>
