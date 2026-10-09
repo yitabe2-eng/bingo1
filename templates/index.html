@@ -73,25 +73,6 @@
             inset: 0;
         }
 
-        .header-banner { 
-            background: linear-gradient(145deg, #1e293b, #050a18); 
-            padding: 8px 15px; 
-            border-bottom: 2px solid var(--gold); 
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 10px;
-            position: relative;
-            z-index: 100;
-        }
-        .header-banner h1 { margin: 0; font-size: 1.2rem; color: var(--gold); letter-spacing: 1px; }
-        
-        .header-btns {
-            display: flex;
-            gap: 6px;
-            align-items: center;
-        }
-
         #inline-notification {
             font-size: 0.7rem;
             font-weight: bold;
@@ -110,33 +91,6 @@
             to { opacity: 1; transform: scale(1); }
         }
 
-        .btn-top-refresh, .btn-top-admin {
-            background: var(--gold);
-            color: #000;
-            border: 1px solid white;
-            border-radius: 6px;
-            font-size: 0.8rem;
-            font-weight: bold;
-            padding: 6px 9px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.4);
-            transition: 0.2s;
-            flex-shrink: 0;
-        }
-        .btn-top-admin {
-            background: var(--red);
-            color: white;
-            display: none;
-        }
-        .btn-top-refresh:active, .btn-top-admin:active { transform: scale(0.9); }
-
-        .stats { display: flex; justify-content: space-around; background: rgba(255,255,255,0.05); padding: 6px; margin: 5px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); }
-        .stats div { font-size: 0.75rem; color: #94a3b8; }
-        .stats b { display: block; font-size: 0.95rem; color: var(--gold); }
-        
         #lobby-ui { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
         .action-bar { display: flex; justify-content: center; gap: 5px; padding: 4px 8px; flex-wrap: wrap; }
         .btn-main { flex: 1; min-width: 70px; padding: 9px 4px; border: none; border-radius: 8px; font-weight: 900; cursor: pointer; text-transform: uppercase; font-size: 0.7rem; transition: 0.3s; }
@@ -508,22 +462,7 @@
     <div id="main-app-content">
         <audio id="win-horn" src="https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3" preload="auto"></audio>
         
-        <div class="header-banner">
-            <h1>beshbingo</h1>
-            <div class="header-btns">
-                <div id="inline-notification"></div>
-                <button id="admin-dashboard-btn" class="btn-top-admin" onclick="openAdminDashboard()">🛡️ ADMIN</button>
-                <button class="btn-top-refresh" onclick="forceRecoveryRefresh()">🔄 Refresh</button>
-            </div>
-        </div>
-        
-        <!-- Lobby Interface Stats Bar (DERASH, SOLD, PLAYERS, BALANCE) - በሎቢ ላይ ብቻ ይታያል -->
-        <div class="stats" id="lobby-stats">
-            <div>DERASH<b id="prize">0 ETB</b></div>
-            <div>SOLD<b id="sold-count-header">0</b></div>
-            <div>PLAYERS<b id="p-count">0</b></div>
-            <div>BALANCE<b id="balance">0 ETB</b></div>
-        </div>
+        <div id="inline-notification" style="display:none;"></div>
 
         <div id="lobby-ui">
             <div class="action-bar">
@@ -558,7 +497,6 @@
             </div>
 
             <div class="game-right-panel">
-                <!-- Game Play Interface - ከላይ የነበረው ስታቲስቲክስ ባር ሙሉ በሙሉ ጠፍቷል -->
                 <div class="top-balls-row">
                     <div id="recent-balls-container"></div>
                     <div id="ball-circle">3</div>
@@ -842,7 +780,6 @@
             .then(d => {
                 if (d && d.balance !== undefined && d.balance !== null) {
                     clientBalance = parseFloat(d.balance) || 0;
-                    document.getElementById('balance').innerText = clientBalance.toFixed(0) + " ETB";
                 }
             }).catch(() => {});
         }
@@ -886,7 +823,6 @@
             socket.on('balance_update', function(data) {
                 if (data && phoneMatches(data.phone, phone)) {
                     clientBalance = parseFloat(data.balance) || 0;
-                    document.getElementById('balance').innerText = clientBalance.toFixed(0) + " ETB";
                 }
             });
 
@@ -914,7 +850,6 @@
                 const result = await response.json();
                 if (result && result.success !== false && result.balance !== undefined && result.balance !== null) {
                     clientBalance = parseFloat(result.balance) || 0;
-                    document.getElementById('balance').innerText = clientBalance.toFixed(0) + " ETB";
                 }
             } catch (error) {}
         }
@@ -923,22 +858,15 @@
             if (!d) return;
             let finalPrize = Math.floor((parseFloat(d.pot) || 0) * 0.8);
             
-            document.getElementById('prize').innerText = finalPrize + " ETB";
-            
-            let activePlayersCount = parseInt(d.active_players) || 0;
-            document.getElementById('p-count').innerText = activePlayersCount;
-            
             document.getElementById('timer').innerText = d.timer;
             
             let soldCount = 0;
             if (d.sold_tickets) {
                 soldCount = Object.keys(d.sold_tickets).length;
             }
-            document.getElementById('sold-count-header').innerText = soldCount;
             
             if (d.balance !== undefined && d.balance !== null) {
                 clientBalance = parseFloat(d.balance) || 0;
-                document.getElementById('balance').innerText = clientBalance.toFixed(0) + " ETB";
             }
 
             if(d.status === "lobby") {
@@ -949,7 +877,6 @@
                 document.getElementById('card-area').innerHTML="";
                 document.getElementById('w-grid-cells').innerHTML = ""; 
                 document.getElementById("recent-balls-container").innerHTML = ""; 
-                document.getElementById('sold-count-header').innerText = "0";
                 document.getElementById('status-center-box').style.display = 'flex';
                 if (announced) { announced = false; }
                 lastBall = "--";
