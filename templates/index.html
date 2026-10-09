@@ -108,36 +108,35 @@
         .t-box.mine { background: var(--gold) !important; color: #000 !important; box-shadow: inset 0 0 0 2px #ffffff; }
         .t-box.sold { background: #333; color: #666; cursor: not-allowed; }
 
-        /* Top App Header mimicking GoodBingo Header */
+        /* Top App Header without GoodBingo text */
         .app-top-header {
             display: flex;
             align-items: center;
             justify-content: space-between;
             background: #111827;
-            padding: 8px 12px;
+            padding: 6px 12px;
             color: white;
             flex-shrink: 0;
             border-bottom: 1px solid rgba(255,255,255,0.08);
         }
         .app-top-left { display: flex; align-items: center; gap: 12px; font-size: 1.1rem; cursor: pointer; font-weight: bold; }
-        .app-top-title { font-size: 1.15rem; font-weight: 900; letter-spacing: 0.5px; }
         .app-top-right { display: flex; align-items: center; gap: 14px; font-size: 1.2rem; cursor: pointer; }
 
-        /* Independent Global Stats Bar (Horizontal 1/3rd wider, completely separated from Main Board)[cite: 7, 9] */
+        /* Stats Bar width set to 75% */
         .global-stats-bar {
             display: flex;
             justify-content: space-around;
             align-items: center;
             background: #111827;
-            padding: 10px 18px;
-            width: 100%;
+            padding: 8px 12px;
+            width: 75%;
             box-sizing: border-box;
             border-bottom: 1px solid rgba(255,255,255,0.08);
             flex-shrink: 0;
         }
         .stat-item { text-align: left; }
-        .stat-label { font-size: 0.7rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }
-        .stat-val { display: block; font-size: 1.05rem; font-weight: 900; color: #00ff88; margin-top: 1px; }
+        .stat-label { font-size: 0.6rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }
+        .stat-val { display: block; font-size: 0.85rem; font-weight: 900; color: #00ff88; margin-top: 1px; }
         .stat-val.gold { color: #ffcc00; }
 
         #game-ui {
@@ -181,11 +180,11 @@
             grid-template-columns: repeat(5, 1fr);
             color: #fff;
             font-weight: 900;
-            font-size: 0.8rem;
-            padding: 6px 0;
+            font-size: 0.75rem;
+            padding: 4px 0;
             border-radius: 4px 4px 0 0;
             text-align: center;
-            margin-bottom: 3px;
+            margin-bottom: 2px;
         }
         .board-header-top div:nth-child(1) { background: #2563eb; } 
         .board-header-top div:nth-child(2) { background: #ef4444; } 
@@ -193,14 +192,14 @@
         .board-header-top div:nth-child(4) { background: #10b981; } 
         .board-header-top div:nth-child(5) { background: #9333ea; } 
 
-        /* Main Board Vertical layout matching reference height and length[cite: 7, 9] */
+        /* Main board height reduced and shifted upward from room */
         .main-board-vertical {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
             gap: 2px;
             flex: 1;
             overflow-y: auto;
-            max-height: calc(100vh - 150px);
+            max-height: calc(100vh - 165px);
         }
 
         .board-column {
@@ -211,8 +210,8 @@
 
         .ball-dot {
             flex: 1;
-            min-height: 24px;
-            font-size: 0.75rem;
+            min-height: 20px;
+            font-size: 0.7rem;
             background: #f8fafc;
             display: flex;
             align-items: center;
@@ -236,15 +235,15 @@
             justify-content: space-between;
             background: #111827;
             color: white;
-            padding: 8px 10px;
+            padding: 6px 8px;
             border-radius: 0;
-            margin-top: auto;
+            margin-top: 4px;
             font-weight: bold;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             flex-shrink: 0;
         }
         .room-footer-bar span {
-            font-size: 0.7rem;
+            font-size: 0.65rem;
             letter-spacing: 1px;
             color: #94a3b8;
             display: flex;
@@ -263,7 +262,7 @@
             padding: 4px;
             box-sizing: border-box;
             overflow: hidden;
-            gap: 6px;
+            gap: 4px;
         }
 
         .top-balls-row {
@@ -272,10 +271,11 @@
             justify-content: flex-start;
             gap: 6px;
             width: 100%;
-            margin-top: 2px;
-            margin-bottom: 4px;
+            margin-top: 0;
+            margin-bottom: 2px;
             flex-shrink: 0;
             padding-left: 4px;
+            height: 70px;
         }
 
         #recent-balls-container {
@@ -285,13 +285,13 @@
         }
 
         .recent-ball {
-            width: 34px;
-            height: 34px;
+            width: 30px;
+            height: 30px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             font-weight: 900;
             color: #fff;
             background: #2563eb;
@@ -304,17 +304,17 @@
         .recent-ball:nth-child(3) { background: #2563eb; }
         .opacity-50-ball { opacity: 0.5; }
 
-        /* Big Golden Ball Circle matching screenshot exactly[cite: 7, 9] */
+        /* Big Golden Ball Circle positioned overlapping right side matching screenshot */
         #ball-circle {
-            width: 76px;
-            height: 76px;
+            width: 72px;
+            height: 72px;
             background: #eab308;
             color: white;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.3rem;
+            font-size: 1.2rem;
             font-weight: 900;
             border: 4px solid #d97706;
             box-shadow: 0 6px 18px rgba(234, 179, 8, 0.6);
@@ -322,7 +322,9 @@
             text-align: center;
             line-height: 1;
             margin-left: auto;
-            margin-right: 6px;
+            margin-right: 2px;
+            margin-top: -20px;
+            z-index: 5;
         }
 
         .status-center-box {
@@ -344,18 +346,19 @@
             width: 100%;
             display: flex;
             flex-direction: column;
-            gap: 6px;
+            gap: 4px;
             overflow-y: auto;
             flex: 1;
-            max-height: calc(100vh - 120px);
+            max-height: calc(100vh - 110px);
             padding-bottom: 4px;
         }
 
+        /* Card height slightly reduced */
         .bingo-card-wrapper {
             background: #ffffff;
-            border-radius: 16px;
-            padding: 8px;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.18);
+            border-radius: 12px;
+            padding: 6px;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.15);
             width: 100%;
             box-sizing: border-box;
             border: 2px solid #cbd5e1;
@@ -367,11 +370,11 @@
             grid-template-columns: repeat(5, 1fr);
             color: #fff;
             font-weight: 900;
-            font-size: 1.4rem;
-            padding: 12px 0;
-            border-radius: 8px 8px 0 0;
+            font-size: 1.2rem;
+            padding: 8px 0;
+            border-radius: 6px 6px 0 0;
             text-align: center;
-            margin-bottom: 4px;
+            margin-bottom: 3px;
             letter-spacing: 2px;
             text-shadow: 0 2px 4px rgba(0,0,0,0.4);
         }
@@ -384,7 +387,7 @@
         .bingo-card { 
             display: grid; 
             grid-template-columns: repeat(5, 1fr); 
-            gap: 4px; 
+            gap: 3px; 
             background: #ffffff; 
             padding: 2px; 
             width: 100%; 
@@ -394,32 +397,32 @@
         .cell { 
             background: #ffffff; 
             color: #0f172a; 
-            height: 38px; 
+            height: 32px; 
             display: flex; 
             align-items: center; 
             justify-content: center; 
             font-weight: 900; 
-            font-size: 1.15rem; 
+            font-size: 1.05rem; 
             cursor: pointer; 
-            border-radius: 6px;
+            border-radius: 5px;
             border: 1px solid #cbd5e1;
         }
         .cell.selected { background: var(--gold) !important; color: #000 !important; border-color: #d97706; }
-        .cell.free { background: #2563eb !important; color: white; font-size: 0.9rem; }
+        .cell.free { background: #2563eb !important; color: white; font-size: 0.85rem; }
         
         .bingo-btn { 
             width: 100%; 
-            padding: 11px 0; 
+            padding: 9px 0; 
             background: linear-gradient(135deg, #3b82f6, #1d4ed8); 
             color: white; 
-            font-size: 1.25rem; 
+            font-size: 1.1rem; 
             font-weight: 900; 
-            border-radius: 0 0 10px 10px; 
+            border-radius: 0 0 8px 8px; 
             border: none; 
             cursor: pointer; 
             text-transform: uppercase; 
-            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4); 
-            margin-top: 6px;
+            box-shadow: 0 4px 10px rgba(37, 99, 235, 0.4); 
+            margin-top: 4px;
             letter-spacing: 2px;
             display: flex;
             align-items: center;
@@ -464,15 +467,6 @@
             color: #e2e8f0;
             text-align: left;
         }
-
-        .admin-box { background: #0f172a; border: 2px solid var(--red); }
-        .admin-table { width: 100%; font-size: 0.8rem; border-collapse: collapse; margin-top: 10px; }
-        .admin-table th, .admin-table td { border: 1px solid #334155; padding: 6px; text-align: left; }
-        .admin-table th { background: #1e293b; color: var(--gold); }
-        .btn-adm-action { padding: 4px 8px; font-size: 0.7rem; border-radius: 4px; border: none; cursor: pointer; font-weight: bold; margin-right: 2px; }
-        .btn-adm-add { background: var(--green); color: #000; }
-        .btn-adm-sub { background: var(--orange); color: #fff; }
-        .btn-adm-del { background: var(--red); color: #fff; }
     </style>
 </head>
 <body>
@@ -518,13 +512,13 @@
         </div>
 
         <div id="game-ui" style="display:none;">
-            <!-- Top App Header mimicking GoodBingo Header -->
+            <!-- Top Header without GoodBingo text -->
             <div class="app-top-header">
-                <div class="app-top-left">✕ <span class="app-top-title">GoodBingo</span></div>
+                <div class="app-top-left">✕</div>
                 <div class="app-top-right"><span>⌄</span><span>⋮</span></div>
             </div>
 
-            <!-- Global Top Stats Bar separated and expanded horizontally by 1/3rd as requested[cite: 7, 9] -->
+            <!-- Stats Bar width set to 75% -->
             <div class="global-stats-bar">
                 <div class="stat-item">
                     <span class="stat-label">DERASH</span>
@@ -574,123 +568,6 @@
         </div>
     </div>
 
-    <div id="guide-m" class="modal"><div class="modal-content"><h2 style="color:var(--gold); text-align:center; margin-top:0;">📖 መመሪያ</h2><p style="color:#fff; line-height: 1.6; font-size:0.9rem;">1. ጨዋታው እንዲጀምር ቢያንስ 2 ተጫዋቾች ሊኖሩ ይገባል。<br>2. ካርቴላ ለመግዛት ሎቢ ላይ ያሉትን ቁጥሮች ይጫኑ (ማክሲመም 2 መግዛት ይቻላል)。<br>3. ጨዋታው ሲጀምር ኳሶች በየጊዜው ይጣላሉ。<br>4. መስመር ሲሞላ ፈጥነው BINGO የሚለውን ይጫኑ!</p><button class="btn-main" style="width:100%; background:var(--red); color:white; margin-top:15px;" onclick="closeM('guide-m')">እሺ</button></div></div>
-    
-    <div id="admin-m" class="modal">
-        <div class="modal-content admin-box" style="max-width: 420px;">
-            <h2 style="color:var(--red); text-align:center; margin-top:0;">🛡️ ADMIN CONTROL PANEL</h2>
-            <p style="font-size:0.8rem; color:#94a3b8; text-align:center;">አጠቃላይ የተጠቃሚዎች ዝርዝር እና የገንዘብ አስተዳደር</p>
-            
-            <div style="margin-bottom: 10px;">
-                <input type="text" id="admin-search" placeholder="በስልክ ቁጥር ወይም ስም ፈልግ..." oninput="filterAdminUsers()" style="margin: 0; padding: 8px; font-size: 0.9rem;">
-            </div>
-
-            <div id="admin-stats-summary" style="font-size: 0.85rem; color: var(--gold); margin-bottom: 8px; font-weight: bold;"></div>
-
-            <div style="max-height: 250px; overflow-y: auto;">
-                <table class="admin-table">
-                    <thead>
-                        <tr>
-                            <th>ስልክ / ስም</th>
-                            <th>ባላንስ</th>
-                            <th>እርምጃ</th>
-                        </tr>
-                    </thead>
-                    <tbody id="admin-users-tbody"></tbody>
-                </table>
-            </div>
-
-            <div style="margin-top: 15px; border-top: 1px solid #334155; padding-top: 10px;">
-                <h4 style="color: var(--gold); margin: 0 0 5px 0; font-size: 0.9rem;">📢 አጠቃላይ ማስታወቂያ መላክ (Broadcast)</h4>
-                <input type="text" id="admin-broadcast-msg" placeholder="የመልዕክት ጽሁፍ ያስገቡ..." style="margin: 5px 0; padding: 8px; font-size: 0.85rem;">
-                <button class="btn-main btn-deposit" style="width:100%; padding:8px;" onclick="sendAdminBroadcast()">ብሮድካስት ላክ</button>
-            </div>
-
-            <button class="btn-main" style="width:100%; background:#475569; color:white; margin-top:15px;" onclick="closeM('admin-m')">ዝጋ (CLOSE)</button>
-        </div>
-    </div>
-
-    <div id="withdraw-selection-m" class="modal">
-        <div class="modal-content" style="text-align:center;">
-            <h2 style="color:var(--orange); margin-top:0; font-size:1.1rem;">💳 የገንዘብ ማወጫ መንገድ ይምረጡ</h2>
-            <p style="font-size:0.85rem; color:#94a3b8; margin-bottom:15px;">እባክዎ ገንዘብ የሚቀበሉበትን አካውንት ዓይነት ይምረጡ፡</p>
-            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-                <button class="btn-main" style="background:#2563eb; color:white; padding:12px;" onclick="selectWithdrawMethod('CBE BIRR')">CBE BIRR</button>
-                <button class="btn-main" style="background:var(--green); color:#000; padding:12px;" onclick="selectWithdrawMethod('TELE BIRR')">TELE BIRR</button>
-            </div>
-            <button onclick="closeM('withdraw-selection-m')" style="color:#94a3b8; background:none; border:none; cursor:pointer; font-weight:bold;">CANCEL</button>
-        </div>
-    </div>
-
-    <div id="withdraw-form-m" class="modal">
-        <div class="modal-content" style="text-align:center;">
-            <h2 id="withdraw-method-title" style="color:var(--orange); margin-top:0;">WITHDRAW</h2>
-            <div class="deposit-guide-box">
-                <b>📌 ማሳሰቢያ:</b><br>
-                በመረጡት የ <span id="withdraw-method-name" style="color:var(--gold);">TELE BIRR</span> አካውንት ገንዘብዎ ይላካል።
-            </div>
-            <p style="font-size:0.85rem; color:#94a3b8;">የሚያወጡትን የብር መጠን ያስገቡ (ዝቅተኛው 51 ETB)</p>
-            <input type="number" id="wa" min="51" placeholder="Amount (ETB)">
-            <button class="btn-main btn-withdraw" style="width:100%; padding:12px;" onclick="subW()">CONFIRM</button>
-            <button onclick="closeWithdrawForm()" style="color:#94a3b8; background:none; border:none; margin-top:15px; cursor:pointer; font-weight:bold;">CLOSE</button>
-        </div>
-    </div>
-    
-    <div id="trans-m" class="modal">
-        <div class="modal-content" style="text-align:center;">
-            <h2 style="color:var(--purple);">TRANSFER MONEY</h2>
-            <p style="font-size: 0.85rem; color:#94a3b8;">የተቀባዩን ስልክ ቁጥር እና የሚላከውን የብር መጠን ያስገቡ</p>
-            <input type="tel" id="trans-phone" placeholder="የተቀባይ ስልክ (ምሳሌ: 09...)">
-            <input type="number" id="trans-amount" min="1" placeholder="የብር መጠን (ETB)">
-            <button class="btn-main btn-transfer" style="width:100%; padding:12px;" onclick="subTransfer()">SEND</button>
-            <button onclick="closeM('trans-m')" style="color:#94a3b8; background:none; border:none; margin-top:15px; cursor:pointer;">CLOSE</button>
-        </div>
-    </div>
-
-    <div id="dep-selection-m" class="modal">
-        <div class="modal-content" style="text-align:center;">
-            <h2 style="color:var(--gold); margin-top:0; font-size:1.1rem;">💳 የማንጸኛ መንገድ ይምረጡ</h2>
-            <p style="font-size:0.85rem; color:#94a3b8; margin-bottom:15px;">እባክዎ ሒሳብ ለመሞላት የሚጠቀሙበትን መንገድ ይምረጡ፡</p>
-            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-                <button class="btn-main" style="background:#2563eb; color:white; padding:12px;" onclick="selectDepositMethod('CBE BIRR')">CBE BIRR</button>
-                <button class="btn-main" style="background:var(--green); color:#000; padding:12px;" onclick="selectDepositMethod('TELE BIRR')">TELE BIRR</button>
-            </div>
-            <button onclick="closeM('dep-selection-m')" style="color:#94a3b8; background:none; border:none; cursor:pointer; font-weight:bold;">CANCEL</button>
-        </div>
-    </div>
-
-    <div id="dep-form-m" class="modal">
-        <div class="modal-content" style="text-align:center;">
-            <h2 id="dep-method-title" style="color:var(--green); margin-top:0;">DEPOSIT</h2>
-            <div class="deposit-guide-box">
-                <b>📌 የክፍያ መመሪያ:</b><br>
-                በተሰጠው የ <span id="dep-method-name" style="color:var(--gold);">TELE BIRR</span> አካውንት ገንዘብ ከላኩ በኋላ የግብይቱን <b>Transaction ID</b> እና መጠን ያስገቡ。<br><br>
-                <b>አካውንት: <span style="color:var(--gold);" onclick="copyNum('0945880474')">0945880474 (ኮፒ ለማድረግ ይጫኑ)</span></b>
-            </div>
-            
-            <input type="number" id="da" min="10" placeholder="Amount (ETB)">
-            <input type="text" id="di" placeholder="Transaction ID">
-            <button class="btn-main btn-deposit" style="width:100%; padding:12px; margin-top:5px;" onclick="subD()">SUBMIT</button>
-            <button onclick="closeDepositForm()" style="color:#94a3b8; background:none; border:none; margin-top:15px; cursor:pointer; font-weight:bold;">CANCEL</button>
-        </div>
-    </div>
-
-    <div id="result-ui" class="winner-modal">
-        <div class="winner-box">
-            <div class="trophy-icon">🏆</div><div class="winner-name-text" id="w-player-name"></div>
-            <div class="prize-pool-card"><span>Total Prize Pool</span><b id="w-prize-pool">0 ETB</b></div>
-            <div class="winner-card-section">
-                <div class="winner-card-info-row">
-                    <div class="winner-card-num-lbl" id="w-card-number">CARD #0</div>
-                    <div class="winner-card-owner-lbl" id="w-card-owner">Player</div>
-                </div>
-                <div id="w-pattern-name" style="font-weight: 900; color: #dc2626; margin-bottom: 8px; font-size: 1rem; text-transform: uppercase;"></div>
-                <div class="winner-grid-modern" id="w-grid-cells"></div>
-            </div>
-        </div>
-        <div class="next-round-bar">Next Round: <span id="w-next-timer">10s</span></div>
-    </div>
-
     <script>
         let phone = localStorage.getItem('phone');
         let username = localStorage.getItem('username');
@@ -699,51 +576,11 @@
         let socket = null;
         let latestDrawnBallsGlobal = []; 
         let globalMyCardsData = []; 
-        let selectedDepositMethodName = "";
-        let selectedWithdrawMethodName = "TELE BIRR";
-        let cachedAdminUsers = [];
-        let countdownInterval = null;
 
         window.onload = function() {
-            try {
-                let telegramChatId = "";
-                if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe) {
-                    telegramChatId = window.Telegram.WebApp.initDataUnsafe.user?.id || "";
-                    if (!phone && window.Telegram.WebApp.initDataUnsafe.user?.phone) {
-                        phone = window.Telegram.WebApp.initDataUnsafe.user.phone;
-                        localStorage.setItem('phone', phone);
-                    }
-                    if (!username && window.Telegram.WebApp.initDataUnsafe.user?.first_name) {
-                        username = window.Telegram.WebApp.initDataUnsafe.user.first_name;
-                        localStorage.setItem('username', username);
-                    }
-                }
-
-                if (phone && phone.trim() !== "") {
-                    fetch(`/register_or_login`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ 
-                            phone: phone, 
-                            username: username || "User",
-                            chat_id: telegramChatId 
-                        })
-                    })
-                    .then(res => res.json())
-                    .then(d => {
-                        if (d && d.success) {
-                            showGameUI();
-                        } else {
-                            showAuthUI();
-                        }
-                    })
-                    .catch(() => {
-                        showGameUI();
-                    });
-                } else {
-                    showAuthUI();
-                }
-            } catch(e) {
+            if (phone && phone.trim() !== "") {
+                showGameUI();
+            } else {
                 showAuthUI();
             }
         }
@@ -756,22 +593,22 @@
         function showGameUI() {
             document.getElementById('auth-ui').style.display = 'none';
             document.getElementById('main-app-content').style.display = 'flex'; 
-            checkAdminAccess(phone);
-            fetchBalanceOnly();
             initWebSocket();
         }
 
-        document.addEventListener("visibilitychange", function() {
-            if (document.visibilityState === "visible") {
-                forceRecoveryRefresh();
-            }
-        });
+        function registerUser() {
+            let inputName = document.getElementById('reg-username').value.trim();
+            let inputPhone = document.getElementById('reg-phone').value.trim();
+            if (inputName.length < 2) return alert("እባክዎ ትክክለኛ ስም ያስገቡ!");
+            const cleanPhone = inputPhone.replace(/[^0-9+]/g, '');
+            if (cleanPhone.length < 9) return alert("እባክዎ ትክክለኛ ስልክ ቁጥር ያስገቡ!");
 
-        setInterval(() => {
-            if (phone && document.getElementById('main-app-content').style.display !== 'none') {
-                silentBackgroundSync();
-            }
-        }, 2000);
+            localStorage.setItem('phone', cleanPhone);
+            localStorage.setItem('username', inputName);
+            phone = cleanPhone;
+            username = inputName;
+            showGameUI();
+        }
 
         function phoneMatches(p1, p2) {
             if (!p1 || !p2) return false;
@@ -780,121 +617,15 @@
             return clean1 === clean2 && clean1.length > 0;
         }
 
-        function checkAdminAccess(currentPhone) {
-            const adminBtn = document.getElementById('admin-dashboard-btn');
-            if (adminBtn) {
-                if (currentPhone && currentPhone.replace(/[^0-9]/g, '').slice(-9) === "0945880474") {
-                    adminBtn.style.display = "flex";
-                } else {
-                    adminBtn.style.display = "none";
-                }
-            }
-        }
-
-        function registerUser() {
-            let inputName = document.getElementById('reg-username').value.trim();
-            let inputPhone = document.getElementById('reg-phone').value.trim();
-            let submitBtn = document.getElementById('auth-submit-btn');
-
-            if (inputName.length < 2) return alert("እባክዎ ትክክለኛ ስም ያስገቡ!");
-            const cleanPhone = inputPhone.replace(/[^0-9+]/g, '');
-            if (cleanPhone.length < 9 || cleanPhone.length > 13) return alert("እባክዎ ትክክለኛ ስልክ ቁጥር ያስገቡ!");
-
-            if(submitBtn) submitBtn.disabled = true;
-
-            let telegramChatId = "";
-            if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe) {
-                telegramChatId = window.Telegram.WebApp.initDataUnsafe.user?.id || "";
-            }
-
-            fetch('/register_or_login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ phone: cleanPhone, username: inputName, chat_id: telegramChatId })
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data && data.success) {
-                    localStorage.setItem('phone', cleanPhone);
-                    localStorage.setItem('username', inputName);
-                    phone = cleanPhone;
-                    username = inputName;
-                    showGameUI();
-                } else {
-                    alert(data.msg || "የምዝገባ ስህተት አጋጥሟል!");
-                    if(submitBtn) submitBtn.disabled = false;
-                }
-            })
-            .catch(() => {
-                localStorage.setItem('phone', cleanPhone);
-                localStorage.setItem('username', inputName);
-                phone = cleanPhone;
-                username = inputName;
-                showGameUI();
-            });
-        }
-
-        function fetchBalanceOnly() {
-            if (!phone) return;
-            fetch(`/get_status?phone=${encodeURIComponent(phone)}&room=10`)
-            .then(r => r.json())
-            .then(d => {
-                if (d && d.balance !== undefined && d.balance !== null) {
-                    clientBalance = parseFloat(d.balance) || 0;
-                }
-            }).catch(() => {});
-        }
-
-        function silentBackgroundSync() {
-            if (!phone) return;
-            fetch(`/get_status?phone=${encodeURIComponent(phone)}&room=10`)
-            .then(r => r.json())
-            .then(d => {
-                applyGameStateData(d);
-            }).catch(() => {});
-        }
-
-        function forceRecoveryRefresh() {
-            if (!phone) return;
-            if(socket) {
-                try { socket.disconnect(); socket.connect(); } catch(e){}
-            } else {
-                initWebSocket();
-            }
-            fetch(`/get_status?phone=${encodeURIComponent(phone)}&room=10`)
-            .then(r => r.json())
-            .then(d => { applyGameStateData(d); }).catch(() => {});
-        }
-
         function initWebSocket() {
             socket = io({
                 reconnection: true,
                 reconnectionAttempts: Infinity,
-                reconnectionDelay: 500,
-                reconnectionDelayMax: 2000,
-                timeout: 10000
+                reconnectionDelay: 500
             });
 
             socket.on('connect', function() {
-                checkAdminAccess(phone);
-                fetchBalanceOnly();
                 forceRecoveryRefresh();
-            });
-
-            socket.on('balance_update', function(data) {
-                if (data && phoneMatches(data.phone, phone)) {
-                    clientBalance = parseFloat(data.balance) || 0;
-                }
-            });
-
-            socket.on('deposit_success_notify', function(data) {
-                const notif = document.getElementById('inline-notification');
-                if (notif) {
-                    notif.innerText = `✅ በሂሳብዎ ላይ ${data.amount} ETB ተጨምሯል!`;
-                    notif.style.display = 'inline-block';
-                    setTimeout(() => { notif.style.display = 'none'; }, (data.duration || 3) * 1000);
-                }
-                if (data && phoneMatches(data.phone, phone)) { refreshUserBalance(data.phone); }
             });
 
             socket.on('game_update_10', function(d) {
@@ -902,100 +633,38 @@
             });
         }
 
-        async function refreshUserBalance(userPhone) {
-            try {
-                const response = await fetch(`/get_status?phone=${userPhone}&room=10`, {
-                    method: 'GET',
-                    headers: { 'Content-Type': 'application/json' }
-                });
-                const result = await response.json();
-                if (result && result.success !== false && result.balance !== undefined && result.balance !== null) {
-                    clientBalance = parseFloat(result.balance) || 0;
-                }
-            } catch (error) {}
+        function forceRecoveryRefresh() {
+            if (!phone) return;
+            fetch(`/get_status?phone=${encodeURIComponent(phone)}&room=10`)
+            .then(r => r.json())
+            .then(d => { applyGameStateData(d); }).catch(() => {});
         }
 
         function applyGameStateData(d) {
             if (!d) return;
             let finalPrize = Math.floor((parseFloat(d.pot) || 0) * 0.8);
-            
             document.getElementById('game-prize').innerText = finalPrize + " ETB";
             let drawnCount = d.drawn_balls ? d.drawn_balls.length : 0;
             document.getElementById('game-balls-count').innerText = drawnCount + "/75";
-            let activePlayersCount = parseInt(d.active_players) || 0;
-            document.getElementById('game-p-count').innerText = activePlayersCount;
-            
+            document.getElementById('game-p-count').innerText = parseInt(d.active_players) || 0;
             document.getElementById('timer').innerText = d.timer;
-            
-            if (d.balance !== undefined && d.balance !== null) {
-                clientBalance = parseFloat(d.balance) || 0;
-            }
 
             if(d.status === "lobby") {
                 document.getElementById('lobby-ui').style.display='flex'; 
                 document.getElementById('game-ui').style.display='none'; 
-                document.getElementById('result-ui').style.display='none';
-                document.getElementById('main-board').innerHTML=""; 
-                document.getElementById('card-area').innerHTML="";
-                document.getElementById('w-grid-cells').innerHTML = ""; 
-                document.getElementById("recent-balls-container").innerHTML = ""; 
-                document.getElementById('status-center-box').style.display = 'none';
-                if (announced) { announced = false; }
-                lastBall = "--";
-                latestDrawnBallsGlobal = [];
-                globalMyCardsData = [];
-                if (countdownInterval) { clearInterval(countdownInterval); countdownInterval = null; }
                 initTicketsOnce(); 
-                if (!isProcessingBuy) { renderTickets(d.sold_tickets || {}); }
+                renderTickets(d.sold_tickets || {});
             } 
             else if(d.status === "playing") {
                 document.getElementById('lobby-ui').style.display='none'; 
                 document.getElementById('game-ui').style.display='flex'; 
-                document.getElementById('result-ui').style.display='none';
                 
                 let rawBall = d.current_ball || "--";
                 let secureBall = rawBall !== "--" ? String(rawBall).replace(/[^0-9]/g, '') : "--";
-                
-                if (secureBall !== lastBall && secureBall !== "--") {
-                    lastBall = secureBall;
-                    if (countdownInterval) { clearInterval(countdownInterval); countdownInterval = null; }
-                    document.getElementById('ball-circle').innerText = secureBall;
-                } else if (secureBall === "--" || !secureBall) {
-                    if (!countdownInterval) {
-                        let count = 3;
-                        document.getElementById('ball-circle').innerText = count;
-                        countdownInterval = setInterval(() => {
-                            count--;
-                            if (count > 0) {
-                                document.getElementById('ball-circle').innerText = count;
-                            } else {
-                                clearInterval(countdownInterval);
-                                countdownInterval = null;
-                            }
-                        }, 1000);
-                    }
-                } else {
-                    document.getElementById('ball-circle').innerText = secureBall;
-                }
+                document.getElementById('ball-circle').innerText = secureBall;
                 
                 latestDrawnBallsGlobal = d.drawn_balls || [];
                 renderMainBoard(latestDrawnBallsGlobal);
-                
-                const recentContainer = document.getElementById("recent-balls-container");
-                recentContainer.innerHTML = "";
-                if(latestDrawnBallsGlobal.length > 1) {
-                    const historyBalls = latestDrawnBallsGlobal.slice(0, -1).reverse().slice(0, 3).reverse();
-                    historyBalls.forEach((b, idx) => {
-                        const ballDiv = document.createElement("div");
-                        ballDiv.className = "recent-ball";
-                        let numStr = String(b).replace(/[^0-9]/g, '');
-                        ballDiv.innerText = numStr;
-                        if(historyBalls.length === 3 && idx === 0) {
-                            ballDiv.classList.add("opacity-50-ball");
-                        }
-                        recentContainer.appendChild(ballDiv);
-                    });
-                }
 
                 let myCards = [];
                 if (d.sold_tickets) {
@@ -1008,223 +677,20 @@
                         }
                     }
                 }
-                globalMyCardsData = myCards;
-
                 const cardArea = document.getElementById('card-area');
-                const statusCenterBox = document.getElementById('status-center-box');
-
-                if (myCards.length > 0) {
-                    statusCenterBox.style.display = 'none';
-                    cardArea.innerHTML = "";
-                    myCards.forEach((cObj, i) => { renderCard(cObj.matrix, i, cObj.id); }); 
-                } else {
-                    statusCenterBox.style.display = 'none';
-                    cardArea.innerHTML = "";
-                }
-            } 
-            else if(d.status === "result") {
-                document.getElementById('result-ui').style.display='flex';
-                let winnerName = d.winner;
-                if (!winnerName || winnerName === "Player" || winnerName.includes("No Winner")) {
-                    winnerName = "ተጫዋች አሸንፏል";
-                }
-                
-                document.getElementById('w-player-name').innerText = winnerName;
-                document.getElementById('w-prize-pool').innerText = finalPrize + " ETB";
-                
-                let ticketNum = d.winning_ticket_num ? String(d.winning_ticket_num) : "100";
-                document.getElementById('w-card-number').innerText = `CARD #${ticketNum}`;
-                document.getElementById('w-card-owner').innerText = winnerName;
-                
-                let timerVal = parseInt(d.timer);
-                document.getElementById('w-next-timer').innerText = isNaN(timerVal) ? "10s" : timerVal + "s";
-
-                let patternNameEl = document.getElementById('w-pattern-name');
-                if (patternNameEl) {
-                    patternNameEl.innerText = d.winning_line_name ? `🎉 ያሸነፈበት መስመር፦ ${d.winning_line_name}` : "🎉 BINGO!";
-                }
-
-                const gridCells = document.getElementById('w-grid-cells');
-                gridCells.innerHTML = ""; 
-
-                let winCard = d.winning_card;
-                if (!winCard && d.all_cards && d.all_cards[ticketNum]) {
-                    winCard = d.all_cards[ticketNum];
-                }
-
-                if (Array.isArray(winCard)) {
-                    let drawnSet = new Set();
-                    if (d.drawn_balls && Array.isArray(d.drawn_balls)) { 
-                        d.drawn_balls.forEach(b => { 
-                            let numOnly = String(b).replace(/[^0-9]/g, ''); 
-                            if(numOnly) drawnSet.add(parseInt(numOnly)); 
-                        }); 
-                    }
-                    
-                    let winIdxs = new Set();
-                    if (d.winning_indices && Array.isArray(d.winning_indices)) {
-                        d.winning_indices.forEach(idx => winIdxs.add(idx));
-                    }
-
-                    winCard.forEach((n, idx) => {
-                        let cell = document.createElement('div'); 
-                        let cleanNum = n;
-                        
-                        if(idx === 12 || cleanNum === "FREE" || cleanNum === "★" || parseInt(cleanNum) === 0) {
-                            cell.className = "w-cell-modern free"; 
-                            cell.innerText = "★";
-                            if(winIdxs.has(idx)) cell.className += " hit";
-                        } else {
-                            let numVal = parseInt(cleanNum); 
-                            cell.innerText = cleanNum;
-                            
-                            if (winIdxs.has(idx)) { 
-                                cell.className = "w-cell-modern hit"; 
-                            } else if (drawnSet.has(numVal)) { 
-                                cell.className = "w-cell-modern drawn"; 
-                            } else { 
-                                cell.className = "w-cell-modern"; 
-                            }
-                        }
-                        gridCells.appendChild(cell);
-                    });
-                }
-                if(!announced) { try { document.getElementById('win-horn').play(); } catch(e){} announced = true; }
+                cardArea.innerHTML = "";
+                myCards.forEach((cObj, i) => { renderCard(cObj.matrix, i, cObj.id); }); 
             }
         }
-
-        function openM(id) { document.getElementById(id).style.display='flex'; }
-        function closeM(id) { document.getElementById(id).style.display='none'; }
-        
-        function openAdminDashboard() {
-            document.getElementById('admin-m').style.display = 'flex';
-            fetchAdminData();
-        }
-
-        function fetchAdminData() {
-            fetch(`/admin_get_users?phone=${encodeURIComponent(phone)}`)
-            .then(res => res.json())
-            .then(data => {
-                if(data && data.success) {
-                    cachedAdminUsers = data.users || [];
-                    renderAdminUsers(cachedAdminUsers);
-                    document.getElementById('admin-stats-summary').innerText = `👥 ጠቅላላ ተጠቃሚዎች: ${data.total_users} | 💰 አጠቃላይ ሲስተም ባላንስ: ${data.total_balance} ETB`;
-                } else {
-                    alert(data?.msg || "ፈቃድ የለዎትም!");
-                    closeM('admin-m');
-                }
-            }).catch(() => { alert("ዳታ ማምጣት አልተቻለም!"); });
-        }
-
-        function renderAdminUsers(users) {
-            const tbody = document.getElementById('admin-users-tbody');
-            tbody.innerHTML = "";
-            if(!users || users.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; color:#94a3b8;">ምንም ተጠቃሚ አልተገኘም</td></tr>`;
-                return;
-            }
-            users.forEach(u => {
-                let tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td><b>${u.name || u.username}</b><br><span style="color:#94a3b8; font-size:0.7rem;">${u.phone}</span></td>
-                    <td style="color:var(--gold); font-weight:bold;">${u.balance} ETB</td>
-                    <td>
-                        <button class="btn-adm-action btn-adm-add" onclick="adminModBalance('${u.phone}', 'add')">+ብር</button>
-                        <button class="btn-adm-action btn-adm-sub" onclick="adminModBalance('${u.phone}', 'sub')">-ብር</button>
-                        <button class="btn-adm-action btn-adm-del" onclick="adminRemoveUser('${u.phone}')">ሰርዝ</button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
-
-        function filterAdminUsers() {
-            let query = document.getElementById('admin-search').value.toLowerCase();
-            let filtered = cachedAdminUsers.filter(u => String(u.phone).toLowerCase().includes(query) || String(u.name || u.username).toLowerCase().includes(query));
-            renderAdminUsers(filtered);
-        }
-
-        function adminModBalance(targetPhone, actionType) {
-            let titleText = actionType === 'add' ? "የሚጨመረውን የብር መጠን ያስገቡ:" : "የሚቀነሰውን የብር መጠን ያስገቡ:";
-            let amountStr = prompt(titleText);
-            if(!amountStr) return;
-            let amount = parseFloat(amountStr);
-            if(isNaN(amount) || amount <= 0) return alert("እባክዎ ትክክለኛ መጠን ያስገቡ!");
-
-            let endpoint = actionType === 'add' ? '/admin_add_balance' : '/admin_sub_balance';
-            fetch(endpoint, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ admin_phone: phone, target_phone: targetPhone, amount: amount })
-            })
-            .then(res => res.json())
-            .then(d => {
-                if(d && d.success) { alert(d.msg); fetchAdminData(); } else { alert(d?.msg || "ስህተት አጋጥሟል!"); }
-            }).catch(() => {});
-        }
-
-        function adminRemoveUser(targetPhone) {
-            if(!confirm(`እርግጠኛ ኖት ተጠቃሚውን (${targetPhone}) ከዳታቤዝ መሰረዝ ይፈልጋሉ?`)) return;
-            fetch('/admin_remove_user', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ admin_phone: phone, target_phone: targetPhone })
-            })
-            .then(res => res.json())
-            .then(d => {
-                if(d && d.success) { alert("ተጠቃሚው ተሰርዟል!"); fetchAdminData(); } else { alert(d?.msg || "ስህተት!"); }
-            }).catch(() => {});
-        }
-
-        function sendAdminBroadcast() {
-            let msgText = document.getElementById('admin-broadcast-msg').value.trim();
-            if(!msgText) return alert("እባክዎ የመልዕክት ጽሁፍ ያስገቡ!");
-            if(!confirm("ይህንን መልዕክት ለሁሉም ተጠቃሚዎች መላክ ይፈልጋሉ?")) return;
-
-            fetch('/admin_broadcast', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ admin_phone: phone, message: msgText })
-            })
-            .then(res => res.json())
-            .then(d => {
-                if(d && d.success) { alert(`ብሮድካስት ተጠናቋል! የተሳካላቸው: ${d.success_count}`); document.getElementById('admin-broadcast-msg').value = ""; } else { alert(d?.msg || "ስህተት!"); }
-            }).catch(() => {});
-        }
-
-        function openDepositSelection() { document.getElementById('dep-selection-m').style.display = 'flex'; }
-        function selectDepositMethod(methodName) {
-            selectedDepositMethodName = methodName;
-            document.getElementById('dep-selection-m').style.display = 'none';
-            document.getElementById('dep-method-name').innerText = methodName;
-            document.getElementById('dep-form-m').style.display = 'flex';
-        }
-        function closeDepositForm() {
-            document.getElementById('dep-form-m').style.display = 'none';
-            document.getElementById('da').value = '';
-            document.getElementById('di').value = '';
-        }
-
-        function openWithdrawSelection() { document.getElementById('withdraw-selection-m').style.display = 'flex'; }
-        function selectWithdrawMethod(methodName) {
-            selectedWithdrawMethodName = methodName;
-            document.getElementById('withdraw-selection-m').style.display = 'none';
-            document.getElementById('withdraw-method-name').innerText = methodName;
-            document.getElementById('withdraw-form-m').style.display = 'flex';
-        }
-        function closeWithdrawForm() {
-            document.getElementById('withdraw-form-m').style.display = 'none';
-            document.getElementById('wa').value = '';
-        }
-
-        function copyNum(n) { navigator.clipboard.writeText(n); alert("Copied: " + n); }
 
         function initTicketsOnce() {
             const area = document.getElementById('ticket-area');
             if(area && area.children.length === 0) { 
                 const fragment = document.createDocumentFragment();
                 for(let i=1; i<=500; i++) { 
-                    let div=document.createElement('div'); div.className='t-box'; div.innerText=i; div.id='t-'+i; fragment.appendChild(div); 
+                    let div=document.createElement('div'); div.className='t-box'; div.innerText=i; div.id='t-'+i; 
+                    div.onclick = () => buy(i);
+                    fragment.appendChild(div); 
                 } 
                 area.appendChild(fragment);
             }
@@ -1233,45 +699,27 @@
         function renderTickets(sold) {
             for(let i=1; i<=500; i++) {
                 let box = document.getElementById('t-'+i); if(!box) continue;
-                box.style.pointerEvents = "auto"; 
                 if(sold && sold[i]) { 
                     const isMine = phoneMatches(sold[i], phone);
                     box.className = isMine ? 't-box mine' : 't-box sold'; 
-                    box.onclick = isMine ? () => refund(i) : null; 
                 } else { 
-                    box.className='t-box'; box.onclick=()=>buy(i); 
+                    box.className='t-box'; 
                 }
             }
         }
 
-        function buy(n) { 
+        function buy(n) {
             if (isProcessingBuy) return;
-            const target = parseInt(n); if(isNaN(target)) return;
-            if (document.querySelectorAll('.t-box.mine').length >= 2) return alert("ከ 2 ካርተላ በላይ መግዛት አይቻልም!");
             isProcessingBuy = true;
-            let box = document.getElementById('t-'+target);
-            if (box) { box.className = 't-box mine'; box.style.pointerEvents = 'none'; }
-            
             fetch('/buy_specific_ticket', {
                 method:'POST', headers:{'Content-Type':'application/json'}, 
-                body:JSON.stringify({phone: phone, ticket_num: target, username: username, room: '10'})
+                body:JSON.stringify({phone: phone, ticket_num: n, username: username, room: '10'})
             })
             .then(res => res.json())
-            .then(d => { 
-                isProcessingBuy = false; 
-                silentBackgroundSync();
-            })
-            .catch(() => { isProcessingBuy = false; }); 
+            .then(d => { isProcessingBuy = false; forceRecoveryRefresh(); })
+            .catch(() => { isProcessingBuy = false; });
         }
 
-        function refund(n) { 
-            const target = parseInt(n); if(isNaN(target)) return;
-            if(confirm("መልሰው 10 ብር ይውሰዱ?")) {
-                fetch('/cancel_ticket', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({phone: phone, ticket_num: target, room: '10'}) })
-                .then(() => { fetchBalanceOnly(); silentBackgroundSync(); }); 
-            }
-        }
-        
         function renderMainBoard(drawn) {
             const board = document.getElementById('main-board');
             if(board.children.length === 0) { 
@@ -1300,50 +748,23 @@
             }
         }
 
-        function handleCellClickCrossMatch(targetNumVal, clickedCellEl) {
-            if(isNaN(targetNumVal)) return;
-            let ballFound = false;
-            if (latestDrawnBallsGlobal && latestDrawnBallsGlobal.length > 0) {
-                for (let k = 0; k < latestDrawnBallsGlobal.length; k++) {
-                    let bNum = parseInt(latestDrawnBallsGlobal[k].replace(/[^0-9]/g, ''));
-                    if (bNum === targetNumVal) { ballFound = true; break; }
-                }
-            }
-            if (!ballFound) {
-                alert("❌ ይህ ቁጥር ገና አልወጣም! ቁጥሩ ሳይወጣ ማቅለም አይቻልም!");
-                return;
-            }
-            if (!clickedCellEl.classList.contains('selected')) {
-                clickedCellEl.classList.add('selected');
-            } else {
-                clickedCellEl.classList.remove('selected');
-            }
-        }
-
         function renderCard(card, index, cardId) {
             const wrap = document.createElement('div'); 
             wrap.className = 'bingo-card-wrapper';
-            
-            wrap.innerHTML = `
-                <div class="bingo-card-header">
-                    <div>B</div><div>I</div><div>N</div><div>G</div><div>O</div>
-                </div>
-            `;
+            wrap.innerHTML = `<div class="bingo-card-header"><div>B</div><div>I</div><div>N</div><div>G</div><div>O</div></div>`;
             
             const grid = document.createElement('div'); 
             grid.className = 'bingo-card';
             
             card.forEach((n, i) => {
                 const cell = document.createElement('div'); 
-                let cleanVal = n;
-                if(i === 12 || parseInt(cleanVal) === 0) { 
+                if(i === 12 || parseInt(n) === 0) { 
                     cell.className = "cell free selected"; 
                     cell.innerText = "★"; 
                 } else { 
-                    let numVal = parseInt(cleanVal); 
                     cell.className = "cell"; 
-                    cell.innerText = cleanVal; 
-                    cell.onclick = () => { handleCellClickCrossMatch(numVal, cell); } 
+                    cell.innerText = n; 
+                    cell.onclick = () => { cell.classList.toggle('selected'); } 
                 }
                 grid.appendChild(cell);
             });
@@ -1351,92 +772,10 @@
 
             const bingoBtn = document.createElement('button');
             bingoBtn.className = 'bingo-btn';
-            bingoBtn.id = 'bingo-btn-' + cardId;
-            bingoBtn.innerHTML = `BINGO! <span style="font-size:0.75rem; opacity:0.8; font-weight:normal;">#${cardId || ''}</span>`;
-            bingoBtn.onclick = () => claimSpecificCard(cardId, wrap, bingoBtn);
+            bingoBtn.innerHTML = `BINGO! <span style="font-size:0.7rem; opacity:0.8;">#${cardId}</span>`;
             wrap.appendChild(bingoBtn);
 
             document.getElementById('card-area').appendChild(wrap);
-        }
-
-        function claimSpecificCard(targetCardId, cardWrapEl, btnEl) {
-            const markedCells = [];
-            cardWrapEl.querySelectorAll('.cell.selected').forEach(cell => {
-                let val = cell.innerText.trim();
-                if (val && val !== "FREE" && val !== "★") {
-                    markedCells.push(parseInt(val));
-                }
-            });
-
-            btnEl.disabled = true;
-            
-            fetch('/claim_bingo', { 
-                method:'POST', 
-                headers:{ 'Content-Type':'application/json' }, 
-                body: JSON.stringify({ phone: phone, room: '10', ticket_num: targetCardId, marked_cells: markedCells }) 
-            })
-            .then(r => r.json())
-            .then(d => { 
-                if(!d || !d.success) { 
-                    alert(d?.msg || "ስህተት አጋጥሟል!"); 
-                    btnEl.disabled = false; 
-                } else {
-                    silentBackgroundSync();
-                }
-            }).catch(() => { btnEl.disabled = false; }); 
-        }
-        
-        function subD() {
-            let amt = parseInt(document.getElementById('da').value);
-            let tid = document.getElementById('di').value.trim();
-            if(!amt || amt < 10 || !tid || tid.length < 4) return alert("ትክክለኛ መረጃ ያስገቡ!");
-            
-            fetch('/request_deposit', { 
-                method:'POST', headers:{'Content-Type':'application/json'}, 
-                body:JSON.stringify({phone: phone, amount: amt, transaction_id: tid, method: selectedDepositMethodName}) 
-            })
-            .then(res => res.json())
-            .then(d => { 
-                closeDepositForm(); 
-                alert(d?.msg || "የዲፖዚት ጥያቄዎ ተልኳል!"); 
-                fetchBalanceOnly(); 
-            })
-            .catch(() => {});
-        }
-
-        function subW() {
-            let amt = parseFloat(document.getElementById('wa').value);
-            if(!amt || amt < 51) return alert("ቢያንስ 51 ETB ማውጣት ይችላሉ!");
-            if(amt > clientBalance) return alert("በቂ ባላንስ የለዎትም!");
-            
-            fetch('/request_withdrawal', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ phone: phone, amount: amt, method: selectedWithdrawMethodName }) 
-            })
-            .then(r => r.json())
-            .then(res => { 
-                closeWithdrawForm(); 
-                alert(res?.msg || "የማውጣት ጥያቄዎ ተልኳል!"); 
-                fetchBalanceOnly(); 
-            })
-            .catch(() => {});
-        }
-
-        function subTransfer() {
-            let receiverPh = document.getElementById('trans-phone').value.trim();
-            let amt = parseFloat(document.getElementById('trans-amount').value);
-            if(!receiverPh || isNaN(amt) || amt <= 0) return alert("እባክዎ ትክክለኛ ስልክ ቁጥር እና የብር መጠን ያስገቡ!");
-            
-            fetch('/request_transfer', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ phone: phone, receiver_phone: receiverPh, amount: amt })
-            })
-            .then(r => r.json())
-            .then(res => {
-                closeM('trans-m');
-                alert(res?.msg || "ተከናውኗል!");
-            })
-            .catch(() => {});
         }
     </script>
 </body>
