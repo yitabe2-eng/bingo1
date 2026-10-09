@@ -206,16 +206,20 @@
             gap: 2px;
         }
 
-        /* የቁጥሮቹ ጽሁፍ ጎላ (bold & prominent) እንዲሉ የተደረገበት ክፍል */
+        /* የቦክሶቹ ቁመት እኩል እንዲጨምር እና ቁጥሮቹ ሳይዛቡ ግልጽ እንዲሆኑ የተደረገ */
         .ball-dot {
+            flex: 1;
+            min-height: 0;
             font-size: 0.72rem;
             background: #f8fafc;
-            padding: 3px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             color: #0f172a;
             border-radius: 2px;
-            text-align: center;
             font-weight: 900;
             border: 1px solid #cbd5e1;
+            box-sizing: border-box;
         }
         .ball-dot.active {
             background: #22c55e !important;
@@ -235,6 +239,7 @@
             margin-top: 2px;
             font-weight: bold;
             font-size: 0.75rem;
+            flex-shrink: 0;
         }
         .room-footer-bar span {
             font-size: 0.65rem;
@@ -345,7 +350,7 @@
             flex-direction: column;
             gap: 4px;
             overflow-y: auto;
-            max-height: 255px; /* የካርዱ ቁመት ትንሽ እንዲጨምር ተደርጓል */
+            max-height: 255px;
         }
 
         .bingo-card-wrapper {
@@ -387,7 +392,7 @@
         .cell { 
             background: #ffffff; 
             color: #000; 
-            height: 32px; /* የሕዋሳት ቁመት ትንሽ ከፍ እንዲል ተደርጓል */
+            height: 32px; 
             display: flex; 
             align-items: center; 
             justify-content: center; 
@@ -1322,7 +1327,7 @@
             fetch('/claim_bingo', { 
                 method:'POST', 
                 headers:{ 'Content-Type':'application/json' }, 
-                body: JSON.stringify({ phone: phone, room: '10', marked_cells: markedCells }) 
+                body: JSON.stringify({ phone: phone, room: '10', marked_nested: markedCells }) 
             })
             .then(r => r.json())
             .then(d => { 
