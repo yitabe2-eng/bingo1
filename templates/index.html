@@ -206,7 +206,6 @@
             gap: 2px;
         }
 
-        /* 4ኛ ጥያቄ: ማይን ቦርድ ላይ ያሉት ቁጥሮች ሳይዝ እና ውፍረት እንዲጨምር ተደርጓል */
         .ball-dot {
             flex: 1;
             min-height: 0;
@@ -228,7 +227,6 @@
             border-color: #16a34a;
         }
 
-        /* 1ኛ ጥያቄ: ROOM 10 የሚለው ቁመት በእጥፍ ጨምሯል */
         .room-footer-bar {
             display: flex;
             align-items: center;
@@ -364,7 +362,6 @@
             border: 2px solid #cbd5e1;
         }
 
-        /* 2ኛ ጥያቄ: B-I-N-G-O ፊደላት ያሉበት ቦክስ ቁመት ጨምሯል */
         .bingo-card-header {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
@@ -391,26 +388,28 @@
             width: 100%; 
             box-sizing: border-box;
         }
+        
+        /* በካርዱ ላይ ያሉት ቁጥሮች ውፍረት እና መጠን ጎላ እንዲሉ ተደርጓል */
         .cell { 
             background: #ffffff; 
-            color: #000; 
+            color: #0f172a; 
             height: 32px; 
             display: flex; 
             align-items: center; 
             justify-content: center; 
-            font-weight: 800; 
-            font-size: 0.8rem; 
+            font-weight: 900; 
+            font-size: 0.95rem; 
             cursor: pointer; 
             border-radius: 4px;
             border: 1px solid #cbd5e1;
         }
         .cell.selected { background: var(--gold) !important; color: #000 !important; border-color: #d97706; }
-        .cell.free { background: #2563eb !important; color: white; font-size: 0.65rem; }
+        .cell.free { background: #2563eb !important; color: white; font-size: 0.75rem; }
         
-        /* 3ኛ ጥያቄ: የቢንጎ ጽሁፍ ትንሽ እንዲጨምር ተደርጓል */
+        /* BINGO በተን ጽሁፍ መሃል ላይ በትክክል እንዲታይ እና ጎላ እንዲል ተደርጓል[cite: 14] */
         #bingo-btn { 
             width: 100%; 
-            padding: 11px 0; 
+            padding: 10px 0; 
             background: linear-gradient(135deg, #2563eb, #1d4ed8); 
             color: white; 
             font-size: 1.15rem; 
@@ -422,6 +421,11 @@
             box-shadow: 0 4px 10px rgba(37, 99, 235, 0.3); 
             margin-top: 4px;
             letter-spacing: 1.5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            line-height: 1;
         }
         #bingo-btn:disabled { background: #555 !important; color: #aaa !important; cursor: not-allowed; box-shadow: none; }
         
@@ -545,7 +549,6 @@
             <div class="game-right-panel">
                 <div class="top-balls-row">
                     <div id="recent-balls-container"></div>
-                    <!-- 5ኛ ጥያቄ: ኳስ መውጫዋ ትልቁ ላይ የመጀመሪያ ኳስ እስከሚጠራ ድረስ የ 3 ሰከንድ ቆጠራ እንዲኖር ተደርጓል -->
                     <div id="ball-circle">3</div>
                 </div>
 
@@ -934,7 +937,6 @@
                 
                 let secureBall = d.current_ball || "--";
                 
-                // 5ኛ ጥያቄ: ጨዋታው ሲጀምር 3 ሰከንድ ቆጥሮ የመጀመሪያውን ኳስ እንዲያሳይ ማድረግ
                 if (secureBall !== lastBall && secureBall !== "--") {
                     lastBall = secureBall;
                     if (countdownInterval) { clearInterval(countdownInterval); countdownInterval = null; }
