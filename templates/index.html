@@ -149,27 +149,25 @@
         .t-box.mine { background: var(--gold) !important; color: #000 !important; box-shadow: inset 0 0 0 2px #ffffff; }
         .t-box.sold { background: #333; color: #666; cursor: not-allowed; }
 
-        /* --- አዲሱ የጨዋታ ዩአይ ንድፍ (እንደ ሁለተኛው ምስል) --- */
         #game-ui {
             flex: 1;
             display: flex;
-            flex-direction: row; /* ጎን ለጎን ለማድረግ */
+            flex-direction: row;
             overflow: hidden;
-            padding: 8px;
+            padding: 6px;
             box-sizing: border-box;
-            gap: 10px;
-            background: #e2e8f0; /* የጀርባ ቀለል ያለ ከለር */
+            gap: 8px;
+            background: #e2e8f0;
             color: #1e293b;
         }
 
-        /* የግራ በኩል - የቦርድ ሰንጠረዥ እና ኳሶች ማሳያ */
         .game-left-panel {
             flex: 1.2;
             display: flex;
             flex-direction: column;
             background: #ffffff;
-            border-radius: 12px;
-            padding: 6px;
+            border-radius: 10px;
+            padding: 5px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
             overflow: hidden;
             box-sizing: border-box;
@@ -182,11 +180,11 @@
             background: var(--gold);
             color: #000;
             font-weight: 900;
-            font-size: 0.8rem;
-            padding: 4px 0;
-            border-radius: 6px;
+            font-size: 0.75rem;
+            padding: 3px 0;
+            border-radius: 5px;
             text-align: center;
-            margin-bottom: 4px;
+            margin-bottom: 3px;
         }
 
         .main-board-vertical {
@@ -204,11 +202,11 @@
         }
 
         .ball-dot {
-            font-size: 0.7rem;
+            font-size: 0.65rem;
             background: #f1f5f9;
-            padding: 4px 0;
+            padding: 3px 0;
             color: #475569;
-            border-radius: 4px;
+            border-radius: 3px;
             text-align: center;
             font-weight: bold;
             border: 1px solid #e2e8f0;
@@ -220,31 +218,44 @@
             border-color: #d97706;
         }
 
-        /* የቀኝ በኩል - ትልቁ ኳስ፣ ያለፉ ኳሶች እና ካርቴላ/ቢንጎ ቁልፍ */
+        .room-footer-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #1e293b;
+            color: white;
+            padding: 5px 8px;
+            border-radius: 5px;
+            margin-top: 3px;
+            font-weight: bold;
+            font-size: 0.8rem;
+        }
+        .room-footer-bar span {
+            font-size: 0.7rem;
+            letter-spacing: 1px;
+            color: #94a3b8;
+        }
+
         .game-right-panel {
-            flex: 1;
+            flex: 1.1;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: space-between;
+            justify-content: flex-start;
             background: transparent;
             padding: 2px;
             box-sizing: border-box;
             overflow: hidden;
+            gap: 6px;
         }
 
         .top-balls-row {
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 6px;
-            margin-bottom: 6px;
-            width: 100%;
-        }
-
-        #recent-balls-container {
-            display: flex;
             gap: 5px;
+            width: 100%;
+            margin-top: 2px;
         }
 
         .recent-ball {
@@ -254,37 +265,36 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             font-weight: bold;
             color: #fff;
             background: #3b82f6;
             box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            flex-shrink: 0;
         }
         .recent-ball:nth-child(1) { background: #ef4444; }
         .recent-ball:nth-child(2) { background: #2563eb; }
         .recent-ball:nth-child(3) { background: #7c3aed; }
         .opacity-50-ball { opacity: 0.5; }
 
-        /* ትልቁ የኳስ ክብ ማሳያ በስተቀኝ በኩል */
         #ball-circle {
-            width: 75px;
-            height: 75px;
+            width: 55px;
+            height: 55px;
             background: #10b981;
             color: white;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.3rem;
+            font-size: 1rem;
             font-weight: 900;
-            border: 4px solid #ffffff;
-            box-shadow: 0 6px 15px rgba(16, 185, 129, 0.4);
+            border: 3px solid #ffffff;
+            box-shadow: 0 4px 10px rgba(16, 185, 129, 0.4);
             flex-shrink: 0;
             text-align: center;
-            line-height: 1.1;
+            line-height: 1;
         }
 
-        /* የጨዋታ ሁኔታ (በሂደት ላይ / በመጠባበቅ ላይ) ሳጥን */
         .status-center-box {
             flex: 1;
             display: flex;
@@ -292,39 +302,38 @@
             align-items: center;
             justify-content: center;
             text-align: center;
-            padding: 10px;
-            background: rgba(255, 255, 255, 0.5);
-            border-radius: 12px;
-            margin: 5px 0;
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 10px;
             width: 100%;
             box-sizing: border-box;
             border: 1px dashed #cbd5e1;
         }
         .status-center-box .hourglass {
-            font-size: 2.2rem;
-            margin-bottom: 8px;
+            font-size: 1.8rem;
+            margin-bottom: 4px;
         }
         .status-center-box h4 {
-            margin: 0 0 5px 0;
-            font-size: 0.85rem;
+            margin: 0 0 3px 0;
+            font-size: 0.8rem;
             color: #0f172a;
             font-style: italic;
             font-weight: 900;
         }
         .status-center-box p {
             margin: 0;
-            font-size: 0.7rem;
+            font-size: 0.65rem;
             color: #64748b;
-            line-height: 1.3;
+            line-height: 1.2;
         }
 
         #card-area {
             width: 100%;
             display: flex;
             flex-direction: column;
-            gap: 5px;
+            gap: 4px;
             overflow-y: auto;
-            max-height: 200px;
+            max-height: 190px;
         }
 
         .bingo-card { 
@@ -332,27 +341,27 @@
             grid-template-columns: repeat(5, 1fr); 
             gap: 2px; 
             background: #334155; 
-            padding: 4px; 
-            border-radius: 0 0 6px 6px; 
+            padding: 3px; 
+            border-radius: 0 0 5px 5px; 
             width: 100%; 
             box-sizing: border-box;
         }
         .cell { 
             background: #fff; 
             color: #000; 
-            height: 28px; 
+            height: 26px; 
             display: flex; 
             align-items: center; 
             justify-content: center; 
             font-weight: 800; 
-            font-size: 0.75rem; 
+            font-size: 0.7rem; 
             cursor: pointer; 
-            border-radius: 3px;
+            border-radius: 2px;
         }
         .cell.selected { background: var(--gold) !important; color: #000 !important; }
-        .cell.free { background: var(--red) !important; color: white; font-size: 0.6rem; }
+        .cell.free { background: var(--red) !important; color: white; font-size: 0.55rem; }
         
-        #bingo-btn { width: 100%; padding: 10px 0; background: var(--red); color: white; font-size: 1rem; font-weight: 900; border-radius: 8px; border: 1px solid white; cursor: pointer; text-transform: uppercase; margin-top: 5px; box-shadow: 0 4px 10px rgba(255, 62, 62, 0.3); }
+        #bingo-btn { width: 100%; padding: 9px 0; background: var(--red); color: white; font-size: 0.95rem; font-weight: 900; border-radius: 8px; border: 1px solid white; cursor: pointer; text-transform: uppercase; box-shadow: 0 4px 10px rgba(255, 62, 62, 0.3); }
         #bingo-btn:disabled { background: #555 !important; border-color: #888 !important; color: #aaa !important; cursor: not-allowed; box-shadow: none; }
         
         .modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index:2000; flex-direction:column; align-items:center; justify-content:center; padding: 20px; }
@@ -433,10 +442,12 @@
             </div>
         </div>
         
+        <!-- ሎቢ ላይ ከ players ቀጥሎ balance እንዲታይ ተደርጓል[cite: 7] -->
         <div class="stats" id="lobby-stats">
             <div>DERASH<b id="prize">0 ETB</b></div>
             <div>BALLS<b id="ball-count-header">0/75</b></div>
             <div>PLAYERS<b id="p-count">0</b></div>
+            <div>BALANCE<b id="balance">0 ETB</b></div>
         </div>
 
         <div id="lobby-ui">
@@ -455,15 +466,17 @@
             <div class="grid-500" id="ticket-area"></div>
         </div>
 
-        <!-- አዲሱ የጌም ዩአይ አቀማመጥ -->
+        <!-- ጌም ዩአይ ላይ ባላንስ አልተጨመረም -->
         <div id="game-ui" style="display:none;">
-            <!-- የግራ በኩል ፓነል (የቦርድ ሰንጠረዥ 1-75) -->
             <div class="game-left-panel">
                 <div class="board-header-top"><div>B</div><div>I</div><div>N</div><div>G</div><div>O</div></div>
                 <div class="main-board-vertical" id="main-board"></div>
+                <div class="room-footer-bar">
+                    <span>ROOM</span>
+                    <b id="room-num-display">10</b>
+                </div>
             </div>
 
-            <!-- የቀኝ በኩል ፓነል (ኳሶች፣ የሰዓት ማሳያ፣ ካርቴላ እና ቢንጎ ቁልፍ) -->
             <div class="game-right-panel">
                 <div class="top-balls-row">
                     <div id="recent-balls-container"></div>
@@ -738,6 +751,7 @@
             .then(d => {
                 if (d.balance !== undefined && d.balance !== null) {
                     clientBalance = parseFloat(d.balance) || 0;
+                    document.getElementById('balance').innerText = clientBalance.toFixed(0) + " ETB";
                 }
             }).catch(() => {});
         }
@@ -778,6 +792,13 @@
                 forceRecoveryRefresh();
             });
 
+            socket.on('balance_update', function(data) {
+                if (data && phoneMatches(data.phone, phone)) {
+                    clientBalance = parseFloat(data.balance) || 0;
+                    document.getElementById('balance').innerText = clientBalance.toFixed(0) + " ETB";
+                }
+            });
+
             socket.on('deposit_success_notify', function(data) {
                 const notif = document.getElementById('inline-notification');
                 if (notif) {
@@ -802,6 +823,7 @@
                 const result = await response.json();
                 if (result.success !== false && result.balance !== undefined && result.balance !== null) {
                     clientBalance = parseFloat(result.balance) || 0;
+                    document.getElementById('balance').innerText = clientBalance.toFixed(0) + " ETB";
                 }
             } catch (error) {}
         }
@@ -815,6 +837,7 @@
             
             if (d.balance !== undefined && d.balance !== null) {
                 clientBalance = parseFloat(d.balance) || 0;
+                document.getElementById('balance').innerText = clientBalance.toFixed(0) + " ETB";
             }
 
             let drawnCount = (d.drawn_balls && Array.isArray(d.drawn_balls)) ? d.drawn_balls.length : 0;
@@ -1159,7 +1182,6 @@
                     board.appendChild(colDiv);
                 }
             }
-            // ሁሉንም ከለር እናስወግድና የወጡትን ብቻ እናደምቅ
             for(let i=1; i<=75; i++) {
                 let el = document.getElementById('b-'+i);
                 if(el) el.className = 'ball-dot';
@@ -1195,7 +1217,7 @@
 
         function renderCard(card) {
             const wrap = document.createElement('div'); wrap.style.margin="0 auto"; wrap.style.width="100%";
-            wrap.innerHTML = `<div style="display:grid;grid-template-columns:repeat(5,1fr);background:var(--orange);font-weight:900;padding:2px;font-size:0.7rem;border-radius:4px 4px 0 0;text-align:center;"><div>B</div><div>I</div><div>N</div><div>G</div><div>O</div></div>`;
+            wrap.innerHTML = `<div style="display:grid;grid-template-columns:repeat(5,1fr);background:var(--orange);font-weight:900;padding:2px;font-size:0.65rem;border-radius:4px 4px 0 0;text-align:center;"><div>B</div><div>I</div><div>N</div><div>G</div><div>O</div></div>`;
             const grid = document.createElement('div'); grid.className='bingo-card';
             
             card.forEach((n, i) => {
