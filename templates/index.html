@@ -134,6 +134,25 @@
             height: 100%; 
         }
 
+        /* Game Stats Bar placed right above the mainboard header/board */
+        .game-stats-bar {
+            display: flex;
+            justify-content: flex-start;
+            gap: 16px;
+            width: 100%;
+            background: transparent;
+            padding: 2px 2px 4px 2px;
+            margin-bottom: 2px;
+            font-size: 0.6rem;
+            font-weight: 800;
+            color: #94a3b8;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+        .game-stats-bar div { text-align: left; }
+        .game-stats-bar b { display: block; font-size: 0.8rem; font-weight: 900; color: #00ff88; margin-top: 1px; }
+        .game-stats-bar div:nth-child(3) b { color: #ffcc00; }
+
         .board-header-top {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
@@ -221,25 +240,6 @@
             overflow: hidden;
             gap: 4px;
         }
-
-        /* Stats bar precisely matching the reference image layout */
-        .game-stats-bar {
-            display: flex;
-            justify-content: flex-start;
-            gap: 24px;
-            width: 100%;
-            background: transparent;
-            padding: 2px 4px;
-            margin-bottom: 2px;
-            font-size: 0.65rem;
-            font-weight: 800;
-            color: #94a3b8;
-            letter-spacing: 0.5px;
-            text-transform: uppercase;
-        }
-        .game-stats-bar div { text-align: left; }
-        .game-stats-bar b { display: block; font-size: 0.85rem; font-weight: 900; color: #00ff88; margin-top: 1px; }
-        .game-stats-bar div:nth-child(3) b { color: #ffcc00; }
 
         .top-balls-row {
             display: flex;
@@ -505,6 +505,13 @@
 
         <div id="game-ui" style="display:none;">
             <div class="game-left-panel">
+                <!-- Stats Bar moved right above the mainboard header -->
+                <div class="game-stats-bar">
+                    <div>DERASH<b id="game-prize">4544 ETB</b></div>
+                    <div>BALLS<b id="game-balls-count">7/75</b></div>
+                    <div>PLAYERS<b id="game-p-count">568</b></div>
+                </div>
+
                 <div class="board-header-top">
                     <div>B</div>
                     <div>I</div>
@@ -520,13 +527,6 @@
             </div>
 
             <div class="game-right-panel">
-                <!-- Game Stats Bar matching the layout of the reference image -->
-                <div class="game-stats-bar">
-                    <div>DERASH<b id="game-prize">4544 ETB</b></div>
-                    <div>BALLS<b id="game-balls-count">7/75</b></div>
-                    <div>PLAYERS<b id="game-p-count">568</b></div>
-                </div>
-
                 <div class="top-balls-row">
                     <div id="recent-balls-container"></div>
                     <div id="ball-circle">N-44</div>
@@ -1230,186 +1230,4 @@
             })
             .then(res => res.json())
             .then(d => { 
-                isProcessingBuy = false; 
-                silentBackgroundSync();
-            })
-            .catch(() => { isProcessingBuy = false; }); 
-        }
-
-        function refund(n) { 
-            const target = parseInt(n); if(isNaN(target)) return;
-            if(confirm("መልሰው 10 ብር ይውሰዱ?")) {
-                fetch('/cancel_ticket', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({phone: phone, ticket_num: target, room: '10'}) })
-                .then(() => { fetchBalanceOnly(); silentBackgroundSync(); }); 
-            }
-        }
-        
-        function renderMainBoard(drawn) {
-            const board = document.getElementById('main-board');
-            if(board.children.length === 0) { 
-                for(let col=0; col<5; col++) {
-                    let colDiv = document.createElement('div'); colDiv.className = 'board-column';
-                    let start = col * 15 + 1;
-                    for(let i=start; i<=start+14; i++) {
-                        let d = document.createElement('div'); d.className = 'ball-dot'; d.id = 'b-' + i; d.innerText = i;
-                        colDiv.appendChild(d);
-                    }
-                    board.appendChild(colDiv);
-                }
-            }
-            for(let i=1; i<=75; i++) {
-                let el = document.getElementById('b-'+i);
-                if(el) el.className = 'ball-dot';
-            }
-            if(drawn && Array.isArray(drawn)) {
-                drawn.forEach(b => { 
-                    let num = parseInt(String(b).replace(/[^0-9]/g, '')); 
-                    if(!isNaN(num)) { 
-                        let el = document.getElementById('b-'+num); 
-                        if(el) el.className = 'ball-dot active'; 
-                    } 
-                });
-            }
-        }
-
-        function handleCellClickCrossMatch(targetNumVal, clickedCellEl) {
-            if(isNaN(targetNumVal)) return;
-            let ballFound = false;
-            if (latestDrawnBallsGlobal && latestDrawnBallsGlobal.length > 0) {
-                for (let k = 0; k < latestDrawnBallsGlobal.length; k++) {
-                    let bNum = parseInt(latestDrawnBallsGlobal[k].replace(/[^0-9]/g, ''));
-                    if (bNum === targetNumVal) { ballFound = true; break; }
-                }
-            }
-            if (!ballFound) {
-                alert("❌ ይህ ቁጥር ገና አልወጣም! ቁጥሩ ሳይወጣ ማቅለም አይቻልም!");
-                return;
-            }
-            if (!clickedCellEl.classList.contains('selected')) {
-                clickedCellEl.classList.add('selected');
-            } else {
-                clickedCellEl.classList.remove('selected');
-            }
-        }
-
-        function renderCard(card, index, cardId) {
-            const wrap = document.createElement('div'); 
-            wrap.className = 'bingo-card-wrapper';
-            
-            wrap.innerHTML = `
-                <div class="bingo-card-header">
-                    <div>B</div><div>I</div><div>N</div><div>G</div><div>O</div>
-                </div>
-            `;
-            
-            const grid = document.createElement('div'); 
-            grid.className = 'bingo-card';
-            
-            card.forEach((n, i) => {
-                const cell = document.createElement('div'); 
-                let cleanVal = n;
-                if(i === 12 || parseInt(cleanVal) === 0) { 
-                    cell.className = "cell free selected"; 
-                    cell.innerText = "★"; 
-                } else { 
-                    let numVal = parseInt(cleanVal); 
-                    cell.className = "cell"; 
-                    cell.innerText = cleanVal; 
-                    cell.onclick = () => { handleCellClickCrossMatch(numVal, cell); } 
-                }
-                grid.appendChild(cell);
-            });
-            wrap.appendChild(grid);
-
-            const bingoBtn = document.createElement('button');
-            bingoBtn.className = 'bingo-btn';
-            bingoBtn.id = 'bingo-btn-' + cardId;
-            bingoBtn.innerHTML = `BINGO! <span style="font-size:0.75rem; opacity:0.8; font-weight:normal;">#${cardId || ''}</span>`;
-            bingoBtn.onclick = () => claimSpecificCard(cardId, wrap, bingoBtn);
-            wrap.appendChild(bingoBtn);
-
-            document.getElementById('card-area').appendChild(wrap);
-        }
-
-        function claimSpecificCard(targetCardId, cardWrapEl, btnEl) {
-            const markedCells = [];
-            cardWrapEl.querySelectorAll('.cell.selected').forEach(cell => {
-                let val = cell.innerText.trim();
-                if (val && val !== "FREE" && val !== "★") {
-                    markedCells.push(parseInt(val));
-                }
-            });
-
-            btnEl.disabled = true;
-            
-            fetch('/claim_bingo', { 
-                method:'POST', 
-                headers:{ 'Content-Type':'application/json' }, 
-                body: JSON.stringify({ phone: phone, room: '10', ticket_num: targetCardId, marked_cells: markedCells }) 
-            })
-            .then(r => r.json())
-            .then(d => { 
-                if(!d || !d.success) { 
-                    alert(d?.msg || "ስህተት አጋጥሟል!"); 
-                    btnEl.disabled = false; 
-                } else {
-                    silentBackgroundSync();
-                }
-            }).catch(() => { btnEl.disabled = false; }); 
-        }
-        
-        function subD() {
-            let amt = parseInt(document.getElementById('da').value);
-            let tid = document.getElementById('di').value.trim();
-            if(!amt || amt < 10 || !tid || tid.length < 4) return alert("ትክክለኛ መረጃ ያስገቡ!");
-            
-            fetch('/request_deposit', { 
-                method:'POST', headers:{'Content-Type':'application/json'}, 
-                body:JSON.stringify({phone: phone, amount: amt, transaction_id: tid, method: selectedDepositMethodName}) 
-            })
-            .then(res => res.json())
-            .then(d => { 
-                closeDepositForm(); 
-                alert(d?.msg || "የዲፖዚት ጥያቄዎ ተልኳል!"); 
-                fetchBalanceOnly(); 
-            })
-            .catch(() => {});
-        }
-
-        function subW() {
-            let amt = parseFloat(document.getElementById('wa').value);
-            if(!amt || amt < 51) return alert("ቢያንስ 51 ETB ማውጣት ይችላሉ!");
-            if(amt > clientBalance) return alert("በቂ ባላንስ የለዎትም!");
-            
-            fetch('/request_withdrawal', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ phone: phone, amount: amt, method: selectedWithdrawMethodName }) 
-            })
-            .then(r => r.json())
-            .then(res => { 
-                closeWithdrawForm(); 
-                alert(res?.msg || "የማውጣት ጥያቄዎ ተልኳል!"); 
-                fetchBalanceOnly(); 
-            })
-            .catch(() => {});
-        }
-
-        function subTransfer() {
-            let receiverPh = document.getElementById('trans-phone').value.trim();
-            let amt = parseFloat(document.getElementById('trans-amount').value);
-            if(!receiverPh || isNaN(amt) || amt <= 0) return alert("እባክዎ ትክክለኛ ስልክ ቁጥር እና የብር መጠን ያስገቡ!");
-            
-            fetch('/request_transfer', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ phone: phone, receiver_phone: receiverPh, amount: amt })
-            })
-            .then(r => r.json())
-            .then(res => {
-                closeM('trans-m');
-                alert(res?.msg || "ተከናውኗል!");
-            })
-            .catch(() => {});
-        }
-    </script>
-</body>
-</html>
+                isProcessing
