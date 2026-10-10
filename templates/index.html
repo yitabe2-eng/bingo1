@@ -108,14 +108,14 @@
         .t-box.mine { background: var(--gold) !important; color: #000 !important; box-shadow: inset 0 0 0 2px #ffffff; }
         .t-box.sold { background: #333; color: #666; cursor: not-allowed; }
 
-        /* Global Stats Bar */
+        /* Global Stats Bar width set to 75% */
         .global-stats-bar {
             display: flex;
             justify-content: space-around;
             align-items: center;
             background: #111827;
             padding: 8px 12px;
-            width: 100%;
+            width: 75%;
             height: 48px;
             box-sizing: border-box;
             border-bottom: 1px solid rgba(255,255,255,0.08);
@@ -127,11 +127,11 @@
         .stat-val { display: block; font-size: 0.85rem; font-weight: 900; color: #00ff88; margin-top: 1px; }
         .stat-val.gold { color: #ffcc00; }
 
-        /* Big Golden Ball (N-44) positioned above stats bar */
+        /* Big Golden Ball (N-44) */
         #ball-circle {
             position: absolute;
             top: -24px;
-            right: 12px;
+            right: -60px;
             width: 70px;
             height: 70px;
             background: #eab308;
@@ -203,7 +203,6 @@
         .board-header-top div:nth-child(4) { background: #10b981; } 
         .board-header-top div:nth-child(5) { background: #9333ea; } 
 
-        /* Main Board Vertical height reduced by 25% */
         .main-board-vertical {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
@@ -356,8 +355,8 @@
             grid-template-columns: repeat(5, 1fr);
             color: #fff;
             font-weight: 900;
-            font-size: 1.1rem;
-            padding: 6px 0;
+            font-size: 1rem;
+            padding: 4px 0;
             border-radius: 4px 4px 0 0;
             text-align: center;
             margin-bottom: 2px;
@@ -498,7 +497,6 @@
         </div>
 
         <div id="game-ui" style="display:none;">
-            <!-- Global Stats Bar with Big Golden Ball positioned on top right -->
             <div class="global-stats-bar">
                 <div class="stat-item">
                     <span class="stat-label">DERASH</span>
@@ -513,7 +511,6 @@
                     <span class="stat-val gold" id="game-p-count">568</span>
                 </div>
                 
-                <!-- Big Golden Ball Circle (N-44) -->
                 <div id="ball-circle">44</div>
             </div>
 
