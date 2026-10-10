@@ -18,7 +18,7 @@
             --purple: #a855f7;
         }
         body { 
-            background: #000; 
+            background: #1e293b; 
             color: white; 
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
             text-align: center; 
@@ -114,7 +114,7 @@
         .stat-val { display: block; font-size: 0.85rem; font-weight: 900; color: #10b981; margin-top: 1px; }
         .stat-val.gold { color: #f59e0b; }
 
-        /* Big Golden Floating Ball */
+        /* Big Yellow Floating Ball */
         #ball-circle {
             position: absolute;
             top: 4px;
@@ -407,7 +407,7 @@
             <div class="grid-500" id="ticket-area"></div>
         </div>
 
-        <div id="game-ui" style="display:none;">
+        <div id="game-ui">
             <div class="game-top-bar">
                 <div class="global-stats-bar">
                     <div class="stat-item">
@@ -424,7 +424,6 @@
                     </div>
                 </div>
 
-                <!-- Big Yellow Floating Ball -->
                 <div id="ball-circle">N-44</div>
             </div>
 
@@ -476,6 +475,8 @@
         function showGameUI() {
             document.getElementById('auth-ui').style.display = 'none';
             document.getElementById('main-app-content').style.display = 'flex'; 
+            renderMainBoard();
+            renderSampleCard();
             initWebSocket();
         }
 
@@ -492,9 +493,11 @@
         }
 
         function initWebSocket() {
-            socket = io({ reconnection: true });
-            socket.on('connect', function() { forceRecoveryRefresh(); });
-            socket.on('game_update_10', function(d) { applyGameStateData(d); });
+            if(typeof io !== "undefined") {
+                socket = io({ reconnection: true });
+                socket.on('connect', function() { forceRecoveryRefresh(); });
+                socket.on('game_update_10', function(d) { applyGameStateData(d); });
+            }
         }
 
         function forceRecoveryRefresh() {
@@ -506,9 +509,9 @@
 
         function applyGameStateData(d) {
             if (!d) return;
-            document.getElementById('game-prize').innerText = (d.pot || 4544) + " ETB";
-            document.getElementById('game-balls-count').innerText = (d.drawn_balls ? d.drawn_balls.length : 7) + "/75";
-            document.getElementById('game-p-count').innerText = d.active_players || 568;
+            if(document.getElementById('game-prize')) document.getElementById('game-prize').innerText = (d.pot || 4544) + " ETB";
+            if(document.getElementById('game-balls-count')) document.getElementById('game-balls-count').innerText = (d.drawn_balls ? d.drawn_balls.length : 7) + "/75";
+            if(document.getElementById('game-p-count')) document.getElementById('game-p-count').innerText = d.active_players || 568;
 
             if(d.status === "lobby") {
                 document.getElementById('lobby-ui').style.display='flex'; 
@@ -517,12 +520,12 @@
                 document.getElementById('lobby-ui').style.display='none'; 
                 document.getElementById('game-ui').style.display='flex'; 
                 renderMainBoard(d.drawn_balls || [9, 12, 21, 44, 46, 50, 54]);
-                renderSampleCard();
             }
         }
 
         function renderMainBoard(drawn) {
             const board = document.getElementById('main-board');
+            if(!board) return;
             board.innerHTML = "";
             const yellowHighlight = [9, 12, 21, 46, 50, 54];
             
@@ -548,6 +551,7 @@
 
         function renderSampleCard() {
             const cardArea = document.getElementById('card-area');
+            if(!cardArea) return;
             cardArea.innerHTML = `
                 <div class="bingo-card-wrapper">
                     <div class="bingo-card-header"><div>B</div><div>I</div><div>N</div><div>G</div><div>O</div></div>
