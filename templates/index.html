@@ -133,21 +133,20 @@
             z-index: 100;
         }
 
+        /* DERASH, BALLS እና PLAYERS መጠን እና በመካከላቸው ያለው ክፍተት ጨምሯል */
         .global-stats-bar {
             display: flex;
             justify-content: flex-start;
-            gap: 12px;
+            gap: 22px;
             align-items: center;
-            max-width: 38%;
             box-sizing: border-box;
-            overflow: hidden;
         }
         .stat-item { text-align: left; }
-        .stat-label { font-size: 0.55rem; font-weight: 900; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }
-        .stat-val { display: block; font-size: 0.85rem; font-weight: 900; color: #00ff88; margin-top: 1px; }
+        .stat-label { font-size: 0.68rem; font-weight: 900; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }
+        .stat-val { display: block; font-size: 1.1rem; font-weight: 900; color: #00ff88; margin-top: 1px; }
         .stat-val.gold { color: #ffcc00; }
 
-        /* ትልቁ ክብ መጠን ጨምሮ በሶስቱ ኳሶች ትክክል ጀምሮ ወደላይ ጎልቶ እንዲታይ የተስተካከለ */
+        /* ትልቁ ኳስ በስተቀኝ ተወስዶ ከ PLAYERS ጋር እንዳይጋጭ እና ከሶስቱ ኳሶች ጎን እንዲሆን የተስተካከለ */
         #ball-circle {
             width: 68px;
             height: 68px;
@@ -165,7 +164,7 @@
             text-align: center;
             line-height: 1;
             position: absolute;
-            left: calc(38% + 6px);
+            left: calc(42% + 8px);
             top: 2px;
             z-index: 105;
         }
@@ -179,7 +178,7 @@
             position: relative;
         }
 
-        /* Left Main Board Panel (Height reduced by another 15%) */
+        /* Left Main Board Panel (ቁመቱ በ 15% ተጨማሪ ተቀንሷል) */
         .game-left-panel {
             width: 38%; 
             display: flex;
@@ -197,7 +196,7 @@
             color: #fff;
             font-weight: 900;
             font-size: 0.9rem;
-            padding: 5px 0;
+            padding: 4px 0;
             text-align: center;
             font-style: italic;
         }
@@ -207,27 +206,29 @@
         .board-header-top div:nth-child(4) { background: #10b981; } 
         .board-header-top div:nth-child(5) { background: #9333ea; } 
 
+        /* Main Board ቁመት በ 15% የተቀነሰበት ክፍል */
         .main-board-vertical {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
-            gap: 3px;
+            gap: 2px;
             flex: 1;
-            padding: 4px;
+            padding: 3px;
             background: #cbd5e1;
             overflow-y: auto;
-            max-height: calc(100vh - 145px); /* ቁመቱ በ 15% ተጨማሪ ተቀንሷል */
+            max-height: calc(100vh - 195px);
         }
 
         .board-column {
             display: flex;
             flex-direction: column;
-            gap: 3px;
+            gap: 2px;
         }
 
         .ball-dot {
             flex: 1;
-            min-height: 10px;
-            font-size: 0.75rem;
+            min-height: 8px;
+            padding: 1px 0;
+            font-size: 0.68rem;
             background: #ffffff;
             display: flex;
             align-items: center;
@@ -259,7 +260,7 @@
             font-weight: bold;
             font-size: 0.75rem;
             flex-shrink: 0;
-            margin-top: 6px;
+            margin-top: 4px;
         }
         .room-footer-bar span {
             font-size: 0.65rem;
@@ -285,13 +286,14 @@
             gap: 6px;
         }
 
+        /* ሶስቱ ኳሶች ከትልቁ ኳስ በስተቀኝ እንዲሰለፉ የተስተካከለ */
         .top-balls-row {
             display: flex;
             align-items: center;
             justify-content: flex-start;
             width: 100%;
             height: 38px;
-            padding-left: 76px;
+            padding-left: 82px;
             box-sizing: border-box;
         }
 
