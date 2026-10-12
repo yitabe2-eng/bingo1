@@ -154,25 +154,59 @@
 
         .time-text { color: #f87171; }
 
-        /* TICKET GRID CONTAINER */
+        /* LOBBY CONTENT AREA */
         .lobby-content-area {
             flex: 1;
             display: flex;
             flex-direction: column;
-            overflow-y: auto;
+            overflow: hidden;
             padding: 10px;
             gap: 10px;
+        }
+
+        /* SLOTS AREA AT TOP (ወደ ላይ እንዲመጣ ተደርጓል) */
+        .slots-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            flex-shrink: 0;
+        }
+
+        .slot-box {
+            border: 2px dashed #94a3b8;
+            border-radius: 16px;
+            height: 70px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #64748b;
+            font-weight: 800;
+            font-size: 0.75rem;
+            background: rgba(255,255,255,0.6);
+        }
+        .slot-box.filled {
+            border: 2px solid #f59e0b;
+            background: #fffbeb;
+            color: #b45309;
+        }
+        .slot-box span { font-size: 1.1rem; margin-bottom: 2px; }
+
+        /* TICKET GRID CONTAINER (SCROLLABLE) */
+        .grid-500-container {
+            flex: 1;
+            overflow-y: auto;
+            background: #e2e8f0;
+            border-radius: 16px;
+            border: 1px solid #cbd5e1;
+            padding: 8px;
         }
 
         .grid-500 { 
             display: grid; 
             grid-template-columns: repeat(10, 1fr); 
             gap: 4px; 
-            background: #e2e8f0; 
-            padding: 8px; 
-            border-radius: 16px; 
             box-sizing: border-box; 
-            border: 1px solid #cbd5e1;
         }
 
         .t-box { 
@@ -190,35 +224,6 @@
         .t-box:active { transform: scale(0.95); }
         .t-box.mine { background: #f59e0b !important; color: #ffffff !important; font-weight: 900; box-shadow: 0 2px 6px rgba(245, 158, 11, 0.4); }
         .t-box.sold { background: #cbd5e1 !important; color: #94a3b8 !important; cursor: not-allowed; box-shadow: none; }
-
-        /* SLOTS AREA AT BOTTOM */
-        .slots-container {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            padding: 5px 0 10px 0;
-            flex-shrink: 0;
-        }
-
-        .slot-box {
-            border: 2px dashed #94a3b8;
-            border-radius: 16px;
-            height: 75px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            color: #64748b;
-            font-weight: 800;
-            font-size: 0.75rem;
-            background: rgba(255,255,255,0.6);
-        }
-        .slot-box.filled {
-            border: 2px solid #f59e0b;
-            background: #fffbeb;
-            color: #b45309;
-        }
-        .slot-box span { font-size: 1.2rem; margin-bottom: 2px; }
 
         /* ================= GAME UI ================= */
         #game-ui {
@@ -543,11 +548,9 @@
                 </div>
             </div>
             
-            <!-- TICKET GRID & SLOTS CONTAINER -->
+            <!-- LOBBY CONTENT AREA -->
             <div class="lobby-content-area">
-                <div class="grid-500" id="ticket-area"></div>
-
-                <!-- SLOTS SECTION AT BOTTOM -->
+                <!-- SLOTS SECTION AT TOP -->
                 <div class="slots-container">
                     <div class="slot-box" id="slot-1">
                         <span>➕</span>
@@ -557,6 +560,11 @@
                         <span>➕</span>
                         SLOT 2 EMPTY
                     </div>
+                </div>
+
+                <!-- TICKET GRID CONTAINER (SCROLLABLE) -->
+                <div class="grid-500-container">
+                    <div class="grid-500" id="ticket-area"></div>
                 </div>
             </div>
         </div>
