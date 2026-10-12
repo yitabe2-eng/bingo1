@@ -101,6 +101,7 @@ def set_bot_commands():
         {"command": "play", "description": "🎮 ጨዋታ ይምረጡ "},
         {"command": "deposit", "description": "📥 ሂሳብ ለመሙላት (Deposit)"},
         {"command": "withdraw", "description": "📤 ብር ወጪ ለማድረግ (Withdraw)"},
+        {"command": "transfer", "description": "💸 ብር ለማስተላለፍ (Transfer)"},
         {"command": "balance", "description": "💰 ቀሪ (Balance) "},
         {"command": "history", "description": "📥 የትራንዛክሽን ታሪክ "},
         {"command": "instruction", "description": "ℹ️ የጨዋታ ህጎች "}
@@ -115,6 +116,7 @@ def set_bot_commands():
             {"command": "play", "description": "🎮 play "},
             {"command": "deposit", "description": "📥 Deposit"},
             {"command": "withdraw", "description": "📤 Withdraw"},
+            {"command": "transfer", "description": "💸 Transfer"},
             {"command": "admin", "description": "🛠 Admin"},
             {"command": "pending", "description": "⏳ Approvals"},
             {"command": "agent", "description": "👥 Agent h"},
@@ -924,7 +926,7 @@ def webhook():
     if "message" in data:
         msg = data["message"]
         chat_id = str(msg.get("chat", {}).get("id", ""))
-        text = msg.get("text", "").strip()
+        text = msg.get("text", "")
         
         if chat_id != str(ADMIN_ID):
             wallets.update_one(
@@ -1029,62 +1031,87 @@ def webhook():
                     send_telegram("❌ ትክክለኛ መረጃ አላስገቡም። እባክዎ እንደገና ይሞክሩ:\n`2026-10-01 2026-10-07 deposit`")
                 return "OK", 200
 
-        # === DIRECT TRANSFER PARSER (09xxxxxxxx 10) ===
-        # ተጠቃሚው /transfer ሳይሉ 09... እና ብር ብቻ ሲልክ በቀጥታ እንዲሰራ የሚያደርግ ሎጂክ
-        parts = text.split()
-        if len(parts) == 2 and parts[0].isdigit() and (parts[0].startswith("09") or parts[0].startswith("07")) and len(parts[0]) == 10:
-            rec_phone = sanitize_input(parts[0])
+        # === /deposit & /withdraw handlers ===
+        if text.lower() in ["/deposit", "/withdraw"]:
             url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
-            try:
-                amt_val = float(parts[1])
-                u_wallet = wallets.find_one({"chat_id": chat_id})
-                if not u_wallet:
-                    requests.post(url, json={"chat_id": chat_id, "text": "❌ አካውንትዎ አልተገኘም። እባክዎ መጀመሪያ /play ብለው ይግቡ።"}, timeout=2)
-                    return "OK", 200
-                
-                sender_phone = u_wallet.get("phone")
-                if u_wallet.get("balance", 0) < amt_val:
-                    requests.post(url, json={"chat_id": chat_id, "text": "❌ በቂ ባላንስ የለዎትም!"}, timeout=2)
-                    return "OK", 200
-
-                rec_wallet = wallets.find_one({"phone": rec_phone})
-                if not rec_wallet:
-                    requests.post(url, json={"chat_id": chat_id, "text": "❌ ተቀባዩ ተጠቃሚ በሲስተሙ አልተገኘም!"}, timeout=2)
-                    return "OK", 200
-
-                if sender_phone == rec_wallet["phone"]:
-                    requests.post(url, json={"chat_id": chat_id, "text": "❌ ለራስዎ ገንዘብ ማስተላለፍ አይችሉም!"}, timeout=2)
-                    return "OK", 200
-
-                tx_res = transactions.insert_one({
-                    "phone": sender_phone,
-                    "receiver_phone": rec_wallet["phone"],
-                    "type": "transfer",
-                    "amount": amt_val,
-                    "status": "pending",
-                    "timestamp": datetime.utcnow()
-                })
-                tx_ref = str(tx_res.inserted_id)
-
-                admin_msg = f"🔄 *Transfer Pending Request*\n📤 From: `{sender_phone}`\n📥 To: `{rec_wallet['phone']}`\n💵 Amount: `{amt_val}` ETB"
-                kb = {
-                    "inline_keyboard": [
-                        [
-                            {"text": "✅ approved", "callback_data": f"app_trf_{tx_ref}_{sender_phone}_{rec_wallet['phone']}_{amt_val}"},
-                            {"text": "❌ ሰርዝ (Reject)", "callback_data": f"rej_trf_{tx_ref}_{sender_phone}_{rec_wallet['phone']}_{amt_val}"}
-                        ]
+            action_name = "ለማስገባት" if text.lower() == "/deposit" else "ወጪ ለማድረግ"
+            dep_keyboard = {
+                "inline_keyboard": [
+                    [
+                        {"text": "CBE BIRR", "callback_data": f"user_select_cbe_{text[1:]}"},
+                        {"text": "TELE BIRR", "callback_data": f"user_select_tele_{text[1:]}"}
                     ]
-                }
-                send_telegram(admin_msg, reply_markup=kb)
+                ]
+            }
+            msg_text = f"💳 **የማስገቢያ መንገድ ይምረጡ (Select Deposit Method)**\n\nእባክዎ ሂሳብ {action_name} የሚጠቀሙበትን መንገድ ይምረጡ፦"
+            requests.post(url, json={
+                "chat_id": chat_id,
+                "text": msg_text,
+                "parse_mode": "Markdown",
+                "reply_markup": dep_keyboard
+            }, timeout=2)
+            return "OK", 200
 
-                requests.post(url, json={
-                    "chat_id": chat_id,
-                    "text": f"⏳ የ **{amt_val} ETB** ትራንስፈር ጥያቄዎ ወደ አድሚን ተልኳል። አድሚኑ approved ሲያደርገው ባላንስዎ ተቀንሶ ለተቀባዩ ይደርሰዋል!",
-                    "parse_mode": "Markdown"
-                }, timeout=2)
-                return "OK", 200
-            except ValueError:
-                pass
+        # === /transfer handler ===
+        if text.lower().startswith("/transfer"):
+            url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
+            parts = text.split()
+            if len(parts) == 3:
+                rec_phone = sanitize_input(parts[1])
+                try:
+                    amt_val = float(parts[2])
+                    u_wallet = wallets.find_one({"chat_id": chat_id})
+                    if not u_wallet:
+                        requests.post(url, json={"chat_id": chat_id, "text": "❌ አካውንትዎ አልተገኘም። እባክዎ መጀመሪያ /play ብለው ይግቡ።"}, timeout=2)
+                        return "OK", 200
+                    
+                    sender_phone = u_wallet.get("phone")
+                    if u_wallet.get("balance", 0) < amt_val:
+                        requests.post(url, json={"chat_id": chat_id, "text": "❌ በቂ ባላንስ የለዎትም!"}, timeout=2)
+                        return "OK", 200
+
+                    rec_wallet = wallets.find_one({"phone": rec_phone})
+                    if not rec_wallet:
+                        requests.post(url, json={"chat_id": chat_id, "text": "❌ ተቀባዩ ተጠቃሚ በሲስተሙ አልተገኘም!"}, timeout=2)
+                        return "OK", 200
+
+                    tx_res = transactions.insert_one({
+                        "phone": sender_phone,
+                        "receiver_phone": rec_phone,
+                        "type": "transfer",
+                        "amount": amt_val,
+                        "status": "pending",
+                        "timestamp": datetime.utcnow()
+                    })
+                    tx_ref = str(tx_res.inserted_id)
+
+                    admin_msg = f"🔄 *Transfer Pending Request*\n📤 From: `{sender_phone}`\n📥 To: `{rec_phone}`\n💵 Amount: `{amt_val}` ETB"
+                    kb = {
+                        "inline_keyboard": [
+                            [
+                                {"text": "✅ approved", "callback_data": f"app_trf_{tx_ref}_{sender_phone}_{rec_phone}_{amt_val}"},
+                                {"text": "❌ ሰርዝ (Reject)", "callback_data": f"rej_trf_{tx_ref}_{sender_phone}_{rec_phone}_{amt_val}"}
+                            ]
+                        ]
+                    }
+                    send_telegram(admin_msg, reply_markup=kb)
+
+                    requests.post(url, json={
+                        "chat_id": chat_id,
+                        "text": f"⏳ የ **{amt_val} ETB** ትራንስፈር ጥያቄዎ ወደ አድሚን ተልኳል። አድሚኑ approved ሲያደርገው ባላንስዎ ተቀንሶ ለተቀባዩ ይደርሰዋል!",
+                        "parse_mode": "Markdown"
+                    }, timeout=2)
+                except ValueError:
+                    requests.post(url, json={"chat_id": chat_id, "text": "❌ የብር መጠን ስህተት ነው። ምሳሌ፦ `/transfer 0921523653 20`"}, timeout=2)
+            else:
+                msg_txt = (
+                    "💸 **ብር ለማስተላለፍ (Transfer)**\n\n"
+                    "የሚልኩለትን ስልክ እና ብር ያስገቡ ምሳሌ፦\n"
+                    "`/transfer 0921523653 20`\n\n"
+                    "ከዛ እስከመረጡት መንገድ ወደ pending ይላቃል፤ አድሚኑ approved ሲያደርገው ለነሱ ባላንሳቸው ይሞላል።"
+                )
+                requests.post(url, json={"chat_id": chat_id, "text": msg_txt, "parse_mode": "Markdown"}, timeout=2)
+            return "OK", 200
 
         if text.lower() == "/balance":
             url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
