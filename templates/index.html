@@ -1,140 +1,362 @@
 <!DOCTYPE html>
 <html lang="am">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>BESH BINGO - FULL & PIXEL PERFECT</title>
-    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <style>
-        :root { --gold: #ffcc00; --bg: #1e293b; --red: #ff3e3e; --green: #00ff88; --orange: #ff8800; --purple: #a855f7; }
-        body { background: var(--bg); color: white; font-family: sans-serif; text-align: center; margin: 0; padding: 0; overflow: hidden; width: 100vw; height: 100vh; }
-        
-        #auth-ui { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; background: radial-gradient(circle at center, #1e293b, #050a18); position: absolute; inset: 0; z-index: 9999; }
-        .auth-card { background: rgba(255, 255, 255, 0.03); border: 2px solid var(--gold); border-radius: 20px; padding: 30px 20px; width: 100%; max-width: 360px; box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
-        .auth-input { padding: 14px; width: 100%; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2); box-sizing: border-box; font-size: 1rem; background: #fff; color: #000; font-weight: bold; margin: 10px 0; }
-        .btn-login { width: 100%; padding: 14px; background: linear-gradient(135deg, var(--green), #00cc6a); color: #000; border: none; border-radius: 10px; font-weight: 900; font-size: 1.1rem; cursor: pointer; text-transform: uppercase; }
-
-        #main-app-content { display: none; flex-direction: column; height: 100vh; width: 100vw; overflow: hidden; background: #1e293b; position: absolute; inset: 0; }
-        #lobby-ui { flex: 1; overflow-y: auto; display: flex; flex-direction: column; background: #050a18; padding: 10px; }
-        .grid-500 { display: grid; grid-template-columns: repeat(10, 1fr); gap: 4px; flex: 1; overflow-y: auto; background: #000; padding: 10px; border-radius: 10px; }
-        .t-box { background: #fff; color: #000; font-size: 0.75rem; padding: 8px 0; font-weight: bold; border-radius: 4px; cursor: pointer; border: 1px solid transparent; }
-        .t-box.mine { background: var(--gold) !important; color: #000 !important; }
-        .t-box.sold { background: #333; color: #666; cursor: not-allowed; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ጉድቢንጎ ኢትዮጵያ - GoodBingo Ethiopia</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    @keyframes pulse-fast { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.08); } }
+    .pulse-urgent { animation: pulse-fast 0.6s infinite; }
+    .wood-pattern { background: radial-gradient(circle, #2d3748 0%, #1a202c 100%); }
+    .bingo-ball-b { background: radial-gradient(circle at 30% 30%, #ef4444, #991b1b); }
+    .bingo-ball-i { background: radial-gradient(circle at 30% 30%, #3b82f6, #1e40af); }
+    .bingo-ball-n { background: radial-gradient(circle at 30% 30%, #eab308, #854d0e); }
+    .bingo-ball-g { background: radial-gradient(circle at 30% 30%, #22c55e, #166534); }
+    .bingo-ball-o { background: radial-gradient(circle at 30% 30%, #a855f7, #6b21a8); }
+  </style>
 </head>
-<body>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans select-none">
 
-    <div id="auth-ui">
-        <div class="auth-card">
-            <h2 style="color:var(--gold);">ተመዝገብ</h2>
-            <p style="color:#94a3b8;">ወደ ጨዋታው ለመግባት መረጃዎን ያስገቡ</p>
-            <input type="text" id="reg-username" class="auth-input" placeholder="ስምዎን ያስገቡ...">
-            <input type="tel" id="reg-phone" class="auth-input" placeholder="09... ወይም 07...">
-            <button class="btn-login" onclick="registerUser()">🚀 ወደ ጨዋታው ግባ</button>
+  <!-- Header / Navigation Bar -->
+  <header class="bg-slate-900 border-b border-amber-500/30 px-4 py-3 sticky top-0 z-40 shadow-lg">
+    <div class="max-w-7xl mx-auto flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-600 to-yellow-400 flex items-center justify-center shadow-md shadow-amber-500/20 font-black text-slate-950 text-xl">
+          B
         </div>
+        <div>
+          <h1 class="text-xl font-black tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-yellow-200">
+            GOOD BINGO
+          </h1>
+          <p class="text-[10px] text-amber-400/80 uppercase font-semibold">ኢትዮጵያ ቁጥር 1 የቀጥታ ቢንጎ</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2 sm:gap-4">
+        <!-- Balance Display -->
+        <div class="bg-slate-800/90 border border-slate-700 rounded-xl px-3 py-1.5 flex items-center gap-2 shadow-inner">
+          <i class="fa-solid fa-wallet text-amber-400"></i>
+          <div>
+            <span class="text-[10px] text-slate-400 block leading-tight">ሂሳብ (Balance)</span>
+            <span id="balanceDisplay" class="font-bold text-amber-400 text-sm sm:text-base">0.00 ETB</span>
+          </div>
+        </div>
+
+        <!-- Deposit Button -->
+        <button onclick="openWalletModal()" class="bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white font-bold px-3 py-2 rounded-xl text-xs sm:text-sm shadow-md transition flex items-center gap-1.5 active:scale-95">
+          <i class="fa-solid fa-plus-circle"></i>
+          <span class="hidden sm:inline">ገንዘብ አስገባ</span>
+        </button>
+
+        <!-- Rules Button -->
+        <button onclick="openRulesModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 p-2.5 rounded-xl border border-slate-700 text-sm transition">
+          <i class="fa-solid fa-circle-question"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- LOBBY SCREEN -->
+  <main id="lobbyScreen" class="flex-1 max-w-7xl w-full mx-auto p-4 flex flex-col gap-4">
+    <!-- Top Countdown & Jackpot Banner -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <!-- 30-Second Countdown Card -->
+      <div id="countdownBox" class="bg-slate-900 border-2 border-amber-500/40 rounded-2xl p-4 flex items-center justify-between shadow-xl relative overflow-hidden">
+        <div class="z-10">
+          <div class="text-xs uppercase tracking-wider text-slate-400 font-bold flex items-center gap-1.5">
+            <i class="fa-solid fa-clock text-amber-400"></i>
+            ዙሩ ለመጀመር የቀረው ጊዜ
+          </div>
+          <div class="text-xs text-amber-400/90 mt-0.5">ሰዓቱ 0 ሲል ጨዋታው በቀጥታ ይጀምራል!</div>
+        </div>
+        <div class="z-10 text-right">
+          <div id="timerText" class="text-4xl sm:text-5xl font-black text-amber-400 font-mono tracking-tighter">
+            00:30
+          </div>
+          <span class="text-[10px] text-slate-400">ሰከንዶች ቀርተዋል</span>
+        </div>
+        <div id="progressBar" class="absolute bottom-0 left-0 h-1.5 bg-amber-500 transition-all duration-1000" style="width: 100%;"></div>
+      </div>
+
+      <!-- Jackpot / Prize Pool Card -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex items-center justify-between shadow-xl">
+        <div>
+          <div class="text-xs uppercase tracking-wider text-slate-400 font-bold flex items-center gap-1.5">
+            <i class="fa-solid fa-trophy text-yellow-400"></i>
+            ጠቅላላ የዙሩ ሽልማት (Prize)
+          </div>
+          <div id="prizePoolDisplay" class="text-3xl font-black text-emerald-400 mt-1 font-mono">
+            0.00 ETB
+          </div>
+        </div>
+        <div class="text-right">
+          <div class="text-xs text-slate-400">የተገዙ ካርዶች</div>
+          <div id="cardsSoldStat" class="text-xl font-bold text-slate-200">0 / 500</div>
+        </div>
+      </div>
+
+      <!-- Player Selected Cards Summary -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex items-center justify-between shadow-xl">
+        <div>
+          <div class="text-xs uppercase tracking-wider text-slate-400 font-bold flex items-center gap-1.5">
+            <i class="fa-solid fa-ticket text-amber-400"></i>
+            የእርስዎ የተመረጡ ካርዶች
+          </div>
+          <div id="myCardsCount" class="text-2xl font-black text-amber-400 mt-1">
+            0 ካርድ (0 ETB)
+          </div>
+        </div>
+        <button onclick="autoSelectCard()" class="bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 font-black px-3 py-2 rounded-xl text-xs transition shadow-lg">
+          <i class="fa-solid fa-dice mr-1"></i> ፈጣን ምርጫ
+        </button>
+      </div>
     </div>
 
-    <div id="main-app-content">
-        <div id="lobby-ui">
-            <h3 style="color:var(--gold);">ካርቴላ ይምረጡ (10 ETB)</h3>
-            <div class="grid-500" id="ticket-area"></div>
+    <!-- 500 Numbers Grid Selector Section -->
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl flex-1 flex flex-col">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800">
+        <div>
+          <h2 class="text-lg font-bold text-slate-100 flex items-center gap-2">
+            <i class="fa-solid fa-table-cells text-amber-400"></i>
+            የካርድ መምረጫ ሰሌዳ (1 - 500)
+          </h2>
+          <p class="text-xs text-slate-400">የሚፈልጉትን ቁጥር ጠቅ በማድረግ ካርድ ይግዙ (አንድ ካርድ = 10 ETB)። እንደገና ጠቅ ካደረጉት ይሰረዛል።</p>
         </div>
+
+        <!-- Range tabs -->
+        <div class="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
+          <button onclick="switchTab(0)" class="tab-btn px-3 py-1.5 rounded-lg bg-amber-500 text-slate-950 font-bold transition">1-100</button>
+          <button onclick="switchTab(1)" class="tab-btn px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold transition">101-200</button>
+          <button onclick="switchTab(2)" class="tab-btn px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold transition">201-300</button>
+          <button onclick="switchTab(3)" class="tab-btn px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold transition">301-400</button>
+          <button onclick="switchTab(4)" class="tab-btn px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold transition">401-500</button>
+        </div>
+      </div>
+
+      <!-- Numbers Grid -->
+      <div id="numbersGrid" class="grid grid-cols-5 sm:grid-cols-10 gap-2 mt-4 max-h-[500px] overflow-y-auto p-1">
+        <!-- Rendered by JS -->
+      </div>
+    </div>
+  </main>
+
+  <!-- LIVE GAME SCREEN -->
+  <main id="gameLiveScreen" class="hidden flex-1 max-w-7xl w-full mx-auto p-4 flex flex-col gap-4">
+    <div class="bg-slate-900 border border-amber-500/40 rounded-2xl p-4 shadow-2xl flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <span class="relative flex h-3 w-3">
+          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+          <span class="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+        </span>
+        <div>
+          <h2 class="text-lg font-black text-amber-400">ቀጥታ የቢንጎ እጣ (LIVE ROUND)</h2>
+          <p id="totalDrawnStat" class="text-xs text-slate-400">የወጡ ኳሶች: 0 / 75</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-4 bg-slate-950 px-6 py-2 rounded-2xl border border-slate-800">
+        <span class="text-xs uppercase font-bold text-slate-400">አሁን የወጣው ኳስ:</span>
+        <div id="activeBallElement" class="w-16 h-16 rounded-full flex items-center justify-center font-black text-2xl text-white shadow-2xl bingo-ball-b">
+          --
+        </div>
+      </div>
+
+      <div class="text-right">
+        <div class="text-xs text-slate-400">የዙሩ ድምር ሽልማት</div>
+        <div id="livePrizeDisplay" class="text-2xl font-black text-emerald-400 font-mono">0.00 ETB</div>
+      </div>
     </div>
 
-    <script>
-        let phone = localStorage.getItem('phone');
-        let username = localStorage.getItem('username');
-        let socket = null;
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-3 flex items-center gap-2 overflow-x-auto">
+      <span class="text-xs font-bold text-slate-400 shrink-0 mr-2">የወጡ ኳሶች ቅደም ተከተል:</span>
+      <div id="recentBallsContainer" class="flex items-center gap-1.5">
+        <span class="text-xs text-slate-500 italic">ኳሶች እየተጠበቁ ነው...</span>
+      </div>
+    </div>
 
-        window.onload = function() {
-            if (phone && phone.trim() !== "") {
-                showGameUI();
-            } else {
-                showAuthUI();
-            }
+    <div class="flex-1 flex flex-col">
+      <h3 class="text-sm font-bold text-slate-300 mb-2 flex items-center gap-2">
+        <i class="fa-solid fa-id-card text-amber-400"></i>
+        የእርስዎ ንቁ ካርዶች
+      </h3>
+      <div id="playerCardsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+    </div>
+  </main>
+
+  <!-- Winner Modal -->
+  <div id="winnerModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-slate-900 border-2 border-yellow-500 rounded-3xl p-6 sm:p-8 max-w-md w-full text-center shadow-2xl relative">
+      <div class="w-20 h-20 mx-auto rounded-full bg-gradient-to-tr from-yellow-500 to-amber-300 flex items-center justify-center text-4xl text-slate-950 shadow-lg mb-4">
+        <i class="fa-solid fa-crown"></i>
+      </div>
+      <h2 id="winnerTitle" class="text-3xl font-black text-yellow-400 mb-2">ቢንጎ! አሸንፈዋል!</h2>
+      <p id="winnerSubtitle" class="text-slate-300 text-sm mb-6">እንኳን ደስ አሎት! የዙሩ አሸናፊ ሆነዋል!</p>
+      <div class="bg-slate-950 border border-slate-800 p-4 rounded-2xl mb-6">
+        <span class="text-xs text-slate-400">የተገኘው የገንዘብ ሽልማት</span>
+        <div id="winAmountDisplay" class="text-3xl font-black text-emerald-400 mt-1">0.00 ETB</div>
+      </div>
+      <button onclick="returnToLobby()" class="w-full bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 font-black py-3 rounded-xl shadow-lg transition">
+        ወደ ሎቢ ተመለስ
+      </button>
+    </div>
+  </div>
+
+  <!-- Wallet Modal -->
+  <div id="walletModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 max-w-md w-full shadow-2xl">
+      <div class="flex items-center justify-between pb-4 border-b border-slate-800">
+        <h3 class="text-lg font-bold text-slate-100 flex items-center gap-2">
+          <i class="fa-solid fa-building-columns text-amber-400"></i>
+          የኪስ ቦርሳ (Wallet)
+        </h3>
+        <button onclick="closeWalletModal()" class="text-slate-400 hover:text-white text-lg">&times;</button>
+      </div>
+      <div class="mt-4 flex flex-col gap-3">
+        <p class="text-xs text-slate-400">ሒሳብ ለመሙላት በቦቱ በኩል /deposit የሚለውን ትዕዛዝ ይጠቀሙ።</p>
+        <button onclick="closeWalletModal()" class="w-full bg-slate-800 text-white font-bold py-3 rounded-xl">ዝጋ</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let phone = prompt("እባክዎ ስልክ ቁጥርዎን ያስገቡ (ምሳሌ: 0912345678):") || "0900000000";
+    let username = prompt("እባክዎ ስምዎን ያስገቡ:") || "ተጫዋች";
+    let currentTab = 0;
+    let soldTicketsMap = {};
+    let socket = io();
+
+    socket.on('connect', () => {
+      fetchStatus();
+    });
+
+    socket.on('game_update_10', (data) => {
+      updateGameStateUI(data);
+    });
+
+    function fetchStatus() {
+      fetch(`/get_status?phone=${encodeURIComponent(phone)}&room=10`)
+        .then(res => res.json())
+        .then(data => {
+          if(data.success) {
+            document.getElementById('balanceDisplay').textContent = `${(data.balance || 0).toFixed(2)} ETB`;
+            soldTicketsMap = data.sold_tickets || {};
+            updateGameStateUI(data);
+          }
+        });
+    }
+
+    function updateGameStateUI(data) {
+      if(!data) return;
+      document.getElementById('timerText').textContent = `00:${data.timer < 10 ? '0' : ''}${data.timer}`;
+      let prize = (data.pot || 0) * 0.8;
+      document.getElementById('prizePoolDisplay').textContent = `${prize.toFixed(2)} ETB`;
+      document.getElementById('livePrizeDisplay').textContent = `${prize.toFixed(2)} ETB`;
+      
+      let soldCount = Object.keys(data.sold_tickets || {}).length;
+      document.getElementById('cardsSoldStat').textContent = `${soldCount} / 500`;
+
+      soldTicketsMap = data.sold_tickets || {};
+      renderNumbersGrid();
+
+      // Update my selected cards count summary
+      let myCount = 0;
+      for(let tNum in soldTicketsMap) {
+        if(soldTicketsMap[tNum] === phone) myCount++;
+      }
+      document.getElementById('myCardsCount').textContent = `${myCount} ካርድ (${myCount * 10} ETB)`;
+
+      if(data.status === "playing") {
+        document.getElementById('lobbyScreen').classList.add('hidden');
+        document.getElementById('gameLiveScreen').classList.remove('hidden');
+        if(data.current_ball) {
+          document.getElementById('activeBallElement').textContent = data.current_ball;
         }
-
-        function showAuthUI() {
-            document.getElementById('auth-ui').style.display = 'flex';
-            document.getElementById('main-app-content').style.display = 'none';
+        if(data.drawn_balls) {
+          document.getElementById('totalDrawnStat').textContent = `የወጡ ኳሶች: ${data.drawn_balls.length} / 75`;
         }
+      } else {
+        document.getElementById('lobbyScreen').classList.remove('hidden');
+        document.getElementById('gameLiveScreen').classList.add('hidden');
+      }
 
-        function showGameUI() {
-            document.getElementById('auth-ui').style.display = 'none';
-            document.getElementById('main-app-content').style.display = 'flex'; 
-            initTicketsOnce();
-            initWebSocket();
+      if(data.winner) {
+        document.getElementById('winnerTitle').textContent = data.winner;
+        document.getElementById('winAmountDisplay').textContent = `${prize.toFixed(2)} ETB`;
+        document.getElementById('winnerModal').classList.remove('hidden');
+      }
+    }
+
+    function renderNumbersGrid() {
+      const grid = document.getElementById('numbersGrid');
+      grid.innerHTML = '';
+      const start = currentTab * 100 + 1;
+      const end = start + 99;
+
+      for (let num = start; num <= end; num++) {
+        const btn = document.createElement('button');
+        const isMine = soldTicketsMap[num] === phone;
+        const isSold = soldTicketsMap[num] && !isMine;
+
+        btn.className = `p-2.5 rounded-xl font-bold text-sm flex flex-col items-center justify-center transition active:scale-95 border ${
+          isMine
+            ? 'bg-amber-500 text-slate-950 border-amber-300 shadow-md font-black ring-2 ring-amber-300'
+            : isSold
+            ? 'bg-slate-800/40 text-slate-600 border-slate-800 cursor-not-allowed line-through'
+            : 'bg-slate-800/90 hover:bg-slate-700 text-slate-200 border-slate-700'
+        }`;
+
+        btn.innerHTML = `<span>#${num}</span><span class="text-[9px] ${isMine ? 'text-slate-950 font-bold' : isSold ? 'text-slate-600' : 'text-amber-400'}">10 ETB</span>`;
+
+        if (!isSold) {
+          btn.onclick = () => toggleSelectNumber(num);
         }
+        grid.appendChild(btn);
+      }
+    }
 
-        function registerUser() {
-            let inputName = document.getElementById('reg-username').value.trim();
-            let inputPhone = document.getElementById('reg-phone').value.trim();
-            if (inputName.length < 2) return alert("እባክዎ ትክክለኛ ስም ያስገቡ!");
-            const cleanPhone = inputPhone.replace(/[^0-9+]/g, '');
-            if (cleanPhone.length < 9) return alert("እባክዎ ትክክለኛ ስልክ ቁጥር ያስገቡ!");
+    function switchTab(tabIndex) {
+      currentTab = tabIndex;
+      document.querySelectorAll('.tab-btn').forEach((btn, idx) => {
+        btn.className = idx === tabIndex 
+          ? 'tab-btn px-3 py-1.5 rounded-lg bg-amber-500 text-slate-950 font-bold transition'
+          : 'tab-btn px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold transition';
+      });
+      renderNumbersGrid();
+    }
 
-            localStorage.setItem('phone', cleanPhone);
-            localStorage.setItem('username', inputName);
-            phone = cleanPhone;
-            username = inputName;
-            showGameUI();
+    function toggleSelectNumber(num) {
+      const isMine = soldTicketsMap[num] === phone;
+      const endpoint = isMine ? '/cancel_ticket' : '/buy_specific_ticket';
+
+      fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: phone, ticket_num: num, username: username, room: '10' })
+      })
+      .then(res => res.json())
+      .then(data => {
+        fetchStatus();
+      });
+    }
+
+    function autoSelectCard() {
+      for(let i=1; i<=500; i++) {
+        if(!soldTicketsMap[i]) {
+          toggleSelectNumber(i);
+          break;
         }
+      }
+    }
 
-        function initWebSocket() {
-            if (typeof io !== "undefined") {
-                socket = io();
-                socket.on('connect', () => forceRecoveryRefresh());
-                socket.on('game_update_10', (d) => applyGameStateData(d));
-            }
-        }
+    function openWalletModal() { document.getElementById('walletModal').classList.remove('hidden'); }
+    function closeWalletModal() { document.getElementById('walletModal').classList.add('hidden'); }
+    function returnToLobby() { document.getElementById('winnerModal').classList.add('hidden'); fetchStatus(); }
+    function openRulesModal() { alert("የጉድቢንጎ ሕጎች፦ ካርቴላ ይግዙ፣ ኳሶች ሲወጡ ይኮትኩቱ፣ አግድም ወይም አቀባዊ ሲሞላ ቢንጎ ብለው ያሸንፉ!"); }
 
-        function forceRecoveryRefresh() {
-            if (!phone) return;
-            fetch(`/get_status?phone=${encodeURIComponent(phone)}&room=10`)
-            .then(r => r.json())
-            .then(d => applyGameStateData(d)).catch(() => {});
-        }
-
-        function applyGameStateData(d) {
-            if (!d) return;
-            if (d.sold_tickets) renderTickets(d.sold_tickets);
-        }
-
-        function initTicketsOnce() {
-            const area = document.getElementById('ticket-area');
-            if(area && area.children.length === 0) { 
-                for(let i=1; i<=500; i++) { 
-                    let div = document.createElement('div'); 
-                    div.className = 't-box'; 
-                    div.innerText = i; 
-                    div.id = 't-' + i; 
-                    div.onclick = () => buy(i);
-                    area.appendChild(div); 
-                } 
-            }
-        }
-
-        function renderTickets(sold) {
-            for(let i=1; i<=500; i++) {
-                let box = document.getElementById('t-'+i); 
-                if(!box) continue;
-                if(sold && sold[i]) { 
-                    const isMine = sold[i] === phone;
-                    box.className = isMine ? 't-box mine' : 't-box sold'; 
-                } else { 
-                    box.className = 't-box'; 
-                }
-            }
-        }
-
-        function buy(n) {
-            fetch('/buy_specific_ticket', {
-                method: 'POST', 
-                headers: { 'Content-Type': 'application/json' }, 
-                body: JSON.stringify({ phone: phone, ticket_num: n, username: username, room: '10' })
-            }).then(() => forceRecoveryRefresh());
-        }
-    </script>
+    renderNumbersGrid();
+  </script>
 </body>
 </html>
