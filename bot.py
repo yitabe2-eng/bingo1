@@ -755,10 +755,13 @@ def request_deposit():
 
     user = wallets.find_one({"phone": ph})
     db_phone = user["phone"] if user else ph
+    user_name = user.get("name", user.get("username", "ስም አልባ")) if user else "ስም አልባ"
     
     is_blocked = blocked_phones.find_one({"phone": db_phone})
     if is_blocked:
         return jsonify({"success": True, "msg": "የነጻዉ አልቋል በቴሌ ብር ወይም ሲቢኢ ብር ወደ 0945880474 ላክ"})
+
+    current_date_str = (datetime.utcnow() + timedelta(hours=3)).strftime("%Y-%m-%d %H:%M:%S")
 
     tx_res = transactions.insert_one({
         "phone": db_phone, 
@@ -772,7 +775,15 @@ def request_deposit():
     })
     tx_ref = str(tx_res.inserted_id)
 
-    msg = f"💰 *Deposit Request (Room: {room})*\n💳 Method: `{method}`\n📞 Phone: `{db_phone}`\n💵 Amount: `{amt}` ETB\n🆔 ID: `{t_id}`"
+    msg = (
+        f"💰 *የዲፖዚት ጥያቄ (Deposit Request)*\n"
+        f"👤 ስም: {user_name}\n"
+        f"📞 ስልክ ቁጥር: `{db_phone}`\n"
+        f"💵 የብር መጠን: `{amt}` ETB\n"
+        f"💳 የክፍያ መንገድ: `{method}`\n"
+        f"📅 ቀን: `{current_date_str}`\n"
+        f"🆔 የትራንዛክሽን ID: `{t_id}`"
+    )
         
     keyboard = {
         "inline_keyboard": [
@@ -793,6 +804,7 @@ def request_withdrawal():
     d = request.json or {}
     ph = sanitize_input(str(d.get('phone')))
     room = sanitize_input(str(d.get('room', '10')))
+    method = sanitize_input(str(d.get('method', 'TELE BIRR')))
     try:
         amt = float(d.get('amount', 0))
     except ValueError:
@@ -804,21 +816,32 @@ def request_withdrawal():
     if not user:
         return jsonify({"success": False, "msg": "ተጠቃሚው አልተገኘም!"})
     db_phone = user["phone"]
+    user_name = user.get("name", user.get("username", "ስም አልባ"))
     
     if user.get("balance", 0) < amt:
         return jsonify({"success": False, "msg": "በቂ ባላንስ የለዎትም!"})
+
+    current_date_str = (datetime.utcnow() + timedelta(hours=3)).strftime("%Y-%m-%d %H:%M:%S")
 
     tx_res = transactions.insert_one({
         "phone": db_phone, 
         "type": "withdrawal", 
         "amount": amt, 
         "status": "pending", 
+        "method": method,
         "room": room, 
         "timestamp": datetime.utcnow()
     })
     tx_ref = str(tx_res.inserted_id)
 
-    msg = f"📤 *Withdrawal Request (Room: {room})*\n📞 Phone: `{db_phone}`\n💵 Amount: `{amt}` ETB"
+    msg = (
+        f"📤 *የዊዝድሮዋል ጥያቄ (Withdrawal Request)*\n"
+        f"👤 ስም: {user_name}\n"
+        f"📞 ስልክ ቁጥር: `{db_phone}`\n"
+        f"💵 የብር መጠን: `{amt}` ETB\n"
+        f"💳 የክፍያ መንገድ: `{method}`\n"
+        f"📅 ቀን: `{current_date_str}`"
+    )
     keyboard = {
         "inline_keyboard": [
             [
@@ -850,14 +873,18 @@ def request_transfer():
     if not sender or sender.get("balance", 0) < amt:
         return jsonify({"success": False, "msg": "በቂ ባላንስ የለዎትም!"})
     db_sender_phone = sender["phone"]
+    sender_name = sender.get("name", sender.get("username", "ስም አልባ"))
     
     receiver = wallets.find_one({"phone": receiver_ph})
     if not receiver:
         return jsonify({"success": False, "msg": "ተቀባዩ አልተገኘም!"})
     db_receiver_phone = receiver["phone"]
+    receiver_name = receiver.get("name", receiver.get("username", "ስም አልባ"))
 
     if db_sender_phone == db_receiver_phone:
         return jsonify({"success": False, "msg": "ለራስዎ ገንዘብ ማስተላለፍ አይችሉም!"})
+
+    current_date_str = (datetime.utcnow() + timedelta(hours=3)).strftime("%Y-%m-%d %H:%M:%S")
 
     tx_res = transactions.insert_one({
         "phone": db_sender_phone, 
@@ -869,7 +896,13 @@ def request_transfer():
     })
     tx_ref = str(tx_res.inserted_id)
 
-    msg = f"🔄 *Transfer Pending Request*\n📤 From: `{db_sender_phone}`\n📥 To: `{db_receiver_phone}`\n💵 Amount: `{amt}` ETB"
+    msg = (
+        f"🔄 *የገንዘብ ዝውውር ጥያቄ (Transfer Pending)*\n"
+        f"📤 ላኪ ስም: {sender_name} (`{db_sender_phone}`)\n"
+        f"📥 ተቀባይ ስም: {receiver_name} (`{db_receiver_phone}`)\n"
+        f"💵 መጠን: `{amt}` ETB\n"
+        f"📅 ቀን: `{current_date_str}`"
+    )
     keyboard = {
         "inline_keyboard": [
             [
@@ -1066,6 +1099,7 @@ def webhook():
                         return "OK", 200
                     
                     sender_phone = u_wallet.get("phone")
+                    sender_name = u_wallet.get("name", u_wallet.get("username", "ስም አልባ"))
                     if u_wallet.get("balance", 0) < amt_val:
                         requests.post(url, json={"chat_id": chat_id, "text": "❌ በቂ ባላንስ የለዎትም!"}, timeout=2)
                         return "OK", 200
@@ -1074,6 +1108,9 @@ def webhook():
                     if not rec_wallet:
                         requests.post(url, json={"chat_id": chat_id, "text": "❌ ተቀባዩ ተጠቃሚ በሲስተሙ አልተገኘም!"}, timeout=2)
                         return "OK", 200
+                    rec_name = rec_wallet.get("name", rec_wallet.get("username", "ስም አልባ"))
+
+                    current_date_str = (datetime.utcnow() + timedelta(hours=3)).strftime("%Y-%m-%d %H:%M:%S")
 
                     tx_res = transactions.insert_one({
                         "phone": sender_phone,
@@ -1085,7 +1122,13 @@ def webhook():
                     })
                     tx_ref = str(tx_res.inserted_id)
 
-                    admin_msg = f"🔄 *Transfer Pending Request*\n📤 From: `{sender_phone}`\n📥 To: `{rec_phone}`\n💵 Amount: `{amt_val}` ETB"
+                    admin_msg = (
+                        f"🔄 *የገንዘብ ዝውውር ጥያቄ (Transfer Pending)*\n"
+                        f"📤 ላኪ ስም: {sender_name} (`{sender_phone}`)\n"
+                        f"📥 ተቀባይ ስም: {rec_name} (`{rec_phone}`)\n"
+                        f"💵 መጠን: `{amt_val}` ETB\n"
+                        f"📅 ቀን: `{current_date_str}`"
+                    )
                     kb = {
                         "inline_keyboard": [
                             [
@@ -1614,7 +1657,7 @@ def webhook():
                         if rec_updated:
                             notify_user_balance_update(rec_ph, rec_updated.get("balance", 0))
 
-                        today_str = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+                        today_str = (datetime.utcnow() + timedelta(hours=3)).strftime("%Y-%m-%d %H:%M:%S")
                         
                         sender_chat_id = sender_updated.get("chat_id")
                         if sender_chat_id:
@@ -1679,12 +1722,15 @@ def webhook():
                     new_bal = updated.get("balance", 0) if updated else 0
                     notify_user_balance_update(phone_num, new_bal)
                     
+                    today_str = (datetime.utcnow() + timedelta(hours=3)).strftime("%Y-%m-%d %H:%M:%S")
+
                     admin_msg = (
-                        f"💰 *Deposit Request*\n"
+                        f"💰 *Deposit Request Approved*\n"
                         f"💳 Method: {tx_method}\n"
                         f"📞 Phone: `{phone_num}`\n"
                         f"💵 Amount: `{amt}` ETB\n"
-                        f"🆔 ID: `{tx_ref_id}`\n\n"
+                        f"🆔 ID: `{tx_ref_id}`\n"
+                        f"📅 ቀን: `{today_str}`\n\n"
                         f"✅ *APPROVED*\n"
                         f"💰 አጠቃላይ ባላንስ: `{new_bal}` ETB"
                     )
@@ -1704,6 +1750,7 @@ def webhook():
                             user_msg = (
                                 f"✅ *የዲፖዚት ጥያቄዎ ጸድቋል!*\n\n"
                                 f"💵 በሂሳብዎ ላይ *{amt} ETB* ተጨምሯል።\n"
+                                f"📅 ቀን፦ {today_str}\n"
                                 f"💰 አጠቃላይ ቀሪ ባላንስዎ: *{new_bal} ETB*"
                             )
                             requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage", json={
@@ -1749,6 +1796,24 @@ def webhook():
                     if updated:
                         new_bal = updated.get("balance", 0)
                         notify_user_balance_update(phone_num, new_bal)
+                        
+                        today_str = (datetime.utcnow() + timedelta(hours=3)).strftime("%Y-%m-%d %H:%M:%S")
+                        user_chat_id = updated.get("chat_id")
+                        if user_chat_id:
+                            try:
+                                user_msg = (
+                                    f"✅ *የዊዝድሮዋል (ውጪ) ጥያቄዎ ጸድቋል!*\n\n"
+                                    f"💵 መጠን: *{amt} ETB*\n"
+                                    f"📅 ቀን፦ {today_str}\n"
+                                    f"💰 ቀሪ ባላንስዎ: *{new_bal} ETB*"
+                                )
+                                requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage", json={
+                                    "chat_id": user_chat_id,
+                                    "text": user_msg,
+                                    "parse_mode": "Markdown"
+                                }, timeout=2)
+                            except: pass
+
                         requests.post(answer_url, json={"callback_query_id": cq_id, "text": "approved!"})
                     else:
                         requests.post(answer_url, json={"callback_query_id": cq_id, "text": "❌ የተጠቃሚው ባላንስ በቂ አይደለም!", "show_alert": True})
