@@ -1,857 +1,658 @@
-<!DOCTYPE html>
-<html lang="am">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>BESH BINGO - FULL & PIXEL PERFECT</title>
-    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+import os
+import time
+from datetime import datetime, timedelta
+from gevent import monkey
+monkey.patch_all()
+
+import random
+import requests
+import re
+import gevent
+from flask import Flask, render_template, jsonify, request
+from pymongo import MongoClient
+from flask_cors import CORS
+from flask_socketio import SocketIO, emit
+from bson.objectid import ObjectId
+
+app = Flask(__name__, template_folder='templates')
+CORS(app)
+
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode="gevent", ping_timeout=20, ping_interval=5)
+
+ADMIN_ID = os.getenv("ADMIN_ID") 
+BOT_TOKEN = os.getenv("BOT_TOKEN") 
+MONGO_URL = os.getenv("MONGO_URL")
+WEB_APP_URL = os.getenv("WEB_APP_URL", "https://bingo1-pjyb.onrender.com") 
+
+client = MongoClient(MONGO_URL, serverSelectionTimeoutMS=2000)
+db = client['bingo_db']
+wallets = db['wallets']
+blocked_phones = db['blocked_phones'] 
+transactions = db['transactions']
+admin_state = db['admin_state']
+
+try:
+    wallets.create_index("phone", unique=True)
+    blocked_phones.create_index("phone", unique=True)
+    transactions.create_index("timestamp")
+except Exception as e:
+    print(f"Index creation notice: {e}")
+
+game_states = {
+    "10": {
+        "status": "lobby", "timer": 30, "ball_timer": 2, "pot": 0, "players": {}, 
+        "sold_tickets": {}, "current_ball": "--", "drawn_balls": [], "winner": None,
+        "winning_card": None, "winning_ticket_num": None, "winning_indices": None,
+        "winning_line_name": None, "all_cards": {}
+    },
+    "20": {
+        "status": "lobby", "timer": 30, "ball_timer": 2, "pot": 0, "players": {}, 
+        "sold_tickets": {}, "current_ball": "--", "drawn_balls": [], "winner": None,
+        "winning_card": None, "winning_ticket_num": None, "winning_indices": None,
+        "winning_line_name": None, "all_cards": {}
+    },
+    "50": {
+        "status": "lobby", "timer": 30, "ball_timer": 2, "pot": 0, "players": {}, 
+        "sold_tickets": {}, "current_ball": "--", "drawn_balls": [], "winner": None,
+        "winning_card": None, "winning_ticket_num": None, "winning_indices": None,
+        "winning_line_name": None, "all_cards": {}
+    },
+    "super": { 
+        "status": "lobby", "timer": 30, "ball_timer": 3, "pot": 0, "players": {}, 
+        "sold_tickets": {}, "current_ball": "--", "drawn_balls": [], "winner": None,
+        "winning_card": None, "winning_ticket_num": None, "winning_indices": None,
+        "winning_line_name": None, "all_cards": {}
+    }
+}
+
+loop_started = False
+reset_task_references = {"10": None, "20": None, "50": None, "super": None}
+pending_claims = {"10": [], "20": [], "50": [], "super": []}
+claim_lock_active = {"10": False, "20": False, "50": False, "super": False}
+
+def sanitize_input(text):
+    if not text:
+        return ""
+    return re.sub(r'[^\w\s\-\\.\@:]', '', str(text)).strip()
+
+def send_telegram(text, reply_markup=None, chat_id=None):
+    target_chat = chat_id if chat_id else ADMIN_ID
+    def _send():
+        url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
+        payload = {"chat_id": target_chat, "text": text, "parse_mode": "Markdown"}
+        if reply_markup:
+            payload["reply_markup"] = reply_markup
+        try:
+            requests.post(url, json=payload, timeout=2)
+        except Exception as e:
+            print(f"Telegram Error: {e}")
+    gevent.spawn(_send)
+
+def set_webhook():
+    webhook_url = f"{WEB_APP_URL}/webhook"
+    url = f"https://api.telegram.org/bot{BOT_TOKEN}/setWebhook?url={webhook_url}"
+    try:
+        requests.get(url, timeout=2)
+    except Exception as e:
+        print(f"Webhook set failed: {e}")
+
+def set_bot_commands():
+    url = f"https://api.telegram.org/bot{BOT_TOKEN}/setMyCommands"
+    default_commands = [
+        {"command": "play", "description": "🎮 ጨዋታ ይምረጡ"},
+        {"command": "balance", "description": "💰 ቀሪ (Balance)"},
+        {"command": "deposit", "description": "📥 ሂሳብ ለመሙላት (Deposit)"},
+        {"command": "withdrawal", "description": "📤 ገንዘብ ለማውጣት (Withdraw)"},
+        {"command": "transfer", "description": "💸 ገንዘብ ለማስተላለፍ"},
+        {"command": "history", "description": "📥 የትራንዛክሽን ታሪክ"},
+        {"command": "instruction", "description": "ℹ️ የጨዋታ ህጎች"}
+    ]
+    try:
+        requests.post(url, json={"commands": default_commands}, timeout=2)
+    except Exception as e:
+        print(f"Error setting default commands: {e}")
+
+    if ADMIN_ID:
+        admin_commands = [
+            {"command": "play", "description": "🎮 play"},
+            {"command": "admin", "description": "🛠 Admin"},
+            {"command": "pending", "description": "⏳ Approvals"},
+            {"command": "agent", "description": "👥 Agent h"},
+            {"command": "daily", "description": "📅 D/W ገቢና ወጪ"},
+            {"command": "balance", "description": "💰 Balance"},
+            {"command": "deposit", "description": "📥 Deposit"},
+            {"command": "withdrawal", "description": "📤 Withdraw"},
+            {"command": "transfer", "description": "💸 Transfer"},
+            {"command": "history", "description": "📥 History"},
+            {"command": "instruction", "description": "ℹ️ Rule"},
+        ]
+        payload = {
+            "commands": admin_commands,
+            "scope": {
+                "type": "chat",
+                "chat_id": int(ADMIN_ID)
+            }
+        }
+        try:
+            requests.post(url, json=payload, timeout=2)
+        except Exception as e:
+            print(f"Error setting admin commands: {e}")
+
+def broadcast_game_state(room_type):
+    state = game_states[room_type]
+    state_payload = {
+        "status": state["status"],
+        "timer": state["timer"],
+        "ball_timer": state["ball_timer"],
+        "pot": state["pot"],
+        "sold_tickets": state["sold_tickets"],
+        "current_ball": state["current_ball"],
+        "drawn_balls": state["drawn_balls"],
+        "winner": state["winner"],
+        "winning_card": state["winning_card"],
+        "winning_ticket_num": state["winning_ticket_num"],
+        "winning_indices": state.get("winning_indices"),
+        "winning_line_name": state.get("winning_line_name"), 
+        "all_cards": state.get("all_cards", {}), 
+        "active_players": len(state["players"])
+    }
+    socketio.emit(f'game_update_{room_type}' if room_type != "super" else 'game_update', state_payload)
+
+def notify_user_balance_update(phone_num, new_balance):
+    socketio.emit('balance_update', {"phone": phone_num, "balance": new_balance})
+
+def check_winning_line(card, drawn_numbers, player_marked_numbers=None):
+    drawn_set = set()
+    for b in drawn_numbers:
+        if len(b) > 1:
+            try:
+                drawn_set.add(int(b[1:]))
+            except ValueError:
+                pass
+    drawn_set.add(0) 
+    marked_set = set(player_marked_numbers) if player_marked_numbers is not None else None
+
+    def is_hit(idx):
+        val = card[idx]
+        if idx == 12 or val == 0 or val == "Besh" or val == "★":
+            return True
+        try:
+            val_int = int(val)
+            if marked_set is not None:
+                return (val_int in drawn_set) and (val_int in marked_set)
+            return val_int in drawn_set
+        except:
+            return False
+
+    all_win_indices = set()
+    line_types = []
     
-    <style>
-        :root { 
-            --gold: #ffcc00; 
-            --bg: #1e293b; 
-            --red: #ff3e3e; 
-            --green: #00ff88; 
-            --orange: #ff8800; 
-            --purple: #a855f7;
-        }
-        body { 
-            background: var(--bg); 
-            color: white; 
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
-            text-align: center; 
-            margin: 0; 
-            padding: 0; 
-            overflow: hidden; 
-            width: 100vw; 
-            height: 100vh; 
-        }
-        
-        #auth-ui {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            padding: 20px;
-            box-sizing: border-box;
-            background: radial-gradient(circle at center, #1e293b, #050a18);
-            position: absolute;
-            inset: 0;
-            z-index: 9999;
-        }
-        .auth-card {
-            background: rgba(255, 255, 255, 0.03);
-            border: 2px solid var(--gold);
-            border-radius: 20px;
-            padding: 30px 20px;
-            width: 100%;
-            max-width: 360px;
-            box-sizing: border-box;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
-        }
-        .auth-card h2 { color: var(--gold); margin-top: 0; font-size: 1.6rem; letter-spacing: 1px; }
-        .auth-card p { color: #94a3b8; font-size: 0.9rem; margin-bottom: 20px; }
-        .input-group { width: 100%; text-align: left; margin-bottom: 15px; }
-        .input-group label { display: block; font-size: 0.85rem; color: var(--gold); margin-bottom: 5px; font-weight: bold; }
-        .auth-input { padding: 14px; width: 100%; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2); box-sizing: border-box; font-size: 1rem; background: #fff; color: #000; font-weight: bold; }
-        .auth-input:focus { border-color: var(--gold); outline: none; }
-        .btn-login { width: 100%; padding: 14px; background: linear-gradient(135deg, var(--green), #00cc6a); color: #000; border: none; border-radius: 10px; font-weight: 900; font-size: 1.1rem; cursor: pointer; text-transform: uppercase; margin-top: 10px; box-shadow: 0 4px 15px rgba(0, 255, 136, 0.3); transition: 0.2s; }
-        .btn-login:disabled { background: #555; cursor: not-allowed; opacity: 0.6; box-shadow: none; }
-
-        #main-app-content {
-            display: none;
-            flex-direction: column;
-            height: 100vh;
-            width: 100vw;
-            box-sizing: border-box;
-            overflow: hidden;
-            background: #1e293b;
-            position: absolute;
-            inset: 0;
-        }
-
-        #inline-notification {
-            font-size: 0.75rem;
-            font-weight: bold;
-            color: var(--green);
-            background: rgba(0, 255, 136, 0.15);
-            border: 1px solid var(--green);
-            padding: 6px 12px;
-            border-radius: 6px;
-            display: none;
-            white-space: nowrap;
-            position: absolute;
-            top: 10px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 2000;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-        }
-
-        #lobby-ui { flex: 1; overflow-y: auto; display: flex; flex-direction: column; background: #050a18; }
-        .action-bar { display: flex; justify-content: center; gap: 5px; padding: 4px 8px; flex-wrap: wrap; }
-        .btn-main { flex: 1; min-width: 70px; padding: 9px 4px; border: none; border-radius: 8px; font-weight: 900; cursor: pointer; text-transform: uppercase; font-size: 0.7rem; transition: 0.3s; }
-        .btn-deposit { background: var(--green); color: #000; }
-        .btn-withdraw { background: var(--orange); color: white; }
-        .btn-transfer { background: var(--purple); color: white; }
-        .btn-how-to { background: #3b82f6; color: white; border: 1px solid #60a5fa; }
-
-        .timer-container { display: flex; align-items: center; justify-content: center; gap: 15px; margin: 10px auto; width: 90%; max-width: 400px; background: rgba(255, 255, 255, 0.02); padding: 6px 12px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.05); }
-        #timer { font-size: 2rem; font-weight: 900; color: var(--gold); text-align: center; line-height: 1; }
-        .buy-notice { font-size: 0.95rem; font-weight: 900; color: var(--green); background: rgba(0, 255, 136, 0.1); padding: 8px 12px; border-radius: 8px; border: 2px dashed var(--green); text-align: center; min-width: 140px; box-sizing: border-box; }
-
-        .grid-500 { display: grid; grid-template-columns: repeat(10, 1fr); gap: 4px; flex: 1; overflow-y: auto; background: #000; padding: 10px; margin: 5px 10px 10px 10px; border-radius: 10px; box-sizing: border-box; }
-        .t-box { background: #fff; color: #000; font-size: 0.75rem; padding: 8px 0; font-weight: bold; border-radius: 4px; cursor: pointer; box-sizing: border-box; border: 1px solid transparent; }
-        .t-box.mine { background: var(--gold) !important; color: #000 !important; box-shadow: inset 0 0 0 2px #ffffff; }
-        .t-box.sold { background: #333; color: #666; cursor: not-allowed; }
-
-        /* ================= GAME UI ================= */
-        #game-ui {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            background: #cbd5e1;
-            color: #1e293b;
-            position: absolute;
-            inset: 0;
-        }
-
-        .game-top-bar {
-            display: flex;
-            align-items: center;
-            justify-content: flex-start;
-            background: #111827;
-            height: 52px;
-            width: 100vw;
-            padding: 0 10px;
-            box-sizing: border-box;
-            position: relative;
-            flex-shrink: 0;
-            z-index: 100;
-        }
-
-        .global-stats-bar {
-            display: flex;
-            justify-content: flex-start;
-            gap: 22px;
-            align-items: center;
-            box-sizing: border-box;
-        }
-        .stat-item { text-align: left; }
-        .stat-label { font-size: 0.68rem; font-weight: 900; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }
-        .stat-val { display: block; font-size: 1.1rem; font-weight: 900; color: #00ff88; margin-top: 1px; }
-        .stat-val.gold { color: #ffcc00; }
-
-        #ball-circle {
-            width: 68px;
-            height: 68px;
-            background: #eab308;
-            color: white;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.4rem;
-            font-weight: 900;
-            border: 3.5px solid #d97706;
-            box-shadow: 0 4px 14px rgba(234, 179, 8, 0.7);
-            flex-shrink: 0;
-            text-align: center;
-            line-height: 1;
-            position: absolute;
-            left: calc(42% + 8px);
-            top: 2px;
-            z-index: 105;
-        }
-
-        .game-main-content-row {
-            display: flex;
-            flex-direction: row;
-            flex: 1;
-            overflow: hidden;
-            background: #cbd5e1;
-            position: relative;
-        }
-
-        .game-left-panel {
-            width: 38%; 
-            display: flex;
-            flex-direction: column;
-            background: #ffffff;
-            overflow: hidden;
-            box-sizing: border-box;
-            border-right: 1px solid #94a3b8;
-            height: 100%; 
-        }
-
-        .board-header-top {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            color: #fff;
-            font-weight: 900;
-            font-size: 0.9rem;
-            padding: 4px 0;
-            text-align: center;
-            font-style: italic;
-        }
-        .board-header-top div:nth-child(1) { background: #2563eb; } 
-        .board-header-top div:nth-child(2) { background: #ef4444; } 
-        .board-header-top div:nth-child(3) { background: #eab308; color: #000; } 
-        .board-header-top div:nth-child(4) { background: #10b981; } 
-        .board-header-top div:nth-child(5) { background: #9333ea; } 
-
-        .main-board-vertical {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 2px;
-            flex: 1;
-            padding: 3px;
-            background: #cbd5e1;
-            overflow-y: auto;
-            max-height: calc(100vh - 195px);
-        }
-
-        .board-column {
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-        }
-
-        .ball-dot {
-            flex: 1;
-            min-height: 8px;
-            padding: 1px 0;
-            font-size: 0.68rem;
-            background: #ffffff;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #0f172a;
-            font-weight: 900;
-            border-radius: 2px;
-            border: 1px solid #cbd5e1;
-            box-sizing: border-box;
-        }
-        .ball-dot.active {
-            background: #22c55e !important;
-            color: #ffffff !important;
-            border-color: #16a34a;
-        }
-        .ball-dot.yellow-active {
-            background: #ffcc00 !important;
-            color: #000000 !important;
-            border-color: #d97706;
-        }
-
-        .room-footer-bar {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            background: #111827;
-            color: white;
-            padding: 6px 8px;
-            font-weight: bold;
-            font-size: 0.75rem;
-            flex-shrink: 0;
-            margin-top: 4px;
-        }
-        .room-footer-bar span {
-            font-size: 0.65rem;
-            letter-spacing: 1px;
-            color: #94a3b8;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            cursor: pointer;
-        }
-
-        .game-right-panel {
-            width: 62%; 
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: flex-start;
-            background: transparent;
-            padding: 6px;
-            box-sizing: border-box;
-            overflow: hidden;
-            gap: 6px;
-        }
-
-        .top-balls-row {
-            display: flex;
-            align-items: center;
-            justify-content: flex-start;
-            width: 100%;
-            height: 38px;
-            padding-left: 82px;
-            box-sizing: border-box;
-        }
-
-        #recent-balls-container {
-            display: flex;
-            gap: 6px;
-            flex-direction: row;
-        }
-
-        .recent-ball {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.75rem;
-            font-weight: 900;
-            color: #fff;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-            border: 2px solid #ffffff;
-        }
-        .recent-ball:nth-child(1) { background: #2563eb; }
-        .recent-ball:nth-child(2) { background: #10b981; }
-        .recent-ball:nth-child(3) { background: #2563eb; }
-
-        #card-area {
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            overflow-y: auto;
-            flex: 1;
-        }
-
-        .bingo-card-wrapper {
-            background: #ffffff;
-            border-radius: 10px;
-            padding: 6px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.12);
-            width: 100%;
-            box-sizing: border-box;
-            border: 1px solid #cbd5e1;
-            flex-shrink: 0;
-        }
-
-        .bingo-card-header {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 8px;
-            color: #fff;
-            font-weight: 900;
-            font-size: 1rem;
-            padding: 4px 0;
-            border-radius: 4px 4px 0 0;
-            text-align: center;
-            margin-bottom: 8px;
-            letter-spacing: 2px;
-            text-shadow: 0 1px 2px rgba(0,0,0,0.4);
-            font-style: italic;
-        }
-        .bingo-card-header div:nth-child(1) { background: #2563eb; }
-        .bingo-card-header div:nth-child(2) { background: #ef4444; }
-        .bingo-card-header div:nth-child(3) { background: #eab308; color: #000; }
-        .bingo-card-header div:nth-child(4) { background: #10b981; }
-        .bingo-card-header div:nth-child(5) { background: #9333ea; }
-
-        .bingo-card { 
-            display: grid; 
-            grid-template-columns: repeat(5, 1fr); 
-            gap: 8px; 
-            background: #ffffff; 
-            padding: 1px; 
-            width: 100%; 
-            box-sizing: border-box;
-        }
-        
-        .cell { 
-            background: #ffffff; 
-            color: #0f172a; 
-            height: 28px; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            font-weight: 900; 
-            font-size: 0.95rem; 
-            cursor: pointer; 
-            border-radius: 4px;
-            border: 1px solid #cbd5e1;
-        }
-        .cell.selected { background: var(--gold) !important; color: #000 !important; border-color: #d97706; }
-        .cell.free { background: #2563eb !important; color: white; font-size: 0.8rem; }
-        
-        .bingo-btn { 
-            width: 100%; 
-            padding: 7px 0; 
-            background: linear-gradient(135deg, #3b82f6, #1d4ed8); 
-            color: white; 
-            font-size: 1rem; 
-            font-weight: 900; 
-            font-style: italic;
-            border-radius: 0 0 6px 6px; 
-            border: none; 
-            cursor: pointer; 
-            text-transform: uppercase; 
-            box-shadow: 0 3px 8px rgba(37, 99, 235, 0.4); 
-            margin-top: 6px;
-            letter-spacing: 2px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
-        }
-        .bingo-btn:disabled { background: #555 !important; color: #aaa !important; cursor: not-allowed; box-shadow: none; text-shadow: none; }
-        .bingo-btn span { font-size: 0.65rem; font-style: normal; opacity: 0.8; font-weight: bold; }
-
-        .modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index:3000; flex-direction:column; align-items:center; justify-content:center; padding: 20px; }
-        .modal-content { background: #1e293b; padding: 20px; border-radius: 15px; width: 92%; max-width: 360px; text-align: left; max-height: 85vh; overflow-y: auto; }
-        input { padding: 12px; margin: 10px 0; width: 100%; border-radius: 8px; border: none; box-sizing: border-box; font-size: 1rem; color: #000; }
-
-        .winner-modal { display: none; position: fixed; inset: 0; background: linear-gradient(180deg, rgba(5,10,24,0.98), rgba(30,41,59,0.98)); z-index: 4000; flex-direction: column; align-items: center; justify-content: center; padding: 15px; }
-        .winner-box { background: #ffffff; color: #1e293b; width: 92%; max-width: 360px; border-radius: 28px; padding: 20px 15px; box-sizing: border-box; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); border: 4px solid var(--gold); text-align: center; }
-        .trophy-icon { font-size: 2.5rem; margin-bottom: 5px; animation: bounce 1s infinite alternate; }
-        @keyframes bounce { from { transform: translateY(0); } to { transform: translateY(-10px); } }
-        .winner-name-text { font-size: 1.2rem; font-weight: 900; margin: 5px 0; color: #10b981; word-break: break-word; }
-        .prize-pool-card { background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 15px; padding: 8px 12px; margin: 10px auto; width: 85%; }
-        .prize-pool-card span { display: block; font-weight: 800; color: #64748b; letter-spacing: 1px; text-transform: uppercase; font-size: 0.8rem; border-bottom: 1px dashed rgba(255,255,255,0.2); padding-bottom: 2px; }
-        .prize-pool-card b { font-size: 1.5rem; font-weight: 900; color: #10b981; }
-        .winner-card-section { background: #ffffff; border: 2px solid #f1f5f9; border-radius: 20px; padding: 10px; margin-top: 10px; }
-        .winner-card-info-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-weight: 800; font-size: 0.85rem; }
-        .winner-card-num-lbl { color: #2563eb; font-style: italic; font-size: 1rem; }
-        .winner-card-owner-lbl { color: #10b981; font-style: italic; }
-        .winner-grid-modern { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; background: #f8fafc; padding: 6px; border-radius: 12px; border: 1px solid #e2e8f0; }
-        .w-cell-modern { background: #ffffff; color: #a0aec0; height: 28px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.8rem; border-radius: 8px; border: 1px solid #e2e8f0; }
-        .w-cell-modern.drawn { background: #cbd5e1; color: #475569; border-color: #cbd5e1; }
-        .w-cell-modern.hit { background: #ef4444 !important; color: #ffffff !important; border-color: #ef4444; font-weight: 900; box-shadow: 0 0 12px #ef4444; }
-        .w-cell-modern.free { background: var(--gold); color: #1e293b; font-size: 1rem; border-color: var(--gold); }
-        .next-round-bar { background: var(--gold); color: #000; font-weight: 900; padding: 12px; width: 92%; max-width: 360px; margin-top: 10px; border-radius: 15px; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
-
-        .deposit-guide-box {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
-            padding: 10px;
-            margin-bottom: 12px;
-            font-size: 0.85rem;
-            line-height: 1.5;
-            color: #e2e8f0;
-            text-align: left;
-        }
-    </style>
-</head>
-<body>
-
-    <div id="auth-ui">
-        <div class="auth-card">
-            <h2>ተመዝገብ</h2>
-            <p>ወደ ጨዋታው ለመግባት መረጃዎን ያስገቡ</p>
+    for i in range(5):
+        row_indices = [i*5 + j for j in range(5)]
+        if all(is_hit(idx) for idx in row_indices):
+            all_win_indices.update(row_indices)
+            line_types.append(f"ረድፍ {i+1}")
             
-            <div class="input-group">
-                <label>የተጫዋች ስም</label>
-                <input type="text" id="reg-username" class="auth-input" placeholder="ስምዎን ያስገቡ...">
-            </div>
-
-            <div class="input-group">
-                <label>የስልክ ቁጥር</label>
-                <input type="tel" id="reg-phone" class="auth-input" placeholder="09... ወይም 07...">
-            </div>
-
-            <button id="auth-submit-btn" class="btn-login" onclick="registerUser()">🚀 ወደ ጨዋታው ግባ</button>
-        </div>
-    </div>
-
-    <div id="main-app-content">
-        <audio id="win-horn" src="https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3" preload="auto"></audio>
+    for j in range(5):
+        col_indices = [j + i*5 for i in range(5)]
+        if all(is_hit(idx) for idx in col_indices):
+            all_win_indices.update(col_indices)
+            line_types.append(f"አምድ {j+1}")
+            
+    diag1_indices = [0, 6, 12, 18, 24]
+    if all(is_hit(idx) for idx in diag1_indices):
+        all_win_indices.update(diag1_indices)
+        line_types.append("ዲያጎናል ↘")
         
-        <div id="inline-notification" style="display:none;"></div>
+    diag2_indices = [4, 8, 12, 16, 20]
+    if all(is_hit(idx) for idx in diag2_indices):
+        all_win_indices.update(diag2_indices)
+        line_types.append("ዲያጎናል ↙")
+        
+    corner_indices = [0, 4, 20, 24]
+    if all(is_hit(idx) for idx in corner_indices):
+        all_win_indices.update(corner_indices)
+        line_types.append("ኮርነር (4 ማዕዘኖች)")
 
-        <div id="lobby-ui">
-            <div class="action-bar">
-                <button class="btn-main btn-deposit" onclick="openM('dep-m')">📥 DEPOSIT</button>
-                <button class="btn-main btn-transfer" onclick="openM('trans-m')">💸 TRANSFER</button>
-                <button class="btn-main btn-withdraw" onclick="openM('with-m')">📤 WITHDRAW</button>
-                <button class="btn-main btn-how-to" onclick="openM('guide-m')">📖 GUIDE</button>
-            </div>
+    if all_win_indices:
+        return list(all_win_indices), " + ".join(line_types)
+    return None, None
+
+def refund_all_sold_tickets(room_type):
+    price = 10 if room_type == "10" else (20 if room_type == "20" else 50)
+    state = game_states[room_type]
+    for t_num, phone_num in list(state["sold_tickets"].items()):
+        if phone_num != "RESERVED_LOCK":
+            updated_user = wallets.find_one_and_update({"phone": phone_num}, {"$inc": {"balance": price}}, return_document=True)
+            if updated_user:
+                notify_user_balance_update(phone_num, updated_user.get("balance", 0))
+
+def reset_game(room_type):
+    global reset_task_references, claim_lock_active, pending_claims
+    reset_task_references[room_type] = None
+    claim_lock_active[room_type] = False
+    pending_claims[room_type] = []
+    
+    default_ball_timer = 3 if room_type == "super" else 2
+    game_states[room_type].update({
+        "status": "lobby", "winner": None, "winning_card": None, "winning_ticket_num": None, 
+        "winning_indices": None, "winning_line_name": None, "pot": 0, "players": {}, 
+        "sold_tickets": {}, "drawn_balls": [], "current_ball": "--", "timer": 30, "ball_timer": default_ball_timer, "all_cards": {}
+    })
+    broadcast_game_state(room_type) 
+
+def run_game_loop(room_type):
+    balls = [f"{'BINGO'[i//15]}{i+1}" for i in range(75)]
+    global reset_task_references
+    last_broadcasted_timer = -1
+    
+    while True:
+        state = game_states[room_type]
+        current_status = state["status"]
+        if current_status == "lobby":
+            for i in range(30, -1, -1):
+                if state["status"] != "lobby": 
+                    break
+                state["timer"] = i
+                if last_broadcasted_timer != i:
+                    last_broadcasted_timer = i
+                    broadcast_game_state(room_type) 
+                socketio.sleep(1) 
             
-            <div class="timer-container">
-                <div id="timer">30</div>
-                <div class="buy-notice">🎟️ ካርቴላ ይግዙ (10 ETB)</div>
-            </div>
+            if state["status"] == "lobby" and len(state["players"]) >= 2:
+                state["status"] = "playing"
+                state["drawn_balls"] = []
+                state["ball_timer"] = 2
+                shuffled = balls.copy()
+                random.shuffle(shuffled)
+                broadcast_game_state(room_type)
+            else:
+                state["timer"] = 30
+                broadcast_game_state(room_type)
+                continue
 
-            <div class="grid-500" id="ticket-area"></div>
-        </div>
+            if shuffled:
+                for j in range(2, -1, -1):
+                    if state["status"] != "playing":
+                        break
+                    state["ball_timer"] = j
+                    broadcast_game_state(room_type) 
+                    socketio.sleep(1)
 
-        <div id="game-ui" style="display:none;">
-            <div class="game-top-bar">
-                <div class="global-stats-bar">
-                    <div class="stat-item">
-                        <span class="stat-label">DERASH</span>
-                        <span class="stat-val" id="game-prize">4544 ETB</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-label">BALLS</span>
-                        <span class="stat-val" id="game-balls-count">7/75</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-label">PLAYERS</span>
-                        <span class="stat-val gold" id="game-p-count">568</span>
-                    </div>
-                </div>
+                for b in shuffled:
+                    if state["status"] != "playing": 
+                        break
+                    if len(state["players"]) < 2:
+                        state["status"] = "result"
+                        state["winner"] = "No Winner (Insufficient Players)"
+                        refund_all_sold_tickets(room_type)
+                        
+                        def player_shortage_reset():
+                            for t in range(5, -1, -1):
+                                if state["status"] != "result":
+                                    return
+                                state["timer"] = t
+                                broadcast_game_state(room_type)
+                                socketio.sleep(1)
+                            reset_game(room_type)
+                        reset_task_references[room_type] = socketio.start_background_task(player_shortage_reset)
+                        break
 
-                <div id="ball-circle">G51</div>
-            </div>
-
-            <div class="game-main-content-row">
-                <div class="game-left-panel">
-                    <div class="board-header-top">
-                        <div>B</div><div>I</div><div>N</div><div>G</div><div>O</div>
-                    </div>
-                    <div class="main-board-vertical" id="main-board"></div>
-                    <div class="room-footer-bar">
-                        <span id="room-text-lbl">ROOM VIP 💰💰</span>
-                        <span onclick="forceRecoveryRefresh()">🔄 REFRESH</span>
-                    </div>
-                </div>
-
-                <div class="game-right-panel">
-                    <div class="top-balls-row">
-                        <div id="recent-balls-container">
-                            <div class="recent-ball">B12</div>
-                            <div class="recent-ball">G54</div>
-                            <div class="recent-ball">B9</div>
-                        </div>
-                    </div>
-
-                    <div id="card-area"></div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modals -->
-    <div id="dep-m" class="modal"><div class="modal-content"><h3>📥 ሂሳብ ሙሉ (Deposit)</h3><div class="deposit-guide-box">እባክዎ በTelebirr/CBE ሂሳቡን ገቢ ያድርጉ።</div><button class="btn-main btn-withdraw" onclick="closeM('dep-m')">ዝጋ</button></div></div>
-    <div id="trans-m" class="modal"><div class="modal-content"><h3>💸 ብር አስተላልፍ</h3><input type="text" placeholder="የተቀባይ ስልክ"><input type="number" placeholder="የብር መጠን"><button class="btn-main btn-deposit">ላክ</button><button class="btn-main btn-withdraw" onclick="closeM('trans-m')">ዝጋ</button></div></div>
-    <div id="with-m" class="modal"><div class="modal-content"><h3>📤 ብር ወጪ አድርግ</h3><input type="number" placeholder="የብር መጠን"><button class="btn-main btn-withdraw">ወጪ አድርግ</button><button class="btn-main btn-deposit" onclick="closeM('with-m')">ዝጋ</button></div></div>
-    <div id="guide-m" class="modal"><div class="modal-content"><h3>📖 የጨዋታው ህግ</h3><p>ካርቴላ በመግዛት BINGO በመስራት ያሸንፉ!</p><button class="btn-main btn-deposit" onclick="closeM('guide-m')">ተረዳሁ</button></div></div>
-
-    <script>
-        let phone = localStorage.getItem('phone');
-        let username = localStorage.getItem('username');
-        let isProcessingBuy = false;
-        let socket = null;
-        let latestDrawnBallsGlobal = []; 
-
-        window.onload = function() {
-            if (phone && phone.trim() !== "") {
-                showGameUI();
-            } else {
-                showAuthUI();
-            }
-        }
-
-        function showAuthUI() {
-            document.getElementById('auth-ui').style.display = 'flex';
-            document.getElementById('main-app-content').style.display = 'none';
-        }
-
-        function showGameUI() {
-            document.getElementById('auth-ui').style.display = 'none';
-            document.getElementById('main-app-content').style.display = 'flex'; 
-            renderMainBoard([9, 12, 21, 44, 46, 50, 54]);
-            renderSampleCard();
-            initWebSocket();
-        }
-
-        function openM(id) { document.getElementById(id).style.display = 'flex'; }
-        function closeM(id) { document.getElementById(id).style.display = 'none'; }
-
-        function registerUser() {
-            let inputName = document.getElementById('reg-username').value.trim();
-            let inputPhone = document.getElementById('reg-phone').value.trim();
-            if (inputName.length < 2) return alert("እባክዎ ትክክለኛ ስም ያስገቡ!");
-            const cleanPhone = inputPhone.replace(/[^0-9+]/g, '');
-            if (cleanPhone.length < 9) return alert("እባክዎ ትክክለኛ ስልክ ቁጥር ያስገቡ!");
-
-            localStorage.setItem('phone', cleanPhone);
-            localStorage.setItem('username', inputName);
-            phone = cleanPhone;
-            username = inputName;
-            showGameUI();
-        }
-
-        function phoneMatches(p1, p2) {
-            if (!p1 || !p2) return false;
-            let clean1 = String(p1).replace(/[^0-9]/g, '').slice(-9);
-            let clean2 = String(p2).replace(/[^0-9]/g, '').slice(-9);
-            return clean1 === clean2 && clean1.length > 0;
-        }
-
-        function initWebSocket() {
-            if (typeof io !== "undefined") {
-                socket = io({
-                    reconnection: true,
-                    reconnectionAttempts: Infinity,
-                    reconnectionDelay: 500
-                });
-
-                socket.on('connect', function() {
-                    forceRecoveryRefresh();
-                });
-
-                socket.on('game_update_10', function(d) {
-                    applyGameStateData(d);
-                });
-            }
-        }
-
-        function forceRecoveryRefresh() {
-            if (!phone) return;
-            fetch(`/get_status?phone=${encodeURIComponent(phone)}&room=10`)
-            .then(r => r.json())
-            .then(d => { applyGameStateData(d); }).catch(() => {});
-        }
-
-        function applyGameStateData(d) {
-            if (!d) return;
-            let finalPrize = Math.floor((parseFloat(d.pot) || 0) * 0.8);
-            document.getElementById('game-prize').innerText = (finalPrize || 4544) + " ETB";
-            let drawnCount = d.drawn_balls ? d.drawn_balls.length : 7;
-            document.getElementById('game-balls-count').innerText = drawnCount + "/75";
-            document.getElementById('game-p-count').innerText = parseInt(d.active_players) || 568;
-            if(document.getElementById('timer')) document.getElementById('timer').innerText = d.timer || 30;
-
-            if(d.status === "lobby") {
-                document.getElementById('lobby-ui').style.display='flex'; 
-                document.getElementById('game-ui').style.display='none'; 
-                initTicketsOnce(); 
-                renderTickets(d.sold_tickets || {});
-            } 
-            else if(d.status === "playing") {
-                document.getElementById('lobby-ui').style.display='none'; 
-                document.getElementById('game-ui').style.display='flex'; 
-                
-                let rawBall = d.current_ball || "G51";
-                document.getElementById('ball-circle').innerText = rawBall;
-                
-                latestDrawnBallsGlobal = d.drawn_balls || [9, 12, 21, 44, 46, 50, 54];
-                renderMainBoard(latestDrawnBallsGlobal);
-
-                const recentContainer = document.getElementById("recent-balls-container");
-                recentContainer.innerHTML = "";
-                if(latestDrawnBallsGlobal.length > 1) {
-                    const historyBalls = latestDrawnBallsGlobal.slice(0, -1).reverse().slice(0, 3).reverse();
-                    historyBalls.forEach((b) => {
-                        const ballDiv = document.createElement("div");
-                        ballDiv.className = "recent-ball";
-                        ballDiv.innerText = getBallLabel(b);
-                        recentContainer.appendChild(ballDiv);
-                    });
-                }
-
-                let myCards = [];
-                if (d.sold_tickets) {
-                    for (let ticketId in d.sold_tickets) {
-                        if (phoneMatches(d.sold_tickets[ticketId], phone)) {
-                            let tNumStr = String(ticketId);
-                            if (d.all_cards && d.all_cards[tNumStr]) {
-                                myCards.push({ id: tNumStr, matrix: d.all_cards[tNumStr] });
-                            }
-                        }
-                    }
-                }
-                
-                const cardArea = document.getElementById('card-area');
-                cardArea.innerHTML = "";
-                if(myCards.length > 0) {
-                    myCards.forEach((cObj, i) => { renderCard(cObj.matrix, i, cObj.id); });
-                } else {
-                    renderSampleCard();
-                }
-            }
-        }
-
-        function getBallLabel(num) {
-            let n = parseInt(String(num).replace(/[^0-9]/g, ''));
-            if(isNaN(n)) return num;
-            if(n <= 15) return "B" + n;
-            if(n <= 30) return "I" + n;
-            if(n <= 45) return "N" + n;
-            if(n <= 60) return "G" + n;
-            return "O" + n;
-        }
-
-        function initTicketsOnce() {
-            const area = document.getElementById('ticket-area');
-            if(area && area.children.length === 0) { 
-                const fragment = document.createDocumentFragment();
-                for(let i=1; i<=500; i++) { 
-                    let div=document.createElement('div'); div.className='t-box'; div.innerText=i; div.id='t-'+i; 
-                    div.onclick = () => buy(i);
-                    fragment.appendChild(div); 
-                } 
-                area.appendChild(fragment);
-            }
-        }
-
-        function renderTickets(sold) {
-            for(let i=1; i<=500; i++) {
-                let box = document.getElementById('t-'+i); if(!box) continue;
-                box.style.pointerEvents = "auto";
-                if(sold && sold[i]) { 
-                    const isMine = phoneMatches(sold[i], phone);
-                    box.className = isMine ? 't-box mine' : 't-box sold'; 
-                    box.onclick = isMine ? () => refund(i) : null;
-                } else { 
-                    box.className='t-box'; 
-                    box.onclick = () => buy(i);
-                }
-            }
-        }
-
-        function buy(n) {
-            if (isProcessingBuy) return;
-            isProcessingBuy = true;
-            fetch('/buy_specific_ticket', {
-                method:'POST', headers:{'Content-Type':'application/json'}, 
-                body:JSON.stringify({phone: phone, ticket_num: n, username: username, room: '10'})
-            })
-            .then(res => res.json())
-            .then(d => { isProcessingBuy = false; forceRecoveryRefresh(); })
-            .catch(() => { isProcessingBuy = false; });
-        }
-
-        function refund(n) {
-            fetch('/cancel_ticket', { 
-                method:'POST', headers:{'Content-Type':'application/json'}, 
-                body:JSON.stringify({phone: phone, ticket_num: n, room: '10'}) 
-            })
-            .then(() => { forceRecoveryRefresh(); });
-        }
-
-        function renderMainBoard(drawn) {
-            const board = document.getElementById('main-board');
-            if(!board) return;
-            board.innerHTML = "";
-            const yellowHighlight = [9, 12, 21, 46, 50, 54];
+                    state["current_ball"] = b
+                    state["drawn_balls"].append(b)
+                    broadcast_game_state(room_type) 
+                    socketio.sleep(3.5) 
             
-            for(let col=0; col<5; col++) {
-                let colDiv = document.createElement('div'); 
-                colDiv.className = 'board-column';
-                let start = col * 15 + 1;
-                for(let i=start; i<=start+14; i++) {
-                    let d = document.createElement('div'); 
-                    d.className = 'ball-dot'; 
-                    d.innerText = i;
+            if state["status"] == "playing":
+                state["status"] = "result"
+                state["winner"] = "No Winner (House)"
+                refund_all_sold_tickets(room_type)
+                def house_countdown_and_reset():
+                    for t in range(5, -1, -1):
+                        if state["status"] != "result":
+                            return
+                        state["timer"] = t
+                        broadcast_game_state(room_type)
+                        socketio.sleep(1)
+                    reset_game(room_type)
+                reset_task_references[room_type] = socketio.start_background_task(house_countdown_and_reset)
+            broadcast_game_state(room_type)
+        socketio.sleep(1)
+
+def super_game_loop():
+    balls = [f"{'BINGO'[i//15]}{i+1}" for i in range(75)]
+    global reset_task_references
+    while True:
+        state = game_states["super"]
+        current_status = state["status"]
+
+        if current_status == "lobby":
+            while True:
+                current_time = time.gmtime()
+                if current_time.tm_wday in [5, 6] and current_time.tm_hour == 14 and current_time.tm_min == 0 and current_time.tm_sec == 0:
+                    break
+                if state["status"] != "lobby":
+                    break
+                socketio.sleep(0.5)
+
+            for i in range(30, -1, -1):
+                if state["status"] != "lobby": 
+                    break
+                state["timer"] = i
+                broadcast_game_state("super") 
+                socketio.sleep(1) 
+            
+            if state["status"] == "lobby" and len(state["players"]) >= 2:
+                state["status"] = "playing"
+                state["drawn_balls"] = []
+                state["ball_timer"] = 3
+                shuffled = balls.copy()
+                random.shuffle(shuffled)
+                broadcast_game_state("super")
+            else:
+                state["timer"] = 30
+                broadcast_game_state("super")
+                continue
+
+            if shuffled:
+                for j in range(3, -1, -1):
+                    if state["status"] != "playing":
+                        break
+                    state["ball_timer"] = j
+                    broadcast_game_state("super") 
+                    socketio.sleep(1)
+
+                for b in shuffled:
+                    if state["status"] != "playing": 
+                        break
+                    if len(state["players"]) < 2:
+                        state["status"] = "result"
+                        state["winner"] = "No Winner (Insufficient Players)"
+                        state["winning_card"] = None
+                        state["winning_ticket_num"] = None
+                        state["winning_indices"] = None
+                        state["winning_line_name"] = None
+                        send_telegram("ℹ️ ተጫዋቾች ከሁለት ስለወረዱ የሳምንቱ መጨረሻ ጨዋታው ተቋርቋል።")
+                        break
+
+                    state["current_ball"] = b
+                    state["drawn_balls"].append(b)
+                    broadcast_game_state("super") 
+                    socketio.sleep(4) 
+            
+            if state["status"] == "playing":
+                state["status"] = "result"
+                state["winner"] = "No Winner (House)"
+                state["winning_card"] = None
+                state["winning_ticket_num"] = None
+                state["winning_indices"] = None
+                state["winning_line_name"] = None
+                send_telegram("ℹ️ የሳምንቱ መጨረሻ ጨዋታ ያለ አሸናፊ ተጠናቋል።")
+                
+                def super_house_countdown_and_reset():
+                    for t in range(10, -1, -1):
+                        if state["status"] != "result":
+                            return
+                        state["timer"] = t
+                        broadcast_game_state("super")
+                        socketio.sleep(1)
+                    reset_game("super")
+
+                reset_task_references["super"] = socketio.start_background_task(super_house_countdown_and_reset)
+            broadcast_game_state("super")
+
+        socketio.sleep(1)
+
+@app.route('/')
+def index_10(): 
+    return render_template('index.html')
+
+@app.route('/twenty')
+def index_20():
+    return render_template('index2.html')
+
+@app.route('/super')
+def index_50():
+    return render_template('index1.html')
+
+@app.route('/superbesh')
+def index_superbesh():
+    return render_template('index3.html')
+
+@app.route('/webhook', methods=['POST'])
+def webhook():
+    data = request.json or {}
+    
+    if "message" in data:
+        msg = data["message"]
+        chat_id = str(msg.get("chat", {}).get("id", ""))
+        text = msg.get("text", "")
+        text_lower = text.lower().strip()
+        
+        user_wallet = wallets.find_one({"chat_id": chat_id})
+        user_phone = user_wallet.get("phone") if user_wallet else None
+
+        user_state = admin_state.find_one({"chat_id": chat_id})
+        if user_state:
+            action = user_state.get("action")
+            
+            if action in ["awaiting_dep_info_cbe", "awaiting_dep_info_tele"]:
+                method = "CBE BIRR" if action == "awaiting_dep_info_cbe" else "TELE BIRR"
+                sms_text = text.strip()
+                admin_state.delete_one({"chat_id": chat_id})
+                
+                tx_res = transactions.insert_one({
+                    "phone": user_phone or chat_id,
+                    "type": "deposit",
+                    "status": "pending",
+                    "method": method,
+                    "sms_content": sms_text,
+                    "timestamp": datetime.utcnow()
+                })
+                tx_ref = str(tx_res.inserted_id)
+
+                send_telegram(f"✅ የዲፖዚት መረጃዎ ለአድሚን ተልኳል! አድሚኑ አረጋግጦ ባላንስ ይሞላልዎታል።", chat_id=chat_id)
+
+                admin_msg = f"💰 *Deposit Request ({method})*\n📞 Phone: `{user_phone}`\n📩 *የደረሰው SMS/መረጃ፦*\n`{sms_text}`"
+                kb = {
+                    "inline_keyboard": [
+                        [
+                            {"text": "✅ approved", "callback_data": f"app_dep_{tx_ref}_{user_phone}"},
+                            {"text": "❌ ሰርዝ (Reject)", "callback_data": f"rej_dep_{tx_ref}_{user_phone}"}
+                        ]
+                    ]
+                }
+                send_telegram(admin_msg, reply_markup=kb, chat_id=ADMIN_ID)
+                return "OK", 200
+
+            elif action in ["awaiting_with_info_cbe", "awaiting_with_info_tele"]:
+                method = "CBE BIRR" if action == "awaiting_with_info_cbe" else "TELE BIRR"
+                try:
+                    amt = float(text.strip())
+                    admin_state.delete_one({"chat_id": chat_id})
                     
-                    let isDrawn = false;
-                    if(drawn && Array.isArray(drawn)) {
-                        isDrawn = drawn.some(b => parseInt(String(b).replace(/[^0-9]/g, '')) === i);
+                    if amt < 20:
+                        send_telegram("❌ ቢያንስ 20 ETB ማውጣት ይችላሉ። እባክዎ እንደገና በ `/withdrawal` ይሞክሩ።", chat_id=chat_id)
+                        return "OK", 200
+
+                    if user_wallet and user_wallet.get("balance", 0) < amt:
+                        send_telegram(f"❌ በቂ ባላንስ የለዎትም። ያሎት ባላንስ፦ `{user_wallet.get('balance', 0)} ETB`", chat_id=chat_id)
+                        return "OK", 200
+
+                    tx_res = transactions.insert_one({
+                        "phone": user_phone or chat_id,
+                        "type": "withdrawal",
+                        "amount": amt,
+                        "status": "pending",
+                        "method": method,
+                        "timestamp": datetime.utcnow()
+                    })
+                    tx_ref = str(tx_res.inserted_id)
+
+                    send_telegram(f"✅ የውዝድሮዋል ጥያቄዎ ለአድሚን ተልኳል!\n💳 ዘዴ: `{method}`\n💵 መጠን፦ `{amt}` ETB", chat_id=chat_id)
+
+                    admin_msg = f"📤 *Withdrawal Request*\n💳 Method: `{method}`\n📞 Phone: `{user_phone}`\n💵 Amount: `{amt}` ETB"
+                    kb = {
+                        "inline_keyboard": [
+                            [
+                                {"text": "✅ approved", "callback_data": f"app_wit_{tx_ref}_{user_phone}_{amt}"},
+                                {"text": "❌ ሰርዝ (Reject)", "callback_data": f"rej_wit_{tx_ref}_{user_phone}_{amt}"}
+                            ]
+                        ]
                     }
-                    
-                    if(i === 44 || (isDrawn && i !== 44 && !yellowHighlight.includes(i))) {
-                        d.className = 'ball-dot active';
-                    } else if(yellowHighlight.includes(i) || isDrawn) {
-                        d.className = 'ball-dot yellow-active';
-                    }
-                    colDiv.appendChild(d);
-                }
-                board.appendChild(colDiv);
+                    send_telegram(admin_msg, reply_markup=kb, chat_id=ADMIN_ID)
+                    return "OK", 200
+                except ValueError:
+                    send_telegram("❌ እባክዎ ትክክለኛ የብር መጠን ብቻ ያስገቡ (ምሳሌ፦ `50`)።", chat_id=chat_id)
+                    return "OK", 200
+
+            elif action == "awaiting_transfer_info":
+                parts = text.split()
+                if len(parts) >= 2:
+                    receiver_ph = parts[0].strip()
+                    try:
+                        amt = float(parts[1])
+                        admin_state.delete_one({"chat_id": chat_id})
+
+                        if not user_wallet or user_wallet.get("balance", 0) < amt:
+                            send_telegram("❌ በቂ ባላንስ የለዎትም!", chat_id=chat_id)
+                            return "OK", 200
+
+                        receiver = wallets.find_one({"phone": receiver_ph})
+                        if not receiver:
+                            send_telegram("❌ ተቀባዩ በሲስተሙ ውስጥ አልተገኘም!", chat_id=chat_id)
+                            return "OK", 200
+
+                        wallets.update_one({"phone": user_phone}, {"$inc": {"balance": -amt}})
+                        wallets.update_one({"phone": receiver_ph}, {"$inc": {"balance": amt}})
+
+                        send_telegram(f"✅ ለ `{receiver_ph}` ተጫዋች `{amt}` ETB በትክክል አስተላልፈዋል።", chat_id=chat_id)
+                        
+                        if receiver.get("chat_id"):
+                            send_telegram(f"📥 ከ `{user_phone}` ተጫዋች `{amt}` ETB ገብቶልዎታል!", chat_id=receiver.get("chat_id"))
+
+                        send_telegram(f"🔄 *Transfer Alert*\n📤 From: `{user_phone}`\n📥 To: `{receiver_ph}`\n💵 Amount: `{amt}` ETB", chat_id=ADMIN_ID)
+                        return "OK", 200
+                    except ValueError:
+                        send_telegram("❌ እባክዎ ስልክ ቁጥር እና መጠን በትክክል ያስገቡ። ምሳሌ፦ `0912345678 50`", chat_id=chat_id)
+                        return "OK", 200
+
+        if text_lower == "/deposit":
+            dep_keyboard = {
+                "inline_keyboard": [
+                    [
+                        {"text": "CBE BIRR", "callback_data": "user_dep_cbe"},
+                        {"text": "TELE BIRR", "callback_data": "user_dep_tele"}
+                    ],
+                    [
+                        {"text": "CANCEL", "callback_data": "user_dep_cancel"}
+                    ]
+                ]
             }
-        }
+            dep_msg = "💳 *የማስቀመጫ መንገድ ይምረጡ*\n\nእባክዎ ሒሳብ ለመሙላት የሚጠቀሙበትን መንገድ ይምረጡ፦"
+            send_telegram(dep_msg, reply_markup=dep_keyboard, chat_id=chat_id)
+            return "OK", 200
 
-        function renderCard(card, index, cardId) {
-            const wrap = document.createElement('div'); 
-            wrap.className = 'bingo-card-wrapper';
-            wrap.innerHTML = `<div class="bingo-card-header"><div>B</div><div>I</div><div>N</div><div>G</div><div>O</div></div>`;
-            
-            const grid = document.createElement('div'); 
-            grid.className = 'bingo-card';
-            
-            card.forEach((n, i) => {
-                const cell = document.createElement('div'); 
-                if(i === 12 || parseInt(n) === 0) { 
-                    cell.className = "cell free selected"; 
-                    cell.innerText = "★"; 
-                } else { 
-                    cell.className = "cell"; 
-                    cell.innerText = n; 
-                    cell.onclick = () => { handleCellClickCrossMatch(parseInt(n), cell); } 
-                }
-                grid.appendChild(cell);
-            });
-            wrap.appendChild(grid);
-
-            const bingoBtn = document.createElement('button');
-            bingoBtn.className = 'bingo-btn';
-            bingoBtn.id = 'bingo-btn-' + cardId;
-            bingoBtn.innerHTML = `BINGO! <span>#${cardId}</span>`;
-            bingoBtn.onclick = () => claimSpecificCard(cardId, wrap, bingoBtn);
-            wrap.appendChild(bingoBtn);
-
-            document.getElementById('card-area').appendChild(wrap);
-        }
-
-        function renderSampleCard() {
-            const cardArea = document.getElementById('card-area');
-            if(!cardArea) return;
-            cardArea.innerHTML = `
-                <div class="bingo-card-wrapper">
-                    <div class="bingo-card-header"><div>B</div><div>I</div><div>N</div><div>G</div><div>O</div></div>
-                    <div class="bingo-card">
-                        <div class="cell">11</div><div class="cell">24</div><div class="cell">43</div><div class="cell">52</div><div class="cell">64</div>
-                        <div class="cell">14</div><div class="cell">19</div><div class="cell">33</div><div class="cell">58</div><div class="cell">73</div>
-                        <div class="cell">6</div><div class="cell">20</div><div class="cell free selected">★</div><div class="cell">50</div><div class="cell">62</div>
-                        <div class="cell">7</div><div class="cell">27</div><div class="cell">44</div><div class="cell">60</div><div class="cell">70</div>
-                        <div class="cell">5</div><div class="cell">21</div><div class="cell">37</div><div class="cell">51</div><div class="cell">69</div>
-                    </div>
-                    <button class="bingo-btn">BINGO! <span>#2</span></button>
-                </div>
-            `;
-        }
-
-        function handleCellClickCrossMatch(targetNumVal, clickedCellEl) {
-            let ballFound = false;
-            if (latestDrawnBallsGlobal && latestDrawnBallsGlobal.length > 0) {
-                for (let k = 0; k < latestDrawnBallsGlobal.length; k++) {
-                    if (parseInt(String(latestDrawnBallsGlobal[k]).replace(/[^0-9]/g, '')) === targetNumVal) { 
-                        ballFound = true; break; 
-                    }
-                }
+        elif text_lower in ["/withdrawal", "/withdraw"]:
+            with_keyboard = {
+                "inline_keyboard": [
+                    [
+                        {"text": "CBE BIRR", "callback_data": "user_wit_cbe"},
+                        {"text": "TELE BIRR", "callback_data": "user_wit_tele"}
+                    ],
+                    [
+                        {"text": "CANCEL", "callback_data": "user_dep_cancel"}
+                    ]
+                ]
             }
-            if (!ballFound) {
-                alert("❌ ይህ ቁጥር ገና አልወጣም!");
-                return;
-            }
-            clickedCellEl.classList.toggle('selected');
-        }
+            with_msg = "📤 *የማውጫ መንገድ ይምረጡ*\n\nእባክዎ ገንዘብ ማውጣት የሚፈልጉበትን መንገድ ይምረጡ፦"
+            send_telegram(with_msg, reply_markup=with_keyboard, chat_id=chat_id)
+            return "OK", 200
 
-        function claimSpecificCard(targetCardId, cardWrapEl, btnEl) {
-            const markedCells = [];
-            cardWrapEl.querySelectorAll('.cell.selected').forEach(cell => {
-                let val = cell.innerText.trim();
-                if (val && val !== "FREE" && val !== "★") {
-                    markedCells.push(parseInt(val));
-                }
-            });
+        elif text_lower == "/transfer":
+            admin_state.update_one({"chat_id": chat_id}, {"$set": {"action": "awaiting_transfer_info"}}, upsert=True)
+            trans_msg = (
+                "💸 *TRANSFER MONEY*\n\n"
+                "የተቀባዩን ስልክ ቁጥር እና የሚልኩትን የብር መጠን በክፍተት አስገብተው ይላኩ፦\n\n"
+                "*ምሳሌ፦* `0912345678 50`"
+            )
+            send_telegram(trans_msg, chat_id=chat_id)
+            return "OK", 200
 
-            btnEl.disabled = true;
-            fetch('/claim_bingo', { 
-                method:'POST', 
-                headers:{ 'Content-Type':'application/json' }, 
-                body: JSON.stringify({ phone: phone, room: '10', ticket_num: targetCardId, marked_cells: markedCells }) 
-            })
-            .then(r => r.json())
-            .then(d => { 
-                if(!d || !d.success) { 
-                    alert(d?.msg || "ስህተት አጋጥሟል!"); 
-                    btnEl.disabled = false; 
-                } else {
-                    forceRecoveryRefresh();
-                }
-            }).catch(() => { btnEl.disabled = false; }); 
-        }
-    </script>
-</body>
-</html>
+    elif "callback_query" in data:
+        cq = data["callback_query"]
+        cq_id = cq["id"]
+        chat_id = str(cq["message"]["chat"]["id"])
+        data_str = cq.get("data", "")
+        answer_url = f"https://api.telegram.org/bot{BOT_TOKEN}/answerCallbackQuery"
+
+        if data_str == "user_dep_cbe":
+            admin_state.update_one({"chat_id": chat_id}, {"$set": {"action": "awaiting_dep_info_cbe"}}, upsert=True)
+            requests.post(answer_url, json={"callback_query_id": cq_id, "text": "CBE BIRR ተመርጧል"})
+            msg = (
+                "💳 *የ CBE-Birr አካውንት*\n\n"
+                "📱 *CBE-BIRR፦* `0960736061`\n"
+                "👤 *(ZEHARA MOHAMMED)*\n\n"
+                "📌 *መመሪያ፦*\n"
+                "1️⃣ ከላይ ባለው የ CBE-Birr አካውንት CBE BIRR በሚለው ገንዘቡን ያስገቡ\n"
+                "2️⃣ ብሩን ስትልኩ የከፈላችሁበትን መረጃ የያዘ አጭር የጽሁፍ መልዕክት (SMS) ከ CBE ይደርሳችኋል\n"
+                "3️⃣ የደረሳችሁን አጭር የጽሁፍ መልዕክት (SMS) ሙሉውን ኮፒ (Copy) በማድረግ ከታች ባለው የጽሁፍ ማስገቢያ ላይ ፔስት (Paste) በማድረግ ይላኩት\n\n"
+                "❓ የሚያጋጥማችሁ የክፍያ ችግር ካለ @beshBingoSupport በዚ ሳፖርት ማውራት ይችላሉ"
+            )
+            send_telegram(msg, chat_id=chat_id)
+            return "OK", 200
+
+        elif data_str == "user_dep_tele":
+            admin_state.update_one({"chat_id": chat_id}, {"$set": {"action": "awaiting_dep_info_tele"}}, upsert=True)
+            requests.post(answer_url, json={"callback_query_id": cq_id, "text": "TELE BIRR ተመርጧል"})
+            msg = (
+                "📱 *ለቴሌ ብር አካውንት*\n\n"
+                "📱 *TELE-BIRR፦* `0960736061`\n"
+                "👤 *(ZEHARA MOHAMMED)*\n\n"
+                "📌 *መመሪያ፦*\n"
+                "1️⃣ ከላይ ባለው የ TELE-Birr አካውንት Send to individual በሚለው ገንዘቡን ያስገቡ\n"
+                "2️⃣ ብሩን ስትልኩ የከፈላችሁበትን መረጃ የያዘ አጭር የጽሁፍ መልዕክት (SMS) ከ TELE ይደርሳችኋል\n"
+                "3️⃣ የደረሳችሁን አጭር የጽሁፍ መልዕክት (SMS) ሙሉውን ኮፒ (Copy) በማድረግ ከታች ባለው የጽሁፍ ማስገቢያ ላይ ፔስት (Paste) በማድረግ ይላኩት\n\n"
+                "❓ የሚያጋጥማችሁ የክፍያ ችግር ካለ @beshBingoSupport በዚ ሳፖርት ማውራት ይችላሉ"
+            )
+            send_telegram(msg, chat_id=chat_id)
+            return "OK", 200
+
+        elif data_str == "user_wit_cbe":
+            admin_state.update_one({"chat_id": chat_id}, {"$set": {"action": "awaiting_with_info_cbe"}}, upsert=True)
+            requests.post(answer_url, json={"callback_query_id": cq_id, "text": "CBE BIRR ተመርጧል"})
+            msg = (
+                "📤 *WITHDRAW (CBE BIRR)*\n\n"
+                "እባክዎ ማውጣት የሚፈልጉትን የብር መጠን ብቻ በሜሴጅ ይላኩ (ቢያንስ 20 ETB)፦\n\n"
+                "*ምሳሌ፦* `50`"
+            )
+            send_telegram(msg, chat_id=chat_id)
+            return "OK", 200
+
+        elif data_str == "user_wit_tele":
+            admin_state.update_one({"chat_id": chat_id}, {"$set": {"action": "awaiting_with_info_tele"}}, upsert=True)
+            requests.post(answer_url, json={"callback_query_id": cq_id, "text": "TELE BIRR ተመርጧል"})
+            msg = (
+                "📤 *WITHDRAW (TELE BIRR)*\n\n"
+                "እባክዎ ማውጣት የሚፈልጉትን የብር መጠን ብቻ በሜሴጅ ይላኩ (ቢያንስ 20 ETB)፦\n\n"
+                "*ምሳሌ፦* `50`"
+            )
+            send_telegram(msg, chat_id=chat_id)
+            return "OK", 200
+
+        elif data_str == "user_dep_cancel":
+            admin_state.delete_one({"chat_id": chat_id})
+            requests.post(answer_url, json={"callback_query_id": cq_id, "text": "የተሰረዘ"})
+            try:
+                requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/deleteMessage", json={
+                    "chat_id": chat_id,
+                    "message_id": cq["message"]["message_id"]
+                }, timeout=2)
+            except Exception:
+                pass
+            return "OK", 200
+
+    return "OK", 200
+
+if __name__ == '__main__':
+    socketio.run(app, host='0.0.0.0', port=int(os.environ.get("PORT", 10000)))
