@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>GoodBingo - BESH BINGO</title>
+    <title> BESH BINGO</title>
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -110,6 +110,8 @@
             height: 100vh;
             overflow: hidden;
         }
+
+
 
         .stats-badges-bar {
             background: #121c29;
@@ -243,8 +245,10 @@
         }
         .slot-card {
             flex: 1;
-            max-width: 155px;
-            min-height: 115px;
+            max-width: 136px;
+            height: 105px;
+            min-height: 105px;
+            max-height: 105px;
             border-radius: 10px;
             display: flex;
             flex-direction: column;
@@ -253,22 +257,23 @@
             cursor: pointer;
             position: relative;
             box-sizing: border-box;
+            overflow: hidden;
         }
         .slot-card.empty {
             border: 2px dashed #94a3b8;
             background: #f8fafc;
             color: #94a3b8;
-            padding: 6px;
+            padding: 4px;
         }
-        .slot-card.empty .slot-icon { font-size: 1.3rem; font-weight: 300; line-height: 1; margin-bottom: 2px; color: #64748b; }
-        .slot-card.empty .slot-lbl { font-size: 0.65rem; font-weight: 800; text-transform: uppercase; color: #475569; }
+        .slot-card.empty .slot-icon { font-size: 1.1rem; font-weight: 300; line-height: 1; margin-bottom: 2px; color: #64748b; }
+        .slot-card.empty .slot-lbl { font-size: 0.6rem; font-weight: 800; text-transform: uppercase; color: #475569; }
 
         .slot-card.active-cartela {
             border: 2px solid #f59e0b;
             background: #ffffff;
-            padding: 4px;
+            padding: 3px;
             justify-content: space-between;
-            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2);
+            box-shadow: 0 2px 6px rgba(245, 158, 11, 0.2);
         }
         .cartela-top-info {
             width: 100%;
@@ -387,18 +392,18 @@
             position: absolute;
             right: 12px;
             top: 4px;
-            width: 74px;
-            height: 74px;
+            width: 88px;
+            height: 88px;
             background: #f59e0b;
             color: white;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.35rem;
+            font-size: 1.6rem;
             font-weight: 900;
-            border: 5px solid #a16207;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.45), inset 0 2px 4px rgba(255,255,255,0.4);
+            border: 6px solid #a16207;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5), inset 0 2px 4px rgba(255,255,255,0.4);
             flex-shrink: 0;
             text-align: center;
             line-height: 1;
@@ -410,8 +415,8 @@
         .sub-header-row {
             display: flex;
             align-items: center;
-            justify-content: space-between;
-            padding: 6px 12px;
+            justify-content: flex-end;
+            padding: 6px 104px 6px 12px;
             background: #e2e8f0;
             border-bottom: 1px solid #cbd5e1;
             flex-shrink: 0;
@@ -428,7 +433,6 @@
             padding: 3px 8px;
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
             border: 1px solid #cbd5e1;
-            margin-left: 6px;
         }
 
         .recent-ball {
@@ -485,7 +489,7 @@
             border-radius: 12px;
             overflow: hidden;
             border: 1px solid #cbd5e1;
-            max-height: calc(100vh - 175px);
+            max-height: calc(100vh - 155px);
         }
 
         .main-board-bingo-header {
@@ -514,14 +518,14 @@
             padding: 4px;
             background: #cbd5e1;
             overflow-y: auto;
-            max-height: calc(100vh - 190px);
+            max-height: calc(100vh - 170px);
         }
         .board-column { display: flex; flex-direction: column; gap: 6px; }
 
         .ball-dot {
             flex: 1;
-            min-height: 12px;
-            font-size: 0.68rem;
+            min-height: 17px;
+            font-size: 0.8rem;
             background: #ffffff;
             display: flex;
             align-items: center;
@@ -530,9 +534,10 @@
             font-weight: 900;
             border-radius: 2px;
             border: 1px solid #cbd5e1;
+            letter-spacing: -0.5px;
         }
-        .ball-dot.active { background: #22c55e !important; color: #ffffff !important; border-color: #16a34a; }
-        .ball-dot.yellow-active { background: #ffcc00 !important; color: #000000 !important; border-color: #d97706; }
+        .ball-dot.active { background: #22c55e !important; color: #ffffff !important; border-color: #16a34a; font-weight: 900; }
+        .ball-dot.yellow-active { background: #ffcc00 !important; color: #000000 !important; border-color: #d97706; font-weight: 900; }
 
         .room-footer-bar {
             display: flex;
@@ -783,26 +788,18 @@
                     </div>
                 </div>
 
-                <!-- RETURN BUTTON -->
-                <div style="display:flex; align-items:center; gap:10px; padding-right:76px;">
-                    <button onclick="document.getElementById('game-ui').style.display='none'; document.getElementById('lobby-ui').style.display='flex';" style="background:#1e293b; color:#cbd5e1; border:1px solid #334155; padding:6px 12px; border-radius:8px; font-size:0.75rem; font-weight:900; cursor:pointer;">ሎቢ ተመለስ</button>
-                </div>
-
-                <!-- BIG PROMINENT CIRCLE OVERLAPPING -->
+                <!-- BIG PROMINENT CIRCLE OVERLAPPING (Enlarged) -->
                 <div id="ball-circle">N-41</div>
             </div>
 
-            <!-- SUB-HEADER ROW: 3 Small Balls Pill Badge -->
+            <!-- SUB-HEADER ROW: 3 Small Balls Pill Badge placed close to the Big Ball Circle -->
             <div class="sub-header-row">
-                <div style="display:flex; align-items:center; gap:8px;">
-                    <!-- 3 RECENT BALLS PILL CONTAINER -->
-                    <div class="recent-balls-pill" id="recent-balls-container">
-                        <div class="recent-ball ball-i">I25</div>
-                        <div class="recent-ball ball-n">N43</div>
-                        <div class="recent-ball ball-b">B15</div>
-                    </div>
+                <!-- 3 RECENT BALLS PILL CONTAINER -->
+                <div class="recent-balls-pill" id="recent-balls-container">
+                    <div class="recent-ball ball-i">I25</div>
+                    <div class="recent-ball ball-n">N43</div>
+                    <div class="recent-ball ball-b">B15</div>
                 </div>
-                <div style="width:74px; flex-shrink:0;"></div>
             </div>
 
             <div class="game-main-content-row">
