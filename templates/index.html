@@ -115,6 +115,7 @@
             padding: 8px 10px;
             background: #1e293b;
             align-items: center;
+            flex-shrink: 0;
         }
 
         .gb-card {
@@ -165,10 +166,10 @@
 
         .grid-500 { 
             display: grid; 
-            grid-template-columns: repeat(8, 1fr); 
-            gap: 5px; 
+            grid-template-columns: repeat(10, 1fr); 
+            gap: 4px; 
             background: #e2e8f0; 
-            padding: 10px; 
+            padding: 8px; 
             border-radius: 16px; 
             box-sizing: border-box; 
             border: 1px solid #cbd5e1;
@@ -177,12 +178,12 @@
         .t-box { 
             background: #ffffff; 
             color: #0f172a; 
-            font-size: 0.8rem; 
+            font-size: 0.75rem; 
             padding: 8px 0; 
             font-weight: 800; 
-            border-radius: 8px; 
+            border-radius: 6px; 
             cursor: pointer; 
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
             border: 1px solid #e2e8f0;
             transition: transform 0.1s;
         }
@@ -195,13 +196,14 @@
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 10px;
-            padding: 5px 0 15px 0;
+            padding: 5px 0 10px 0;
+            flex-shrink: 0;
         }
 
         .slot-box {
             border: 2px dashed #94a3b8;
             border-radius: 16px;
-            height: 90px;
+            height: 75px;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -209,9 +211,14 @@
             color: #64748b;
             font-weight: 800;
             font-size: 0.75rem;
-            background: rgba(255,255,255,0.4);
+            background: rgba(255,255,255,0.6);
         }
-        .slot-box span { font-size: 1.4rem; margin-bottom: 2px; }
+        .slot-box.filled {
+            border: 2px solid #f59e0b;
+            background: #fffbeb;
+            color: #b45309;
+        }
+        .slot-box span { font-size: 1.2rem; margin-bottom: 2px; }
 
         /* ================= GAME UI ================= */
         #game-ui {
@@ -524,15 +531,15 @@
                 </div>
                 <div class="gb-card">
                     <span class="gb-label" style="color:#94a3b8;">SOLD</span>
-                    <span class="gb-value" id="lobby-sold-count" style="color:#fff;">44</span>
+                    <span class="gb-value" id="lobby-sold-count" style="color:#fff;">0</span>
                 </div>
                 <div class="gb-card">
                     <span class="gb-label" style="color:#f87171;">TIME</span>
-                    <span class="gb-value time-text" id="timer">28s</span>
+                    <span class="gb-value time-text" id="timer">30s</span>
                 </div>
                 <div class="gb-card balance">
                     <span class="gb-label">BALANCE</span>
-                    <span class="gb-value" id="user-balance-val">12.00 ETB</span>
+                    <span class="gb-value" id="user-balance-val">0.00 ETB</span>
                 </div>
             </div>
             
@@ -542,11 +549,11 @@
 
                 <!-- SLOTS SECTION AT BOTTOM -->
                 <div class="slots-container">
-                    <div class="slot-box">
+                    <div class="slot-box" id="slot-1">
                         <span>➕</span>
                         SLOT 1 EMPTY
                     </div>
-                    <div class="slot-box">
+                    <div class="slot-box" id="slot-2">
                         <span>➕</span>
                         SLOT 2 EMPTY
                     </div>
@@ -684,9 +691,9 @@
             document.getElementById('game-balls-count').innerText = drawnCount + "/75";
             document.getElementById('game-p-count').innerText = parseInt(d.active_players) || 568;
             
-            if(document.getElementById('timer')) document.getElementById('timer').innerText = (d.timer || 28) + "s";
+            if(document.getElementById('timer')) document.getElementById('timer').innerText = (d.timer || 30) + "s";
             if(document.getElementById('lobby-sold-count')) {
-                let soldCount = d.sold_tickets ? Object.keys(d.sold_tickets).length : 44;
+                let soldCount = d.sold_tickets ? Object.keys(d.sold_tickets).length : 0;
                 document.getElementById('lobby-sold-count').innerText = soldCount;
             }
             if(document.getElementById('user-balance-val') && d.balance !== undefined) {
@@ -698,6 +705,7 @@
                 document.getElementById('game-ui').style.display='none'; 
                 initTicketsOnce(); 
                 renderTickets(d.sold_tickets || {});
+                updateUserSlots(d.sold_tickets || {});
             } 
             else if(d.status === "playing") {
                 document.getElementById('lobby-ui').style.display='none'; 
@@ -743,6 +751,40 @@
             }
         }
 
+        function updateUserSlots(sold) {
+            let myPurchasedTickets = [];
+            if (sold) {
+                for (let ticketId in sold) {
+                    if (phoneMatches(sold[ticketId], phone)) {
+                        myPurchasedTickets.push(ticketId);
+                    }
+                }
+            }
+
+            let slot1 = document.getElementById('slot-1');
+            let slot2 = document.getElementById('slot-2');
+
+            if (slot1) {
+                if (myPurchasedTickets.length > 0) {
+                    slot1.className = 'slot-box filled';
+                    slot1.innerHTML = `<span>🎟️</span>ካርቴላ #${myPurchasedTickets[0]}`;
+                } else {
+                    slot1.className = 'slot-box';
+                    slot1.innerHTML = `<span>➕</span>SLOT 1 EMPTY`;
+                }
+            }
+
+            if (slot2) {
+                if (myPurchasedTickets.length > 1) {
+                    slot2.className = 'slot-box filled';
+                    slot2.innerHTML = `<span>🎟️</span>ካርቴላ #${myPurchasedTickets[1]}`;
+                } else {
+                    slot2.className = 'slot-box';
+                    slot2.innerHTML = `<span>➕</span>SLOT 2 EMPTY`;
+                }
+            }
+        }
+
         function getBallLabel(num) {
             let n = parseInt(String(num).replace(/[^0-9]/g, ''));
             if(isNaN(n)) return num;
@@ -757,7 +799,7 @@
             const area = document.getElementById('ticket-area');
             if(area && area.children.length === 0) { 
                 const fragment = document.createDocumentFragment();
-                for(let i=1; i<=104; i++) { 
+                for(let i=1; i<=500; i++) { 
                     let div=document.createElement('div'); div.className='t-box'; div.innerText=i; div.id='t-'+i; 
                     div.onclick = () => buy(i);
                     fragment.appendChild(div); 
@@ -767,7 +809,7 @@
         }
 
         function renderTickets(sold) {
-            for(let i=1; i<=104; i++) {
+            for(let i=1; i<=500; i++) {
                 let box = document.getElementById('t-'+i); if(!box) continue;
                 box.style.pointerEvents = "auto";
                 if(sold && sold[i]) { 
