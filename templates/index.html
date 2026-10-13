@@ -350,7 +350,7 @@
             z-index: 100;
             box-sizing: border-box;
             border-bottom: 1px solid #1e293b;
-            overflow: visible !important; /* CRITICAL: Must be visible so the big ball is NEVER cut off */
+            overflow: visible !important;
         }
 
         /* FIXED STATS POSITION: DERASH, BALLS, PLAYERS DO NOT MOVE */
@@ -411,7 +411,7 @@
             flex-shrink: 0;
             text-align: center;
             line-height: 1;
-            z-index: 1000 !important; /* Above everything so it is NEVER covered */
+            z-index: 1000 !important;
             letter-spacing: -0.5px;
             pointer-events: none;
         }
@@ -483,9 +483,9 @@
             border-right: 1px solid #94a3b8;
             height: 100%; 
             padding: 6px;
-            gap: 6px;
+            gap: 0;
             box-sizing: border-box;
-            justify-content: space-between; /* Keeps ROOM VIP bar at the bottom with clean space */
+            justify-content: space-between;
         }
 
         .game-mid-gap {
@@ -494,7 +494,7 @@
             background: #cbd5e1;
         }
 
-        /* MAIN BOARD HEIGHT EXACTLY UP TO THE UNDERLINED LEVEL (DOES NOT GO NEAR ROOM VIP) */
+        /* MAIN BOARD: ቁመቱ ወደታች ተስቦ ከ ROOM VIP በትክክል በ 60px ይርቃል */
         .main-board-container {
             display: flex;
             flex-direction: column;
@@ -502,9 +502,9 @@
             border-radius: 12px;
             overflow: hidden;
             border: 1px solid #cbd5e1;
-            height: 300px; /* Aligns with the bottom of the card on the right, does NOT stretch to room vip */
-            max-height: 300px;
-            flex-shrink: 0;
+            flex: 1;
+            min-height: 0;
+            margin-bottom: 60px; /* በትክክል 60px ክፍተት ወደ ROOM VIP */
             box-shadow: 0 2px 6px rgba(0,0,0,0.06);
         }
 
@@ -512,7 +512,7 @@
             display: grid;
             grid-template-columns: repeat(5, 1fr);
             gap: 4px;
-            padding: 3px 4px;
+            padding: 4px;
             background: #f1f5f9;
             border-bottom: 1px solid #cbd5e1;
             flex-shrink: 0;
@@ -524,17 +524,18 @@
             text-align: center;
             border-radius: 3px;
             padding: 2px 0;
-            font-size: 0.78rem;
+            font-size: 0.8rem;
             letter-spacing: 1px;
         }
 
         .main-board-vertical {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
-            gap: 2px;
-            padding: 3px 4px;
+            gap: 3px;
+            padding: 4px;
             background: #cbd5e1;
             flex: 1;
+            min-height: 0;
             overflow: hidden;
         }
         .board-column { 
@@ -547,9 +548,8 @@
 
         .ball-dot {
             flex: 1;
-            min-height: 13px;
-            max-height: 16px;
-            font-size: 0.75rem;
+            min-height: 0;
+            font-size: 0.78rem;
             background: #ffffff;
             display: flex;
             align-items: center;
@@ -577,7 +577,7 @@
             border-radius: 10px;
             box-shadow: 0 2px 6px rgba(0,0,0,0.25);
             border: 1px solid #1e293b;
-            margin-top: 2px;
+            margin-top: auto; /* ከስር ሳይንቀሳቀስ የተቆለፈ */
         }
         .room-footer-bar span {
             font-size: 0.65rem;
@@ -1162,7 +1162,7 @@
             </div>
 
             <div class="game-main-content-row">
-                <!-- LEFT PANEL (Main board height stops at the line, does not stretch to room vip) -->
+                <!-- LEFT PANEL (Main board height pulled down, gap to ROOM VIP is exactly 60px) -->
                 <div class="game-left-panel">
                     <div class="main-board-container">
                         <div class="main-board-bingo-header">
