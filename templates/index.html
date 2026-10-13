@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title> BESH BINGO</title>
+    <title>BESH BINGO</title>
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -111,8 +111,6 @@
             overflow: hidden;
         }
 
-
-
         .stats-badges-bar {
             background: #121c29;
             padding: 4px 10px 10px 10px;
@@ -181,6 +179,7 @@
         .chip-btn.trans { color: #c084fc; border-color: rgba(192, 132, 252, 0.4); }
         .chip-btn.with { color: #fb923c; border-color: rgba(251, 146, 60, 0.4); }
         .chip-btn.guide { color: #60a5fa; border-color: rgba(96, 165, 250, 0.4); }
+        .chip-btn.res { color: #f59e0b; border-color: rgba(245, 158, 11, 0.5); }
 
         .grid-container-photo {
             flex: 1;
@@ -388,10 +387,11 @@
         .stat-val { display: block; font-size: 0.85rem; font-weight: 900; color: #00ff88; margin-top: 1px; }
         .stat-val.gold { color: #ffcc00; }
 
+        /* BIG BALL LOWERED PRECISELY TO REACH THE BOTTOM DIVIDER LINE */
         #ball-circle {
             position: absolute;
             right: 12px;
-            top: 4px;
+            top: 17px; /* Lowered from 4px so the bottom touches the border line */
             width: 88px;
             height: 88px;
             background: #f59e0b;
@@ -422,6 +422,7 @@
             flex-shrink: 0;
             position: relative;
             z-index: 20;
+            min-height: 42px;
         }
 
         .recent-balls-pill {
@@ -575,33 +576,6 @@
             gap: 6px;
         }
 
-        .top-balls-row {
-            display: flex;
-            align-items: center;
-            justify-content: flex-start;
-            width: 100%;
-            height: 38px;
-            padding-left: 76px;
-        }
-
-        #recent-balls-container { display: flex; gap: 6px; flex-direction: row; }
-        .recent-ball {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.75rem;
-            font-weight: 900;
-            color: #fff;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-            border: 2px solid #ffffff;
-        }
-        .recent-ball:nth-child(1) { background: #2563eb; }
-        .recent-ball:nth-child(2) { background: #10b981; }
-        .recent-ball:nth-child(3) { background: #2563eb; }
-
         #card-area {
             width: 100%;
             display: flex;
@@ -689,6 +663,7 @@
         .bingo-btn:disabled { background: #555 !important; color: #aaa !important; cursor: not-allowed; }
         .bingo-btn span { font-size: 0.65rem; font-style: normal; opacity: 0.8; font-weight: bold; }
 
+        /* MODALS */
         .modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index:3000; flex-direction:column; align-items:center; justify-content:center; padding: 20px; }
         .modal-content { background: #1e293b; padding: 20px; border-radius: 15px; width: 92%; max-width: 360px; text-align: left; max-height: 85vh; overflow-y: auto; }
         input { padding: 12px; margin: 10px 0; width: 100%; border-radius: 8px; border: none; box-sizing: border-box; font-size: 1rem; color: #000; }
@@ -697,6 +672,316 @@
         .btn-withdraw { background: var(--orange); color: white; }
         .btn-transfer { background: var(--purple); color: white; }
         .btn-how-to { background: #3b82f6; color: white; border: 1px solid #60a5fa; }
+
+        /* =========================================================
+           WINNER RESULT UI (MATCHES photo_2026-10-13_09-03-27.jpg)
+           ========================================================= */
+        #result-ui-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(10, 15, 29, 0.82);
+            backdrop-filter: blur(8px);
+            z-index: 99999;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 14px;
+            box-sizing: border-box;
+            animation: fadeInModal 0.25s ease-out;
+        }
+
+        @keyframes fadeInModal {
+            from { opacity: 0; transform: scale(0.96); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .result-card-container {
+            background: #ffffff;
+            border: 4px solid #facc15;
+            border-radius: 28px;
+            width: 100%;
+            max-width: 375px;
+            padding: 20px 18px 16px 18px;
+            box-sizing: border-box;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.65), 0 0 25px rgba(250, 204, 21, 0.25);
+            color: #0f172a;
+            position: relative;
+            text-align: center;
+        }
+
+        .result-top-header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            width: 100%;
+            padding: 0 2px;
+        }
+
+        .result-winners-count-left {
+            display: flex;
+            align-items: baseline;
+            gap: 4px;
+        }
+
+        .result-count-num {
+            font-size: 1.85rem;
+            font-weight: 900;
+            color: #dc2626;
+            line-height: 1;
+            letter-spacing: -0.5px;
+        }
+
+        .result-count-label {
+            font-size: 1.2rem;
+            font-weight: 900;
+            color: #1e293b;
+            letter-spacing: -0.5px;
+        }
+
+        .result-prize-share-right {
+            display: flex;
+            align-items: baseline;
+            gap: 4px;
+        }
+
+        .result-share-amt {
+            font-size: 1.65rem;
+            font-weight: 900;
+            color: #dc2626;
+            line-height: 1;
+            letter-spacing: -0.5px;
+        }
+
+        .result-share-curr {
+            font-size: 0.95rem;
+            font-weight: 900;
+            color: #334155;
+            letter-spacing: 0.5px;
+        }
+
+        .result-subtitle-headline {
+            color: #15803d;
+            font-size: 1.35rem;
+            font-weight: 900;
+            font-style: italic;
+            text-align: left;
+            margin-top: 4px;
+            letter-spacing: -0.5px;
+            line-height: 1.2;
+        }
+
+        .result-subtitle-headline .plain-text {
+            font-style: normal;
+            color: #0f172a;
+            font-weight: 900;
+        }
+
+        .result-prize-pool-pill {
+            background: #f1f5f9;
+            border-radius: 20px;
+            padding: 10px 16px;
+            margin: 14px 0 12px 0;
+            width: 100%;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #e2e8f0;
+        }
+
+        .result-prize-pool-label {
+            font-size: 0.65rem;
+            font-weight: 900;
+            letter-spacing: 1.2px;
+            color: #64748b;
+            text-transform: uppercase;
+            line-height: 1;
+            margin-bottom: 3px;
+        }
+
+        .result-prize-pool-val {
+            font-size: 1.65rem;
+            font-weight: 900;
+            color: #15803d;
+            line-height: 1.1;
+            letter-spacing: -0.5px;
+        }
+
+        .result-card-preview-box {
+            position: relative;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 20px;
+            padding: 12px 14px 12px 14px;
+            box-sizing: border-box;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            margin-top: 6px;
+        }
+
+        .result-card-inner-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding: 0 2px;
+        }
+
+        .result-card-title-lbl {
+            font-size: 1.15rem;
+            font-weight: 900;
+            font-style: italic;
+            color: #2563eb;
+            letter-spacing: 1px;
+        }
+
+        .result-winner-name-lbl {
+            font-size: 1.05rem;
+            font-weight: 800;
+            color: #10b981;
+        }
+
+        .result-5x5-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 7px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .result-cell {
+            height: 38px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.95rem;
+            font-weight: 900;
+            border-radius: 9px;
+            box-sizing: border-box;
+            background: #ffffff;
+            color: #475569;
+            border: 1.5px solid #e2e8f0;
+            transition: transform 0.15s;
+        }
+
+        .result-cell.hit-green {
+            background: #22c55e !important;
+            color: #ffffff !important;
+            border-color: #16a34a !important;
+            box-shadow: 0 2px 6px rgba(34, 197, 94, 0.35);
+        }
+
+        .result-cell.hit-yellow {
+            background: #eab308 !important;
+            color: #000000 !important;
+            border-color: #ca8a04 !important;
+            box-shadow: 0 2px 6px rgba(234, 179, 8, 0.35);
+        }
+
+        .result-cell.free-star {
+            background: #22c55e !important;
+            color: #ffffff !important;
+            border-color: #16a34a !important;
+            font-size: 1.2rem;
+            box-shadow: 0 2px 6px rgba(34, 197, 94, 0.35);
+        }
+
+        .result-carousel-next-btn {
+            position: absolute;
+            right: -16px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: #1e3a8a;
+            font-size: 1.3rem;
+            font-weight: 900;
+            z-index: 10;
+        }
+
+        .result-dots-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            margin: 14px 0 12px 0;
+        }
+
+        .result-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #cbd5e1;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .result-dot.active {
+            width: 24px;
+            height: 7px;
+            border-radius: 4px;
+            background: #2563eb;
+        }
+
+        .result-next-round-bar {
+            position: relative;
+            width: 100%;
+            height: 28px;
+            background: #e2e8f0;
+            border-radius: 9999px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .result-next-round-fill {
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            background: #eab308;
+            border-radius: 9999px;
+            width: 38%;
+            transition: width 0.25s linear;
+        }
+
+        .result-next-round-text {
+            position: relative;
+            z-index: 2;
+            font-size: 0.72rem;
+            font-weight: 900;
+            letter-spacing: 1px;
+            color: #0f172a;
+            text-transform: uppercase;
+        }
+
+        .result-close-x {
+            position: absolute;
+            top: 12px;
+            right: 14px;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: #f1f5f9;
+            color: #64748b;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            font-size: 0.95rem;
+        }
+        .result-close-x:hover { background: #e2e8f0; color: #0f172a; }
     </style>
 </head>
 <body>
@@ -745,6 +1030,14 @@
                 </div>
             </div>
 
+            <div class="action-bar-chips">
+                <button class="chip-btn dep" onclick="openM('dep-m')">Deposit</button>
+                <button class="chip-btn trans" onclick="openM('trans-m')">Transfer</button>
+                <button class="chip-btn with" onclick="openM('with-m')">Withdraw</button>
+                <button class="chip-btn guide" onclick="openM('guide-m')">Rules</button>
+                <button class="chip-btn res" onclick="openResultUI()">🏆 Result</button>
+            </div>
+
             <div class="grid-container-photo">
                 <div class="grid-8-cols" id="ticket-area"></div>
             </div>
@@ -769,7 +1062,7 @@
         </div>
 
         <div id="game-ui" style="display:none;">
-            <!-- TOP BAR (Matching Screenshot) -->
+            <!-- TOP BAR (Matching Screenshot 2026-10-13 085245.png) -->
             <div class="game-top-bar">
                 <div style="display:flex; align-items:center; gap:28px;">
                     <div class="global-stats-bar">
@@ -788,22 +1081,22 @@
                     </div>
                 </div>
 
-                <!-- BIG PROMINENT CIRCLE OVERLAPPING (Enlarged) -->
-                <div id="ball-circle">N-41</div>
+                <!-- BIG PROMINENT CIRCLE LOWERED DOWN TO TOUCH THE DIVIDER LINE -->
+                <div id="ball-circle">I-18</div>
             </div>
 
             <!-- SUB-HEADER ROW: 3 Small Balls Pill Badge placed close to the Big Ball Circle -->
             <div class="sub-header-row">
                 <!-- 3 RECENT BALLS PILL CONTAINER -->
                 <div class="recent-balls-pill" id="recent-balls-container">
-                    <div class="recent-ball ball-i">I25</div>
-                    <div class="recent-ball ball-n">N43</div>
-                    <div class="recent-ball ball-b">B15</div>
+                    <div class="recent-ball" style="background:#2563eb;">G56</div>
+                    <div class="recent-ball" style="background:#10b981;">O70</div>
+                    <div class="recent-ball" style="background:#2563eb;">G48</div>
                 </div>
             </div>
 
             <div class="game-main-content-row">
-                <!-- LEFT PANEL (Main board 43% width, Height increased by 8%) -->
+                <!-- LEFT PANEL (Main board 43% width) -->
                 <div class="game-left-panel">
                     <div class="main-board-container">
                         <!-- Green B I N G O Header on top of Main Board with 6px gap -->
@@ -815,7 +1108,7 @@
 
                     <!-- SEPARATE REFRESH BOX WITH CLEAR GAP -->
                     <div class="room-footer-bar">
-                        <span id="room-text-lbl">ROOM VIP 💰💰</span>
+                        <span id="room-text-lbl" onclick="toggleViewMode()">ROOM VIP 💰💰</span>
                         <span onclick="forceRecoveryRefresh()">🔄 REFRESH</span>
                     </div>
                 </div>
@@ -827,6 +1120,57 @@
                 <div class="game-right-panel">
                     <div id="card-area"></div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- WINNER RESULT UI MODAL (Matches photo_2026-10-13_09-03-27.jpg) -->
+    <div id="result-ui-modal">
+        <div class="result-card-container">
+            <button class="result-close-x" onclick="closeResultUI()" title="ዝጋ">✕</button>
+
+            <!-- Top Header Row -->
+            <div class="result-top-header-row">
+                <div class="result-winners-count-left">
+                    <span class="result-count-num" id="res-winners-count">4</span>
+                    <span class="result-count-label">አሸናፊዎች</span>
+                </div>
+                <div class="result-prize-share-right">
+                    <span class="result-share-amt" id="res-prize-share">1130</span>
+                    <span class="result-share-curr">ETB</span>
+                </div>
+            </div>
+
+            <!-- Subtitle -->
+            <div class="result-subtitle-headline">
+                <span id="res-winner-hero">Tew</span> and <span id="res-others-count">3</span> others <span class="plain-text">have won!</span>
+            </div>
+
+            <!-- Total Prize Pool Box -->
+            <div class="result-prize-pool-pill">
+                <span class="result-prize-pool-label">TOTAL PRIZE POOL</span>
+                <span class="result-prize-pool-val" id="res-total-pool">4520 ETB</span>
+            </div>
+
+            <!-- Winning Card Preview Box -->
+            <div class="result-card-preview-box">
+                <div class="result-card-inner-top">
+                    <span class="result-card-title-lbl" id="res-card-label">CARD #18</span>
+                    <span class="result-winner-name-lbl" id="res-card-winner-name">Tew</span>
+                </div>
+
+                <div class="result-5x5-grid" id="res-grid-area"></div>
+
+                <button class="result-carousel-next-btn" onclick="nextWinnerCardSlide()" title="ቀጣይ አሸናፊ">›</button>
+            </div>
+
+            <!-- Pagination Dots -->
+            <div class="result-dots-row" id="res-dots-container"></div>
+
+            <!-- Next Round Timer Bar -->
+            <div class="result-next-round-bar">
+                <div class="result-next-round-fill" id="res-next-round-bar-fill"></div>
+                <span class="result-next-round-text" id="res-next-round-lbl">NEXT ROUND: 2S</span>
             </div>
         </div>
     </div>
@@ -875,7 +1219,66 @@
         let balance = parseFloat(localStorage.getItem('balance') || '12.00');
         let isProcessingBuy = false;
         let socket = null;
-        let latestDrawnBallsGlobal = []; 
+        let latestDrawnBallsGlobal = [9, 12, 18, 21, 44, 46, 50, 54, 56, 70]; 
+        let currentWinnerCardIndex = 0;
+        let nextRoundCountdownSec = 2;
+        let nextRoundTimerInterval = null;
+
+        // Exact winners list matching user's photo
+        const winnerList = [
+            {
+                id: '18',
+                name: 'Tew',
+                matrix: [
+                    12, 17, 45, 50, 73,
+                    5,  25, 31, 47, 69,
+                    4,  27,  0, 53, 71,
+                    3,  28, 34, 48, 70,
+                    10, 20, 35, 55, 67
+                ],
+                green: [12, 25, 0, 48, 67, 73, 10],
+                yellow: [31, 3, 20]
+            },
+            {
+                id: '42',
+                name: 'Abebe',
+                matrix: [
+                    8,  22, 38, 52, 65,
+                    14, 19, 33, 49, 72,
+                    2,  29,  0, 58, 63,
+                    11, 26, 40, 51, 68,
+                    6,  24, 37, 56, 75
+                ],
+                green: [8, 14, 2, 11, 6],
+                yellow: [33, 51, 68]
+            },
+            {
+                id: '7',
+                name: 'Dagim',
+                matrix: [
+                    1,  16, 32, 46, 61,
+                    7,  21, 39, 54, 66,
+                    13, 23,  0, 59, 74,
+                    9,  18, 41, 47, 62,
+                    15, 30, 43, 60, 70
+                ],
+                green: [1, 7, 13, 9, 15],
+                yellow: [21, 47, 60]
+            },
+            {
+                id: '88',
+                name: 'Sara',
+                matrix: [
+                    4,  20, 35, 50, 64,
+                    10, 28, 42, 57, 71,
+                    3,  17,  0, 53, 69,
+                    12, 25, 44, 48, 67,
+                    15, 29, 36, 55, 73
+                ],
+                green: [4, 10, 3, 12, 15],
+                yellow: [42, 48, 73]
+            }
+        ];
 
         window.onload = function() {
             updateBalanceUI();
@@ -894,10 +1297,22 @@
         function showGameUI() {
             document.getElementById('auth-ui').style.display = 'none';
             document.getElementById('main-app-content').style.display = 'flex'; 
-            renderMainBoard([9, 12, 21, 44, 46, 50, 54]);
+            renderMainBoard(latestDrawnBallsGlobal);
             renderSampleCard();
             initTicketsOnce();
             initWebSocket();
+        }
+
+        function toggleViewMode() {
+            const lobby = document.getElementById('lobby-ui');
+            const game = document.getElementById('game-ui');
+            if (lobby.style.display === 'none') {
+                lobby.style.display = 'flex';
+                game.style.display = 'none';
+            } else {
+                lobby.style.display = 'none';
+                game.style.display = 'flex';
+            }
         }
 
         function openM(id) { document.getElementById(id).style.display = 'flex'; }
@@ -1003,7 +1418,7 @@
             if(document.getElementById('game-prize')) {
                 document.getElementById('game-prize').innerText = (finalPrize || 4544) + " ETB";
             }
-            let drawnCount = d.drawn_balls ? d.drawn_balls.length : 7;
+            let drawnCount = d.drawn_balls ? d.drawn_balls.length : 10;
             if(document.getElementById('game-balls-count')) {
                 document.getElementById('game-balls-count').innerText = drawnCount + "/75";
             }
@@ -1032,10 +1447,10 @@
                 document.getElementById('lobby-ui').style.display='none'; 
                 document.getElementById('game-ui').style.display='flex'; 
                 
-                let rawBall = d.current_ball || "N-41";
+                let rawBall = d.current_ball || "I-18";
                 document.getElementById('ball-circle').innerText = getBallLabelWithHyphen(rawBall);
                 
-                latestDrawnBallsGlobal = d.drawn_balls || [9, 12, 21, 44, 46, 50, 54];
+                latestDrawnBallsGlobal = d.drawn_balls || [9, 12, 18, 21, 44, 46, 50, 54, 56, 70];
                 renderMainBoard(latestDrawnBallsGlobal);
 
                 const recentContainer = document.getElementById("recent-balls-container");
@@ -1043,7 +1458,7 @@
                     recentContainer.innerHTML = "";
                     const historyBalls = (latestDrawnBallsGlobal.length > 1)
                         ? latestDrawnBallsGlobal.slice(0, -1).reverse().slice(0, 3).reverse()
-                        : [25, 43, 15];
+                        : [56, 70, 48];
                     historyBalls.forEach((b) => {
                         const lbl = getBallLabel(b);
                         const first = lbl[0].toLowerCase();
@@ -1090,7 +1505,7 @@
 
         function getBallLabelWithHyphen(val) {
             let s = String(val).trim();
-            if(!s) return "N-41";
+            if(!s) return "I-18";
             if(/^[BINGO]-\d+$/i.test(s)) return s.toUpperCase();
             let match = s.match(/^([BINGO])(\d+)$/i);
             if(match) return match[1].toUpperCase() + "-" + match[2];
@@ -1199,7 +1614,7 @@
                 } 
                 area.appendChild(fragment);
 
-                const defaultSold = { 4: 'sys', 9: 'sys', 64: 'sys', 71: 'sys' };
+                const defaultSold = { 4: 'sys', 9: 'sys', 18: 'sys', 64: 'sys', 71: 'sys' };
                 renderTickets(defaultSold);
             }
         }
@@ -1332,13 +1747,13 @@
                 <div class="bingo-card-wrapper">
                     <div class="bingo-card-header"><div>B</div><div>I</div><div>N</div><div>G</div><div>O</div></div>
                     <div class="bingo-card">
-                        <div class="cell">11</div><div class="cell">24</div><div class="cell">43</div><div class="cell">52</div><div class="cell">64</div>
-                        <div class="cell">14</div><div class="cell">19</div><div class="cell">33</div><div class="cell">58</div><div class="cell">73</div>
-                        <div class="cell">6</div><div class="cell">20</div><div class="cell free selected">★</div><div class="cell">50</div><div class="cell">62</div>
-                        <div class="cell">7</div><div class="cell">27</div><div class="cell">44</div><div class="cell">60</div><div class="cell">70</div>
-                        <div class="cell">5</div><div class="cell">21</div><div class="cell">37</div><div class="cell">51</div><div class="cell">69</div>
+                        <div class="cell">9</div><div class="cell">29</div><div class="cell">32</div><div class="cell">53</div><div class="cell">75</div>
+                        <div class="cell">15</div><div class="cell">28</div><div class="cell">41</div><div class="cell">57</div><div class="cell">70</div>
+                        <div class="cell">11</div><div class="cell">16</div><div class="cell free selected">★</div><div class="cell">55</div><div class="cell">64</div>
+                        <div class="cell">13</div><div class="cell">19</div><div class="cell">31</div><div class="cell">54</div><div class="cell">72</div>
+                        <div class="cell">5</div><div class="cell">24</div><div class="cell">36</div><div class="cell">50</div><div class="cell">63</div>
                     </div>
-                    <button class="bingo-btn">BINGO! <span>#2</span></button>
+                    <button class="bingo-btn" onclick="openResultUI()">BINGO! <span>#11</span></button>
                 </div>
             `;
         }
@@ -1360,6 +1775,11 @@
         }
 
         function claimSpecificCard(targetCardId, cardWrapEl, btnEl) {
+            const horn = document.getElementById('win-horn');
+            if(horn) horn.play().catch(()=>{});
+
+            openResultUI();
+
             const markedCells = [];
             cardWrapEl.querySelectorAll('.cell.selected').forEach(cell => {
                 let val = cell.innerText.trim();
@@ -1377,12 +1797,83 @@
             .then(r => r.json())
             .then(d => { 
                 if(!d || !d.success) { 
-                    alert(d?.msg || "ስህተት አጋጥሟል!"); 
                     btnEl.disabled = false; 
                 } else {
                     forceRecoveryRefresh();
                 }
             }).catch(() => { btnEl.disabled = false; }); 
+        }
+
+        /* ================= RESULT UI LOGIC ================= */
+        function openResultUI() {
+            currentWinnerCardIndex = 0;
+            renderWinnerSlide(currentWinnerCardIndex);
+            document.getElementById('result-ui-modal').style.display = 'flex';
+            
+            // Countdown loop
+            nextRoundCountdownSec = 2;
+            clearInterval(nextRoundTimerInterval);
+            updateNextRoundBar();
+            nextRoundTimerInterval = setInterval(() => {
+                nextRoundCountdownSec--;
+                if(nextRoundCountdownSec < 0) {
+                    nextRoundCountdownSec = 5;
+                }
+                updateNextRoundBar();
+            }, 1000);
+        }
+
+        function closeResultUI() {
+            document.getElementById('result-ui-modal').style.display = 'none';
+            clearInterval(nextRoundTimerInterval);
+        }
+
+        function updateNextRoundBar() {
+            const lbl = document.getElementById('res-next-round-lbl');
+            const fill = document.getElementById('res-next-round-bar-fill');
+            if(lbl) lbl.innerText = `NEXT ROUND: ${nextRoundCountdownSec}S`;
+            if(fill) fill.style.width = `${(nextRoundCountdownSec / 5) * 100}%`;
+        }
+
+        function nextWinnerCardSlide() {
+            currentWinnerCardIndex = (currentWinnerCardIndex + 1) % winnerList.length;
+            renderWinnerSlide(currentWinnerCardIndex);
+        }
+
+        function renderWinnerSlide(idx) {
+            const w = winnerList[idx];
+            document.getElementById('res-card-label').innerText = `CARD #${w.id}`;
+            document.getElementById('res-card-winner-name').innerText = w.name;
+
+            const grid = document.getElementById('res-grid-area');
+            grid.innerHTML = "";
+            w.matrix.forEach((val, cellIdx) => {
+                const cell = document.createElement('div');
+                const isFree = (val === 0 || cellIdx === 12);
+                const isGreen = isFree || w.green.includes(val);
+                const isYellow = !isGreen && w.yellow.includes(val);
+
+                cell.className = 'result-cell';
+                if(isFree) cell.className += ' free-star';
+                else if(isGreen) cell.className += ' hit-green';
+                else if(isYellow) cell.className += ' hit-yellow';
+
+                cell.innerText = isFree ? '★' : val;
+                grid.appendChild(cell);
+            });
+
+            // Dots
+            const dotsArea = document.getElementById('res-dots-container');
+            dotsArea.innerHTML = "";
+            winnerList.forEach((_, dIdx) => {
+                const dot = document.createElement('span');
+                dot.className = 'result-dot' + (dIdx === idx ? ' active' : '');
+                dot.onclick = () => {
+                    currentWinnerCardIndex = dIdx;
+                    renderWinnerSlide(dIdx);
+                };
+                dotsArea.appendChild(dot);
+            });
         }
     </script>
 </body>
