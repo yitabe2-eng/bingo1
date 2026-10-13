@@ -350,10 +350,10 @@
             z-index: 100;
             box-sizing: border-box;
             border-bottom: 1px solid #1e293b;
-            overflow: hidden;
+            overflow: visible !important; /* CRITICAL: Must be visible so the big ball is NEVER cut off */
         }
 
-        /* FIXED STATS POSITION: DERASH, BALLS, PLAYERS DO NOT SHIFT */
+        /* FIXED STATS POSITION: DERASH, BALLS, PLAYERS DO NOT MOVE */
         .global-stats-bar {
             position: absolute;
             left: 14px;
@@ -391,7 +391,7 @@
         }
         .stat-val.gold { color: #ffcc00; }
 
-        /* BIG BALL POSITION LOWERED DOWN TO THE DIVIDER LINE */
+        /* BIG BALL UNCOVERED AND VISIBLE */
         #ball-circle {
             position: absolute;
             right: 12px;
@@ -411,7 +411,7 @@
             flex-shrink: 0;
             text-align: center;
             line-height: 1;
-            z-index: 50;
+            z-index: 1000 !important; /* Above everything so it is NEVER covered */
             letter-spacing: -0.5px;
             pointer-events: none;
         }
@@ -485,7 +485,7 @@
             padding: 6px;
             gap: 6px;
             box-sizing: border-box;
-            justify-content: space-between;
+            justify-content: space-between; /* Keeps ROOM VIP bar at the bottom with clean space */
         }
 
         .game-mid-gap {
@@ -494,7 +494,7 @@
             background: #cbd5e1;
         }
 
-        /* MAIN BOARD EXTENDED FULL HEIGHT DIRECTLY DOWN TO FOOTER */
+        /* MAIN BOARD HEIGHT EXACTLY UP TO THE UNDERLINED LEVEL (DOES NOT GO NEAR ROOM VIP) */
         .main-board-container {
             display: flex;
             flex-direction: column;
@@ -502,16 +502,17 @@
             border-radius: 12px;
             overflow: hidden;
             border: 1px solid #cbd5e1;
-            flex: 1;
-            min-height: 0;
+            height: 285px; /* Aligns with the bottom of the card on the right, does NOT stretch to room vip */
+            max-height: 285px;
+            flex-shrink: 0;
             box-shadow: 0 2px 6px rgba(0,0,0,0.06);
         }
 
         .main-board-bingo-header {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
-            gap: 6px;
-            padding: 5px 4px;
+            gap: 4px;
+            padding: 3px 4px;
             background: #f1f5f9;
             border-bottom: 1px solid #cbd5e1;
             flex-shrink: 0;
@@ -522,39 +523,40 @@
             font-weight: 900;
             text-align: center;
             border-radius: 3px;
-            padding: 3px 0;
-            font-size: 0.82rem;
+            padding: 2px 0;
+            font-size: 0.78rem;
             letter-spacing: 1px;
         }
 
         .main-board-vertical {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
-            gap: 4px;
-            padding: 4px;
+            gap: 2px;
+            padding: 3px 4px;
             background: #cbd5e1;
             flex: 1;
-            min-height: 0;
             overflow: hidden;
         }
         .board-column { 
             display: flex; 
             flex-direction: column; 
-            gap: 3px; 
+            gap: 2px; 
             height: 100%; 
+            justify-content: space-between;
         }
 
         .ball-dot {
             flex: 1;
-            min-height: 0;
-            font-size: 0.85rem;
+            min-height: 13px;
+            max-height: 16px;
+            font-size: 0.75rem;
             background: #ffffff;
             display: flex;
             align-items: center;
             justify-content: center;
             color: #0f172a;
             font-weight: 900;
-            border-radius: 3px;
+            border-radius: 2px;
             border: 1px solid #cbd5e1;
             letter-spacing: -0.5px;
             box-sizing: border-box;
@@ -748,7 +750,7 @@
         .btn-transfer { background: var(--purple); color: white; }
         .btn-how-to { background: #3b82f6; color: white; border: 1px solid #60a5fa; }
 
-        /* ================= WINNER RESULT UI ================= */
+        /* WINNER RESULT UI */
         #result-ui-modal {
             position: fixed;
             inset: 0;
@@ -1129,7 +1131,7 @@
         </div>
 
         <div id="game-ui" style="display:none;">
-            <!-- TOP BAR: DERASH, BALLS, PLAYERS IN FIXED POSITION -->
+            <!-- TOP BAR -->
             <div class="game-top-bar">
                 <div class="global-stats-bar">
                     <div class="stat-item">
@@ -1138,7 +1140,7 @@
                     </div>
                     <div class="stat-item">
                         <span class="stat-label">BALLS</span>
-                        <span class="stat-val" id="game-balls-count"><span style="color:#fff; font-weight:900;">65</span><span style="color:#94a3b8; font-size:0.75rem;">/75</span></span>
+                        <span class="stat-val" id="game-balls-count"><span style="color:#fff; font-weight:900;">8</span><span style="color:#94a3b8; font-size:0.75rem;">/75</span></span>
                     </div>
                     <div class="stat-item">
                         <span class="stat-label">PLAYERS</span>
@@ -1146,11 +1148,11 @@
                     </div>
                 </div>
 
-                <!-- BIG PROMINENT CIRCLE LOWERED DOWN TO THE DIVIDER LINE -->
-                <div id="ball-circle">N-35</div>
+                <!-- BIG PROMINENT CIRCLE - FULLY UNCOVERED -->
+                <div id="ball-circle">G-48</div>
             </div>
 
-            <!-- SUB-HEADER ROW: 3 SMALL BALLS PILL (O61, I26, B4) ALWAYS VISIBLE -->
+            <!-- SUB-HEADER ROW: 3 SMALL BALLS PILL (O61, I26, B4) -->
             <div class="sub-header-row">
                 <div class="recent-balls-pill" id="recent-balls-container">
                     <div class="recent-ball ball-o" style="background:#2563eb;">O61</div>
@@ -1160,7 +1162,7 @@
             </div>
 
             <div class="game-main-content-row">
-                <!-- LEFT PANEL (Main board stretched down to line) -->
+                <!-- LEFT PANEL (Main board height stops at the line, does not stretch to room vip) -->
                 <div class="game-left-panel">
                     <div class="main-board-container">
                         <div class="main-board-bingo-header">
@@ -1200,7 +1202,7 @@
         </div>
     </div>
 
-    <!-- WINNER RESULT UI (BROADCAST TO ALL PLAYERS ON WIN) -->
+    <!-- WINNER RESULT UI -->
     <div id="result-ui-modal">
         <div class="result-card-container">
             <button class="result-close-x" onclick="closeResultUI()" title="ዝጋ">✕</button>
@@ -1293,7 +1295,7 @@
         let currentWinnerCardIndex = 0;
         let nextRoundCountdownSec = 2;
         let nextRoundTimerInterval = null;
-        let myPurchasedTickets = [42];
+        let myPurchasedTickets = [26];
 
         const winnerList = [
             {
@@ -1310,17 +1312,17 @@
                 yellow: [31, 3, 20]
             },
             {
-                id: '42',
+                id: '26',
                 name: 'Abebe',
                 matrix: [
-                    2,  26, 44, 49, 73,
-                    10, 17, 37, 51, 70,
-                    13, 19,  0, 47, 63,
-                    4,  29, 34, 52, 67,
-                    15, 25, 35, 54, 71
+                    6,  24, 44, 60, 70,
+                    5,  21, 41, 49, 61,
+                    4,  20,  0, 52, 74,
+                    12, 25, 39, 57, 64,
+                    2,  16, 38, 47, 63
                 ],
-                green: [2, 10, 13, 4, 15],
-                yellow: [44, 52, 71]
+                green: [6, 5, 4, 12, 2],
+                yellow: [44, 52, 64]
             },
             {
                 id: '7',
@@ -1487,7 +1489,7 @@
             if(document.getElementById('game-prize')) {
                 document.getElementById('game-prize').innerText = (finalPrize || 24) + " ETB";
             }
-            let drawnCount = d.drawn_balls ? d.drawn_balls.length : 65;
+            let drawnCount = d.drawn_balls ? d.drawn_balls.length : 8;
             if(document.getElementById('game-balls-count')) {
                 document.getElementById('game-balls-count').innerHTML = `<span style="color:#fff; font-weight:900;">${drawnCount}</span><span style="color:#94a3b8; font-size:0.75rem;">/75</span>`;
             }
@@ -1516,7 +1518,7 @@
                 document.getElementById('lobby-ui').style.display='none'; 
                 document.getElementById('game-ui').style.display='flex'; 
                 
-                let rawBall = d.current_ball || "N-35";
+                let rawBall = d.current_ball || "G-48";
                 document.getElementById('ball-circle').innerText = getBallLabelWithHyphen(rawBall);
                 
                 latestDrawnBallsGlobal = d.drawn_balls || latestDrawnBallsGlobal;
@@ -1573,7 +1575,7 @@
 
         function getBallLabelWithHyphen(val) {
             let s = String(val).trim();
-            if(!s) return "N-35";
+            if(!s) return "G-48";
             if(/^[BINGO]-\d+$/i.test(s)) return s.toUpperCase();
             let match = s.match(/^([BINGO])(\d+)$/i);
             if(match) return match[1].toUpperCase() + "-" + match[2];
@@ -1815,13 +1817,13 @@
                 <div class="bingo-card-wrapper">
                     <div class="bingo-card-header"><div>B</div><div>I</div><div>N</div><div>G</div><div>O</div></div>
                     <div class="bingo-card">
-                        <div class="cell">2</div><div class="cell">26</div><div class="cell">44</div><div class="cell">49</div><div class="cell">73</div>
-                        <div class="cell">10</div><div class="cell">17</div><div class="cell">37</div><div class="cell">51</div><div class="cell">70</div>
-                        <div class="cell">13</div><div class="cell">19</div><div class="cell free selected">★</div><div class="cell">47</div><div class="cell">63</div>
-                        <div class="cell">4</div><div class="cell">29</div><div class="cell">34</div><div class="cell">52</div><div class="cell">67</div>
-                        <div class="cell">15</div><div class="cell">25</div><div class="cell">35</div><div class="cell">54</div><div class="cell">71</div>
+                        <div class="cell">6</div><div class="cell">24</div><div class="cell">44</div><div class="cell">60</div><div class="cell">70</div>
+                        <div class="cell">5</div><div class="cell">21</div><div class="cell">41</div><div class="cell">49</div><div class="cell">61</div>
+                        <div class="cell">4</div><div class="cell">20</div><div class="cell free selected">★</div><div class="cell">52</div><div class="cell">74</div>
+                        <div class="cell">12</div><div class="cell">25</div><div class="cell">39</div><div class="cell">57</div><div class="cell">64</div>
+                        <div class="cell">2</div><div class="cell">16</div><div class="cell">38</div><div class="cell">47</div><div class="cell">63</div>
                     </div>
-                    <button class="bingo-btn" onclick="claimSpecificCard('42', this.parentElement, this)">BINGO! <span>#42</span></button>
+                    <button class="bingo-btn" onclick="claimSpecificCard('26', this.parentElement, this)">BINGO! <span>#26</span></button>
                 </div>
             `;
         }
