@@ -101,7 +101,7 @@
             box-shadow: 0 6px 16px rgba(0,0,0,0.4);
         }
 
-        /* REDESIGNED LOBBY */
+        /* LOBBY UI */
         #lobby-ui { 
             flex: 1; 
             display: flex; 
@@ -154,32 +154,6 @@
         .badge-balance { background: #10b981; color: #ffffff; cursor: pointer; }
         .badge-balance .badge-label { color: #d1fae5; }
         .badge-balance .badge-val { font-size: 0.72rem; }
-
-        .action-bar-chips {
-            background: #121c29;
-            padding: 0 10px 8px 10px;
-            display: flex;
-            gap: 6px;
-            justify-content: center;
-            flex-shrink: 0;
-        }
-        .chip-btn {
-            flex: 1;
-            padding: 5px 2px;
-            font-size: 0.65rem;
-            font-weight: 800;
-            border-radius: 8px;
-            border: 1px solid rgba(255,255,255,0.15);
-            background: rgba(255,255,255,0.06);
-            color: #e2e8f0;
-            cursor: pointer;
-            text-transform: uppercase;
-        }
-        .chip-btn.dep { color: #34d399; border-color: rgba(52, 211, 153, 0.4); }
-        .chip-btn.trans { color: #c084fc; border-color: rgba(192, 132, 252, 0.4); }
-        .chip-btn.with { color: #fb923c; border-color: rgba(251, 146, 60, 0.4); }
-        .chip-btn.guide { color: #60a5fa; border-color: rgba(96, 165, 250, 0.4); }
-        .chip-btn.res { color: #f59e0b; border-color: rgba(245, 158, 11, 0.5); }
 
         .grid-container-photo {
             flex: 1;
@@ -387,11 +361,11 @@
         .stat-val { display: block; font-size: 0.85rem; font-weight: 900; color: #00ff88; margin-top: 1px; }
         .stat-val.gold { color: #ffcc00; }
 
-        /* BIG BALL LOWERED PRECISELY TO REACH THE BOTTOM DIVIDER LINE */
+        /* BIG BALL LOWERED DOWN TO TOUCH THE SUB-HEADER LINE */
         #ball-circle {
             position: absolute;
             right: 12px;
-            top: 17px; /* Lowered from 4px so the bottom touches the border line */
+            top: 17px;
             width: 88px;
             height: 88px;
             background: #f59e0b;
@@ -448,11 +422,6 @@
             color: #fff;
             box-shadow: 0 1px 2px rgba(0,0,0,0.15);
         }
-        .recent-ball.ball-b { background: #2563eb; }
-        .recent-ball.ball-i { background: #dc2626; }
-        .recent-ball.ball-n { background: #eab308; border: 1.5px solid #b45309; }
-        .recent-ball.ball-g { background: #16a34a; }
-        .recent-ball.ball-o { background: #2563eb; }
 
         .game-main-content-row {
             display: flex;
@@ -472,7 +441,7 @@
             border-right: 1px solid #94a3b8;
             height: 100%; 
             padding: 6px;
-            gap: 8px;
+            gap: 6px;
             box-sizing: border-box;
             justify-content: space-between;
         }
@@ -483,6 +452,7 @@
             background: #cbd5e1;
         }
 
+        /* MAIN BOARD EXTENDED FULL HEIGHT DIRECTLY DOWN TO FOOTER LINE */
         .main-board-container {
             display: flex;
             flex-direction: column;
@@ -490,16 +460,19 @@
             border-radius: 12px;
             overflow: hidden;
             border: 1px solid #cbd5e1;
-            max-height: calc(100vh - 155px);
+            flex: 1;
+            min-height: 0;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.06);
         }
 
         .main-board-bingo-header {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
             gap: 6px;
-            padding: 4px;
+            padding: 5px 4px;
             background: #f1f5f9;
             border-bottom: 1px solid #cbd5e1;
+            flex-shrink: 0;
         }
         .main-board-bingo-header div {
             background: #15803d;
@@ -508,34 +481,41 @@
             text-align: center;
             border-radius: 3px;
             padding: 3px 0;
-            font-size: 0.8rem;
+            font-size: 0.82rem;
             letter-spacing: 1px;
         }
 
         .main-board-vertical {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
-            gap: 6px;
+            gap: 4px;
             padding: 4px;
             background: #cbd5e1;
-            overflow-y: auto;
-            max-height: calc(100vh - 170px);
+            flex: 1;
+            min-height: 0;
+            overflow: hidden;
         }
-        .board-column { display: flex; flex-direction: column; gap: 6px; }
+        .board-column { 
+            display: flex; 
+            flex-direction: column; 
+            gap: 3px; 
+            height: 100%; 
+        }
 
         .ball-dot {
             flex: 1;
-            min-height: 17px;
-            font-size: 0.8rem;
+            min-height: 0;
+            font-size: 0.85rem;
             background: #ffffff;
             display: flex;
             align-items: center;
             justify-content: center;
             color: #0f172a;
             font-weight: 900;
-            border-radius: 2px;
+            border-radius: 3px;
             border: 1px solid #cbd5e1;
             letter-spacing: -0.5px;
+            box-sizing: border-box;
         }
         .ball-dot.active { background: #22c55e !important; color: #ffffff !important; border-color: #16a34a; font-weight: 900; }
         .ball-dot.yellow-active { background: #ffcc00 !important; color: #000000 !important; border-color: #d97706; font-weight: 900; }
@@ -553,6 +533,7 @@
             border-radius: 10px;
             box-shadow: 0 2px 6px rgba(0,0,0,0.25);
             border: 1px solid #1e293b;
+            margin-top: 2px;
         }
         .room-footer-bar span {
             font-size: 0.65rem;
@@ -583,6 +564,58 @@
             gap: 6px;
             overflow-y: auto;
             flex: 1;
+        }
+
+        /* WAITING SCREEN (Matches Screenshot 2026-10-13 094246.png) */
+        .waiting-screen-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            box-sizing: border-box;
+            text-align: center;
+        }
+
+        .waiting-hourglass-circle {
+            width: 96px;
+            height: 96px;
+            border-radius: 50%;
+            background: #ffffff;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.8rem;
+            margin-bottom: 24px;
+            animation: gentlePulse 2s infinite ease-in-out;
+        }
+
+        @keyframes gentlePulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .waiting-title {
+            font-size: 1.15rem;
+            font-weight: 900;
+            font-style: italic;
+            color: #0f172a;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+        }
+
+        .waiting-subtitle {
+            font-size: 0.75rem;
+            font-weight: 800;
+            color: #64748b;
+            letter-spacing: 1.4px;
+            line-height: 1.6;
+            text-transform: uppercase;
+            max-width: 220px;
         }
 
         .bingo-card-wrapper {
@@ -673,9 +706,7 @@
         .btn-transfer { background: var(--purple); color: white; }
         .btn-how-to { background: #3b82f6; color: white; border: 1px solid #60a5fa; }
 
-        /* =========================================================
-           WINNER RESULT UI (MATCHES photo_2026-10-13_09-03-27.jpg)
-           ========================================================= */
+        /* ================= WINNER RESULT UI ================= */
         #result-ui-modal {
             position: fixed;
             inset: 0;
@@ -981,7 +1012,6 @@
             font-weight: 900;
             font-size: 0.95rem;
         }
-        .result-close-x:hover { background: #e2e8f0; color: #0f172a; }
     </style>
 </head>
 <body>
@@ -1011,6 +1041,7 @@
         <div id="inline-notification"></div>
 
         <div id="lobby-ui">
+            <!-- TOP STATS BAR (Tap BALANCE to deposit) -->
             <div class="stats-badges-bar">
                 <div class="badge-pill badge-room">
                     <span class="badge-label">ROOM</span>
@@ -1024,24 +1055,18 @@
                     <span class="badge-label">TIME</span>
                     <span class="badge-val" id="timer">28s</span>
                 </div>
-                <div class="badge-pill badge-balance" onclick="openM('dep-m')">
+                <div class="badge-pill badge-balance" onclick="openM('dep-m')" title="ሂሳብ ለመሙላት ይጫኑ">
                     <span class="badge-label">BALANCE</span>
                     <span class="badge-val" id="lobby-balance-val">12.00 ETB</span>
                 </div>
             </div>
 
-            <div class="action-bar-chips">
-                <button class="chip-btn dep" onclick="openM('dep-m')">Deposit</button>
-                <button class="chip-btn trans" onclick="openM('trans-m')">Transfer</button>
-                <button class="chip-btn with" onclick="openM('with-m')">Withdraw</button>
-                <button class="chip-btn guide" onclick="openM('guide-m')">Rules</button>
-                <button class="chip-btn res" onclick="openResultUI()">🏆 Result</button>
-            </div>
-
+            <!-- 500 TICKETS GRID -->
             <div class="grid-container-photo">
                 <div class="grid-8-cols" id="ticket-area"></div>
             </div>
 
+            <!-- BOTTOM TRAY -->
             <div class="bottom-slots-tray">
                 <div class="slot-card empty" id="slot-1-box" onclick="alert('እባክዎ ከላይ ካሉት ቁጥሮች ካርቴላ ይምረጡ')">
                     <div class="slot-icon">+</div>
@@ -1062,7 +1087,7 @@
         </div>
 
         <div id="game-ui" style="display:none;">
-            <!-- TOP BAR (Matching Screenshot 2026-10-13 085245.png) -->
+            <!-- TOP BAR -->
             <div class="game-top-bar">
                 <div style="display:flex; align-items:center; gap:28px;">
                     <div class="global-stats-bar">
@@ -1081,13 +1106,12 @@
                     </div>
                 </div>
 
-                <!-- BIG PROMINENT CIRCLE LOWERED DOWN TO TOUCH THE DIVIDER LINE -->
+                <!-- BIG PROMINENT CIRCLE LOWERED DOWN TO TOUCH THE LINE -->
                 <div id="ball-circle">I-18</div>
             </div>
 
-            <!-- SUB-HEADER ROW: 3 Small Balls Pill Badge placed close to the Big Ball Circle -->
+            <!-- SUB-HEADER ROW -->
             <div class="sub-header-row">
-                <!-- 3 RECENT BALLS PILL CONTAINER -->
                 <div class="recent-balls-pill" id="recent-balls-container">
                     <div class="recent-ball" style="background:#2563eb;">G56</div>
                     <div class="recent-ball" style="background:#10b981;">O70</div>
@@ -1096,40 +1120,52 @@
             </div>
 
             <div class="game-main-content-row">
-                <!-- LEFT PANEL (Main board 43% width) -->
+                <!-- LEFT PANEL (Main board extended directly to footer) -->
                 <div class="game-left-panel">
                     <div class="main-board-container">
-                        <!-- Green B I N G O Header on top of Main Board with 6px gap -->
                         <div class="main-board-bingo-header">
                             <div>B</div><div>I</div><div>N</div><div>G</div><div>O</div>
                         </div>
                         <div class="main-board-vertical" id="main-board"></div>
                     </div>
 
-                    <!-- SEPARATE REFRESH BOX WITH CLEAR GAP -->
                     <div class="room-footer-bar">
                         <span id="room-text-lbl" onclick="toggleViewMode()">ROOM VIP 💰💰</span>
+                        <span id="toggle-wait-btn" onclick="toggleWaitingScreenMode()">⏳ WAITING</span>
                         <span onclick="forceRecoveryRefresh()">🔄 REFRESH</span>
                     </div>
                 </div>
 
-                <!-- MIDDLE GAP (2% space) -->
+                <!-- MIDDLE GAP -->
                 <div class="game-mid-gap"></div>
 
-                <!-- RIGHT PANEL (55% width) -->
+                <!-- RIGHT PANEL: Shows Bingo Cards OR Waiting in Progress -->
                 <div class="game-right-panel">
+                    <!-- CARDS AREA -->
                     <div id="card-area"></div>
+
+                    <!-- WAITING IN PROGRESS SCREEN -->
+                    <div id="waiting-screen" class="waiting-screen-container" style="display:none;">
+                        <div class="waiting-hourglass-circle">
+                            <span>⏳</span>
+                        </div>
+                        <div class="waiting-title">GAME IN PROGRESS</div>
+                        <div class="waiting-subtitle">
+                            PLEASE WAIT FOR THE<br>
+                            NEXT BUYING ROUND TO<br>
+                            JOIN.
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- WINNER RESULT UI MODAL (Matches photo_2026-10-13_09-03-27.jpg) -->
+    <!-- WINNER RESULT UI (BROADCAST TO ALL PLAYERS ON WIN) -->
     <div id="result-ui-modal">
         <div class="result-card-container">
             <button class="result-close-x" onclick="closeResultUI()" title="ዝጋ">✕</button>
 
-            <!-- Top Header Row -->
             <div class="result-top-header-row">
                 <div class="result-winners-count-left">
                     <span class="result-count-num" id="res-winners-count">4</span>
@@ -1141,18 +1177,15 @@
                 </div>
             </div>
 
-            <!-- Subtitle -->
             <div class="result-subtitle-headline">
                 <span id="res-winner-hero">Tew</span> and <span id="res-others-count">3</span> others <span class="plain-text">have won!</span>
             </div>
 
-            <!-- Total Prize Pool Box -->
             <div class="result-prize-pool-pill">
                 <span class="result-prize-pool-label">TOTAL PRIZE POOL</span>
                 <span class="result-prize-pool-val" id="res-total-pool">4520 ETB</span>
             </div>
 
-            <!-- Winning Card Preview Box -->
             <div class="result-card-preview-box">
                 <div class="result-card-inner-top">
                     <span class="result-card-title-lbl" id="res-card-label">CARD #18</span>
@@ -1164,10 +1197,8 @@
                 <button class="result-carousel-next-btn" onclick="nextWinnerCardSlide()" title="ቀጣይ አሸናፊ">›</button>
             </div>
 
-            <!-- Pagination Dots -->
             <div class="result-dots-row" id="res-dots-container"></div>
 
-            <!-- Next Round Timer Bar -->
             <div class="result-next-round-bar">
                 <div class="result-next-round-fill" id="res-next-round-bar-fill"></div>
                 <span class="result-next-round-text" id="res-next-round-lbl">NEXT ROUND: 2S</span>
@@ -1175,7 +1206,7 @@
         </div>
     </div>
 
-    <!-- Modals -->
+    <!-- MODALS -->
     <div id="dep-m" class="modal">
         <div class="modal-content">
             <h3>📥 ሂሳብ ሙሉ (Deposit)</h3>
@@ -1223,8 +1254,9 @@
         let currentWinnerCardIndex = 0;
         let nextRoundCountdownSec = 2;
         let nextRoundTimerInterval = null;
+        let isWaitingMode = false;
+        let myPurchasedTickets = [11, 18];
 
-        // Exact winners list matching user's photo
         const winnerList = [
             {
                 id: '18',
@@ -1315,6 +1347,22 @@
             }
         }
 
+        function toggleWaitingScreenMode() {
+            isWaitingMode = !isWaitingMode;
+            const cardArea = document.getElementById('card-area');
+            const waitingScreen = document.getElementById('waiting-screen');
+            const btn = document.getElementById('toggle-wait-btn');
+            if (isWaitingMode) {
+                cardArea.style.display = 'none';
+                waitingScreen.style.display = 'flex';
+                if(btn) btn.innerText = '🎟️ CARDS';
+            } else {
+                cardArea.style.display = 'flex';
+                waitingScreen.style.display = 'none';
+                if(btn) btn.innerText = '⏳ WAITING';
+            }
+        }
+
         function openM(id) { document.getElementById(id).style.display = 'flex'; }
         function closeM(id) { document.getElementById(id).style.display = 'none'; }
 
@@ -1330,14 +1378,6 @@
             phone = cleanPhone;
             username = inputName;
             showGameUI();
-        }
-
-        function logoutUser() {
-            if(confirm("ጨዋታውን መልቀቅ ይፈልጋሉ?")) {
-                localStorage.removeItem('phone');
-                phone = '';
-                showAuthUI();
-            }
         }
 
         function updateBalanceUI() {
@@ -1400,6 +1440,14 @@
 
                     socket.on('game_update_10', function(d) {
                         applyGameStateData(d);
+                    });
+
+                    // Broadcast to ALL players when a winner is declared
+                    socket.on('bingo_won', function(d) {
+                        broadcastWinnerResult(d);
+                    });
+                    socket.on('round_finished', function(d) {
+                        broadcastWinnerResult(d);
                     });
                 } catch(e) {}
             }
@@ -1482,13 +1530,19 @@
                 }
                 
                 const cardArea = document.getElementById('card-area');
-                if(cardArea) {
+                const waitingScreen = document.getElementById('waiting-screen');
+                if(myCards.length > 0) {
+                    isWaitingMode = false;
+                    cardArea.style.display = 'flex';
+                    waitingScreen.style.display = 'none';
                     cardArea.innerHTML = "";
-                    if(myCards.length > 0) {
-                        myCards.forEach((cObj, i) => { renderCard(cObj.matrix, i, cObj.id); });
-                    } else {
-                        renderSampleCard();
-                    }
+                    myCards.forEach((cObj, i) => { renderCard(cObj.matrix, i, cObj.id); });
+                } else if(!isWaitingMode && myPurchasedTickets.length > 0) {
+                    renderSampleCard();
+                } else {
+                    isWaitingMode = true;
+                    cardArea.style.display = 'none';
+                    waitingScreen.style.display = 'flex';
                 }
             }
         }
@@ -1540,7 +1594,7 @@
             const n = getColNumbers(31, 45, 5, 11);
             const g = getColNumbers(46, 60, 5, 16);
             const o = getColNumbers(61, 75, 5, 21);
-            n[2] = 0; // Free space
+            n[2] = 0;
             const matrix = [];
             for (let r = 0; r < 5; r++) {
                 matrix.push(b[r], i[r], n[r], g[r], o[r]);
@@ -1567,7 +1621,7 @@
             if (!box) return;
             if (ticketObj) {
                 box.className = 'slot-card active-cartela';
-                box.onclick = () => { alert("ካርቴላ #" + ticketObj.id + " (5x5 BINGO) ተመርጧል!"); };
+                box.onclick = () => { toggleViewMode(); };
                 
                 let cellsHtml = '';
                 ticketObj.matrix.forEach((num, idx) => {
@@ -1753,7 +1807,19 @@
                         <div class="cell">13</div><div class="cell">19</div><div class="cell">31</div><div class="cell">54</div><div class="cell">72</div>
                         <div class="cell">5</div><div class="cell">24</div><div class="cell">36</div><div class="cell">50</div><div class="cell">63</div>
                     </div>
-                    <button class="bingo-btn" onclick="openResultUI()">BINGO! <span>#11</span></button>
+                    <button class="bingo-btn" onclick="claimSpecificCard('11', this.parentElement, this)">BINGO! <span>#11</span></button>
+                </div>
+
+                <div class="bingo-card-wrapper">
+                    <div class="bingo-card-header"><div>B</div><div>I</div><div>N</div><div>G</div><div>O</div></div>
+                    <div class="bingo-card">
+                        <div class="cell selected">12</div><div class="cell">17</div><div class="cell">45</div><div class="cell">50</div><div class="cell">73</div>
+                        <div class="cell">5</div><div class="cell selected">25</div><div class="cell">31</div><div class="cell">47</div><div class="cell">69</div>
+                        <div class="cell">4</div><div class="cell">27</div><div class="cell free selected">★</div><div class="cell">53</div><div class="cell">71</div>
+                        <div class="cell">3</div><div class="cell">28</div><div class="cell">34</div><div class="cell selected">48</div><div class="cell">70</div>
+                        <div class="cell">10</div><div class="cell">20</div><div class="cell">35</div><div class="cell">55</div><div class="cell selected">67</div>
+                    </div>
+                    <button class="bingo-btn" style="background:linear-gradient(135deg, #10b981, #059669);" onclick="claimSpecificCard('18', this.parentElement, this)">BINGO! <span>#18</span></button>
                 </div>
             `;
         }
@@ -1778,17 +1844,20 @@
             const horn = document.getElementById('win-horn');
             if(horn) horn.play().catch(()=>{});
 
-            openResultUI();
+            // Immediately show Result UI to player & broadcast
+            broadcastWinnerResult({ cardId: targetCardId, winnerName: username || 'Tew' });
 
             const markedCells = [];
-            cardWrapEl.querySelectorAll('.cell.selected').forEach(cell => {
-                let val = cell.innerText.trim();
-                if (val && val !== "FREE" && val !== "★") {
-                    markedCells.push(parseInt(val));
-                }
-            });
+            if(cardWrapEl) {
+                cardWrapEl.querySelectorAll('.cell.selected').forEach(cell => {
+                    let val = cell.innerText.trim();
+                    if (val && val !== "FREE" && val !== "★") {
+                        markedCells.push(parseInt(val));
+                    }
+                });
+            }
 
-            btnEl.disabled = true;
+            if(btnEl) btnEl.disabled = true;
             fetch('/claim_bingo', { 
                 method:'POST', 
                 headers:{ 'Content-Type':'application/json' }, 
@@ -1797,20 +1866,22 @@
             .then(r => r.json())
             .then(d => { 
                 if(!d || !d.success) { 
-                    btnEl.disabled = false; 
+                    if(btnEl) btnEl.disabled = false; 
                 } else {
                     forceRecoveryRefresh();
                 }
-            }).catch(() => { btnEl.disabled = false; }); 
+            }).catch(() => { if(btnEl) btnEl.disabled = false; }); 
         }
 
-        /* ================= RESULT UI LOGIC ================= */
-        function openResultUI() {
+        /* ================= BROADCAST RESULT UI ================= */
+        function broadcastWinnerResult(data) {
             currentWinnerCardIndex = 0;
             renderWinnerSlide(currentWinnerCardIndex);
             document.getElementById('result-ui-modal').style.display = 'flex';
             
-            // Countdown loop
+            const horn = document.getElementById('win-horn');
+            if(horn) horn.play().catch(()=>{});
+
             nextRoundCountdownSec = 2;
             clearInterval(nextRoundTimerInterval);
             updateNextRoundBar();
@@ -1862,7 +1933,6 @@
                 grid.appendChild(cell);
             });
 
-            // Dots
             const dotsArea = document.getElementById('res-dots-container');
             dotsArea.innerHTML = "";
             winnerList.forEach((_, dIdx) => {
