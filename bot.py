@@ -477,18 +477,35 @@ def webhook():
                 upsert=True
             )
             
-            # የተሳካ ምዝገባ መልእክት እና ዌብ-አፕ ሊንክ መላክ
-            u_10 = f"{WEB_APP_URL}"
-            keyboard = {
-                "inline_keyboard": [
-                    [{"text": "🎮 ዌብ-አፕ (Web App) ይክፈቱ", "web_app": {"url": u_10}}]
-                ]
-            }
+            # የስልክ ማጋሪያ ቁልፉን ማጥፋት (Remove Keyboard)
             url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
             requests.post(url, json={
                 "chat_id": chat_id,
-                "text": "✅ ምዝገባዎ ተጠናቋል!\n🎁 የ 20.00 ETB መነሻ ቀሪ ሂሳብ ተሰጥቶዎታል።\n\nጨዋታውን ለመጀመር ከታች ያለውን ቁልፍ ይጫኑ፦",
-                "reply_markup": keyboard
+                "text": "✅ ምዝገባዎ ተጠናቋል!\n🎁 የ 20.00 ETB መነሻ ቀሪ ሂሳብ ተሰጥቶዎታል።",
+                "parse_mode": "Markdown",
+                "reply_markup": {"remove_keyboard": True}
+            }, timeout=2)
+
+            # ልክ እንደ /play ትዕዛዝ የጨዋታ መምረጫ ቁልፎችን መላክ
+            u_10 = f"{WEB_APP_URL}?phone={formatted_phone}"
+            u_20 = f"{WEB_APP_URL}/twenty?phone={formatted_phone}"
+            u_50 = f"{WEB_APP_URL}/super?phone={formatted_phone}"
+            u_super = f"{WEB_APP_URL}/superbesh?phone={formatted_phone}"
+
+            play_keyboard = {
+                "inline_keyboard": [
+                    [{"text": "🎮 PLAY | በ10 ብር", "web_app": {"url": u_10}}], 
+                    [{"text": "🎮 PLAY | በ20 ብር", "web_app": {"url": u_20}}], 
+                    [{"text": "🎮 PLAY | በ50 ብር", "web_app": {"url": u_50}}], 
+                    [{"text": "🎮 BeshBingo (ሳምንታዊ) | 50 ብር", "web_app": {"url": u_super}}],
+                    [{"text": "⚽ BeshBingo Bonus", "callback_data": "Besh_bingo_bonus"}]
+                ]
+            }
+            requests.post(url, json={
+                "chat_id": chat_id,
+                "text": "🕹 *PLAY IN:*\nጨዋታ ለመጀመር ከታች ካሉት ክፍሎች አንዱን ይምረጡ፦",
+                "parse_mode": "Markdown",
+                "reply_markup": play_keyboard
             }, timeout=2)
             return "OK", 200
 
