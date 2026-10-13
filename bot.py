@@ -602,7 +602,7 @@ def run_game_loop(room_type):
                 continue
 
             if shuffled:
-                for j in range(2, -1, -1):
+                for j in range(3, -1, -1):
                     if state["status"] != "playing":
                         break
                     state["ball_timer"] = j
@@ -631,7 +631,7 @@ def run_game_loop(room_type):
                     state["current_ball"] = b
                     state["drawn_balls"].append(b)
                     broadcast_game_state(room_type) 
-                    socketio.sleep(3.5) 
+                    socketio.sleep(5) 
             
             if state["status"] == "playing":
                 state["status"] = "result"
@@ -1001,7 +1001,7 @@ def claim_bingo():
 
             def process_claims_by_ball():
                 global claim_lock_active, pending_claims
-                socketio.sleep(0.2)
+                socketio.sleep(0.5)
 
                 total_prize = state["pot"] * 0.8  
                 num_winners = len(pending_claims[room])
