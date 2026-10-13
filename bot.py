@@ -1,6 +1,7 @@
 import os
 import time
 from datetime import datetime, timedelta
+import gevent
 from gevent import monkey
 monkey.patch_all()
 
@@ -975,7 +976,6 @@ def webhook():
 
         user_wallet = wallets.find_one({"chat_id": chat_id})
         
-        # Withdraw መጠን እየጠበቁ ከሆነ
         if user_wallet and user_wallet.get("state") == "awaiting_withdraw_amount":
             wallets.update_one({"chat_id": chat_id}, {"$unset": {"state": "", "method": ""}})
             method = user_wallet.get("pending_method", "TELEBIRR")
@@ -1003,7 +1003,6 @@ def webhook():
                 })
                 return "OK", 200
 
-            # 5 ደቂቃ ገደብ
             five_mins_ago = datetime.utcnow() - timedelta(minutes=5)
             recent_wits_count = transactions.count_documents({
                 "phone": db_phone,
@@ -1017,7 +1016,6 @@ def webhook():
                 })
                 return "OK", 200
 
-            # ባላንስ ወዲያውኑ መቀነስ (ቆልፎ መያዝ)
             updated_user = wallets.find_one_and_update(
                 {"phone": db_phone, "balance": {"$gte": amt}},
                 {"$inc": {"balance": -amt}},
@@ -1067,7 +1065,6 @@ def webhook():
             })
             return "OK", 200
 
-        # SMS Deposit Handler & Validation
         if user_wallet and text and chat_id != str(ADMIN_ID):
             is_only_digits = text.isdigit()
             is_only_letters = text.isalpha()
@@ -1226,7 +1223,6 @@ def webhook():
                     send_telegram("❌ ትክክለኛ መረጃ አላስገቡም። እባክዎ እንደገና ይሞክሩ:\n`2026-10-01 2026-10-07 deposit`")
                 return "OK", 200
 
-        # === /deposit, /withdraw, /play, /transfer handlers ===
         if text.lower() == "/deposit":
             url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
             dep_keyboard = {
@@ -1502,7 +1498,6 @@ def webhook():
             requests.post(answer_url, json={"callback_query_id": cq_id})
             return "OK", 200
 
-        # Withdraw Method Select (CBE or Telebirr)
         if data_str in ["user_wit_cbe", "user_wit_tele"]:
             method_name = "CBE BIRR" if data_str == "user_wit_cbe" else "TELE BIRR"
             wallets.update_one(
