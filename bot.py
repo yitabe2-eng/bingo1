@@ -9,7 +9,7 @@ import requests
 import re
 import hmac
 import hashlib
-from urllib.parse import parse_qsl, unquote
+from urllib.parse import parse_qsl
 from flask import Flask, render_template, jsonify, request
 from pymongo import MongoClient
 from flask_cors import CORS
@@ -207,11 +207,11 @@ def get_financial_stats():
     ]))
 
     today_wit = list(transactions.aggregate([
-        {"$match": {"type": "withdrawal", "status": "approved", "timestamp": {"$gte": today_start}}},
+        {"$match": {"type": "withdrawal", "status": "success", "timestamp": {"$gte": today_start}}},
         {"$group": {"_id": None, "total": {"$sum": "$amount"}}}
     ]))
     week_wit = list(transactions.aggregate([
-        {"$match": {"type": "withdrawal", "status": "approved", "timestamp": {"$gte": week_start}}},
+        {"$match": {"type": "withdrawal", "status": "success", "timestamp": {"$gte": week_start}}},
         {"$group": {"_id": None, "total": {"$sum": "$amount"}}}
     ]))
 
@@ -772,53 +772,32 @@ def claim_bingo():
 def request_deposit():
     d = request.json or {}
     ph = sanitize_input(str(d.get('phone')))
-    method = sanitize_input(str(d.get('method', 'TELE BIRR'))) 
     room = sanitize_input(str(d.get('room', '10')))
     try:
         amt = float(d.get('amount', 0))
     except ValueError:
         amt = 0
-    t_id = sanitize_input(d.get('transaction_id', 'N/A'))
     
-    if t_id.isdigit():
-        return jsonify({"success": False, "msg": "የትራንዛክሽን አይድው ስህተት ነው! ቁጥር ብቻ መሆን አይችልም።"})
-    if len(t_id) < 10:
-        return jsonify({"success": False, "msg": "የትራንዛክሽን አይድው ስህተት ነው! ከ 10 ቁምፊዎች ማነስ የለበትም።"})
-
     user = wallets.find_one({"phone": ph})
-    db_phone = user["phone"] if user else ph
-    
+    if not user:
+        return jsonify({"success": False, "msg": "ተጠቃሚው አልተገኘም!"})
+    db_phone = user["phone"]
+
+    # 5 ደቂቃ ገደብ (በ5 ደቂቃ ውስጥ ከ 2 ጊዜ በላይ መጠየቅ አይቻልም)
+    five_mins_ago = datetime.utcnow() - timedelta(minutes=5)
+    recent_deps_count = transactions.count_documents({
+        "phone": db_phone,
+        "type": "deposit",
+        "timestamp": {"$gte": five_mins_ago}
+    })
+    if recent_deps_count >= 2:
+        return jsonify({"success": False, "msg": "በ 5 ደቂቃ ውስጥ ከ 2 ጊዜ በላይ ዲፖዚት ጥያቄ መላክ አይቻልም!"})
+
     is_blocked = blocked_phones.find_one({"phone": db_phone})
     if is_blocked:
-        return jsonify({"success": True, "msg": "የነጻዉ አልቋል በቴሌ ብር ወይም ሲቢኢ ብር ወደ 0945880474 ላክ"})
+        return jsonify({"success": True, "msg": "አካውንትዎ ታግዷል!"})
 
-    tx_res = transactions.insert_one({
-        "phone": db_phone, 
-        "type": "deposit", 
-        "amount": amt, 
-        "status": "pending", 
-        "method": method, 
-        "tx_id": t_id, 
-        "room": room, 
-        "timestamp": datetime.utcnow()
-    })
-    tx_ref = str(tx_res.inserted_id)
-
-    msg = f"💰 *Deposit Request (Room: {room})*\n💳 Method: `{method}`\n📞 Phone: `{db_phone}`\n💵 Amount: `{amt}` ETB\n🆔 ID: `{t_id}`"
-        
-    keyboard = {
-        "inline_keyboard": [
-            [
-                {"text": "✅ approved", "callback_data": f"app_dep_{tx_ref}_{db_phone}_{amt}"},
-                {"text": "❌ ሰርዝ (Reject)", "callback_data": f"rej_dep_{tx_ref}_{db_phone}"}
-            ],
-            [
-                {"text": "🚫 ተጠቃሚን ባን አድርግ (Ban)", "callback_data": f"ban_user_{db_phone}"}
-            ]
-        ]
-    }
-    send_telegram(msg, reply_markup=keyboard)
-    return jsonify({"success": True, "msg": "የዲፖዚት ጥያቄዎ ለአድሚን ተልኳል!"})
+    return jsonify({"success": True, "msg": "እባክዎ ኤስኤምኤሱን በቴሌግራም ቦት በኩል ይላኩ።"})
 
 @app.route('/request_withdrawal', methods=['POST'])
 def request_withdrawal():
@@ -840,6 +819,27 @@ def request_withdrawal():
     if user.get("balance", 0) < amt:
         return jsonify({"success": False, "msg": "በቂ ባላንስ የለዎትም!"})
 
+    # 5 ደቂቃ ገደብ (በ5 ደቂቃ ውስጥ ከ 2 ጊዜ በላይ ዊዝድሮዋል መጠየቅ አይቻልም)
+    five_mins_ago = datetime.utcnow() - timedelta(minutes=5)
+    recent_wits_count = transactions.count_documents({
+        "phone": db_phone,
+        "type": "withdrawal",
+        "timestamp": {"$gte": five_mins_ago}
+    })
+    if recent_wits_count >= 2:
+        return jsonify({"success": False, "msg": "በ 5 ደቂቃ ውስጥ ከ 2 ጊዜ በላይ የዊዝድሮዋል ጥያቄ መላክ አይቻልም!"})
+
+    # ባላንሱን ወዲያውኑ መቆለፍ (መቀነስ)
+    updated_user = wallets.find_one_and_update(
+        {"phone": db_phone, "balance": {"$gte": amt}},
+        {"$inc": {"balance": -amt}},
+        return_document=True
+    )
+    if not updated_user:
+        return jsonify({"success": False, "msg": "በቂ ባላንስ የለዎትም!"})
+    
+    gevent.spawn(notify_user_balance_update, db_phone, updated_user.get("balance", 0))
+
     tx_res = transactions.insert_one({
         "phone": db_phone, 
         "type": "withdrawal", 
@@ -854,11 +854,9 @@ def request_withdrawal():
     keyboard = {
         "inline_keyboard": [
             [
-                {"text": "✅ approved", "callback_data": f"app_wit_{tx_ref}_{db_phone}_{amt}"},
-                {"text": "❌ ሰርዝ (Reject)", "callback_data": f"rej_wit_{tx_ref}_{db_phone}_{amt}"}
-            ],
-            [
-                {"text": "🚫 ተጠቃሚን ባን አድርግ (Ban)", "callback_data": f"ban_user_{db_phone}"}
+                {"text": "✅ Approve", "callback_data": f"app_wit_{tx_ref}_{db_phone}_{amt}"},
+                {"text": "❌ Reject", "callback_data": f"rej_wit_{tx_ref}_{db_phone}_{amt}"},
+                {"text": "🚫 Ban", "callback_data": f"ban_user_{db_phone}"}
             ]
         ]
     }
@@ -891,27 +889,36 @@ def request_transfer():
     if db_sender_phone == db_receiver_phone:
         return jsonify({"success": False, "msg": "ለራስዎ ገንዘብ ማስተላለፍ አይችሉም!"})
 
-    tx_res = transactions.insert_one({
-        "phone": db_sender_phone, 
-        "receiver_phone": db_receiver_phone, 
-        "type": "transfer", 
-        "amount": amt, 
-        "status": "pending", 
+    # አውቶማቲክ P2P (Atomic Transfer)
+    sender_updated = wallets.find_one_and_update(
+        {"phone": db_sender_phone, "balance": {"$gte": amt}},
+        {"$inc": {"balance": -amt}},
+        return_document=True
+    )
+    if not sender_updated:
+        return jsonify({"success": False, "msg": "በቂ ባላንስ የለዎትም!"})
+
+    receiver_updated = wallets.find_one_and_update(
+        {"phone": db_receiver_phone},
+        {"$inc": {"balance": amt}},
+        return_document=True,
+        upsert=True
+    )
+
+    transactions.insert_one({
+        "phone": db_sender_phone,
+        "receiver_phone": db_receiver_phone,
+        "type": "transfer",
+        "amount": amt,
+        "status": "success",
         "timestamp": datetime.utcnow()
     })
-    tx_ref = str(tx_res.inserted_id)
 
-    msg = f"🔄 *Transfer Pending Request*\n📤 From: `{db_sender_phone}`\n📥 To: `{db_receiver_phone}`\n💵 Amount: `{amt}` ETB"
-    keyboard = {
-        "inline_keyboard": [
-            [
-                {"text": "✅ approved", "callback_data": f"app_trf_{tx_ref}_{db_sender_phone}_{db_receiver_phone}_{amt}"},
-                {"text": "❌ ሰርዝ (Reject)", "callback_data": f"rej_trf_{tx_ref}_{db_sender_phone}_{db_receiver_phone}_{amt}"}
-            ]
-        ]
-    }
-    send_telegram(msg, reply_markup=keyboard)
-    return jsonify({"success": True, "msg": "የትራንስፈር ጥያቄዎ ወደ pending ተልኳል፤ አድሚኑ approved ሲያደርገው ባላንስዎ ይሞላል!"})
+    gevent.spawn(notify_user_balance_update, db_sender_phone, sender_updated.get("balance", 0))
+    if receiver_updated:
+        gevent.spawn(notify_user_balance_update, db_receiver_phone, receiver_updated.get("balance", 0))
+
+    return jsonify({"success": True, "msg": f"በተሳካ ሁኔታ {amt} ETB ተላልፏል!"})
 
 @app.route('/register_or_login', methods=['POST'])
 def register_or_login():
@@ -981,6 +988,151 @@ def webhook():
                 upsert=False
             )
         
+        # === ተጠቃሚው ስልክ ቁጥሩን ሲያጋራ (Contact Shared) ===
+        if "contact" in msg:
+            contact = msg["contact"]
+            raw_phone = contact.get("phone_number", "")
+            telegram_id = str(msg.get("from", {}).get("id", ""))
+            first_name = sanitize_input(msg.get("from", {}).get("first_name", "User"))
+            username = sanitize_input(msg.get("from", {}).get("username", ""))
+            
+            clean_phone = format_phone_number(raw_phone)
+            
+            if not clean_phone:
+                requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage", json={
+                    "chat_id": chat_id,
+                    "text": "❌ ስልክ ቁጥርዎን ማንበብ አልተቻለም። እባክዎ እንደገና ይሞክሩ።"
+                })
+                return "OK", 200
+
+            existing_phone_user = wallets.find_one({"phone": clean_phone})
+            if existing_phone_user and str(existing_phone_user.get("telegram_id")) != telegram_id:
+                requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage", json={
+                    "chat_id": chat_id,
+                    "text": "❌ ይህ ስልክ ቁጥር ከሌላ የቴሌግራም አካውንት ጋር ተመዝግቧል!"
+                })
+                return "OK", 200
+
+            update_doc = {
+                "$set": {
+                    "telegram_id": telegram_id,
+                    "phone": clean_phone,
+                    "first_name": first_name,
+                    "username": username,
+                    "status": "ACTIVE",
+                    "chat_id": chat_id
+                },
+                "$setOnInsert": {
+                    "balance": 20.00,
+                    "created_at": datetime.utcnow()
+                }
+            }
+
+            wallets.update_one(
+                {"telegram_id": telegram_id},
+                update_doc,
+                upsert=True
+            )
+
+            u_10 = f"{WEB_APP_URL}"
+            u_20 = f"{WEB_APP_URL}/twenty"
+            u_50 = f"{WEB_APP_URL}/super"
+            u_super = f"{WEB_APP_URL}/superbesh"
+
+            keyboard = {
+                "inline_keyboard": [
+                    [{"text": "🎮 PLAY | በ10 ብር", "web_app": {"url": u_10}}], 
+                    [{"text": "🎮 PLAY | በ20 ብር", "web_app": {"url": u_20}}], 
+                    [{"text": "🎮 PLAY | በ50 ብር", "web_app": {"url": u_50}}], 
+                    [{"text": "🎮 BeshBingo (ሳምንታዊ) | 50 ብር", "web_app": {"url": u_super}}]
+                ]
+            }
+            
+            success_txt = (
+                "✅ *ምዝገባዎ በተሳካ ሁኔታ ተጠናቋል!*\n"
+                "💰 የ 20.00 ETB መነሻ ቦነስ ተሰጥაዎታል።\n\n"
+                "🕹 *ጨዋታ ለመጀመር የሚፈልጉትን ሩም ይምረጡ፦*"
+            )
+            
+            requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage", json={
+                "chat_id": chat_id,
+                "text": success_txt,
+                "parse_mode": "Markdown",
+                "reply_markup": keyboard
+            }, timeout=2)
+            return "OK", 200
+
+        # === SMS Deposit Handler & Validation ===
+        user_wallet = wallets.find_one({"chat_id": chat_id})
+        if user_wallet and text and chat_id != str(ADMIN_ID):
+            # 1. ቁጥር ብቻ ከሆነ
+            # 2. አሃዙ ከ 9 ብቻ ከሆነ (ለምሳሌ የትራንዛክሽን ቁጥር ወይም አጭር ኮድ)
+            # 3. ፊደል ብቻ ከሆነ
+            is_only_digits = text.isdigit()
+            is_only_letters = text.isalpha()
+            is_only_9s = bool(re.match(r'^[9]+$', text))
+
+            if is_only_digits or is_only_letters or is_only_9s:
+                # ምንም አይነት ሎግ አድርጎ notification አሳይቶ አይረብሽም (ዝም ይላል)
+                return "OK", 200
+
+            # SMS መሆኑን ለማረጋገጥ የተወሰኑ ቁልፍ ቃላት መኖራቸውን ማረጋገጥ ይቻላል ወይም የገባውን ጽሁፍ እንደ ዲፖዚት SMS መቀበል
+            db_phone = user_wallet.get("phone")
+            
+            # 5 ደቂቃ ገደብ (በ5 ደቂቃ ውስጥ ከ 2 ጊዜ በላይ ዲፖዚት ጥያቄ መላክ አይቻልም)
+            five_mins_ago = datetime.utcnow() - timedelta(minutes=5)
+            recent_deps_count = transactions.count_documents({
+                "phone": db_phone,
+                "type": "deposit",
+                "timestamp": {"$gte": five_mins_ago}
+            })
+            if recent_deps_count >= 2:
+                requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage", json={
+                    "chat_id": chat_id,
+                    "text": "❌ በ 5 ደቂቃ ውስጥ ከ 2 ጊዜ በላይ ዲፖዚት ጥያቄ መላክ አይቻልም!"
+                })
+                return "OK", 200
+
+            # የገንዘብ መጠን ከኤስኤምኤስ ጽሁፍ በሬጀክስ (Regex) ለመፈለግ መሞከር
+            amt_match = re.search(r'(\d+[\d\.]*)\s*(ETB|ብር)', text, re.IGNORECASE)
+            amt = float(amt_match.group(1)) if amt_match else 0.0
+
+            tx_res = transactions.insert_one({
+                "phone": db_phone,
+                "type": "deposit",
+                "amount": amt,
+                "status": "pending",
+                "method": "TELEBIRR/CBE",
+                "sms_text": text,
+                "timestamp": datetime.utcnow()
+            })
+            tx_ref = str(tx_res.inserted_id)
+
+            admin_msg = (
+                f"📥 *Deposit SMS Request*\n"
+                f"👤 Name: {user_wallet.get('first_name', 'N/A')}\n"
+                f"📞 Phone: `{db_phone}`\n"
+                f"💵 Amount: `{amt}` ETB\n"
+                f"📅 Date: {datetime.utcnow().strftime('%Y-%m-%d %H:%M')}\n"
+                f"💬 SMS: {text}"
+            )
+            keyboard = {
+                "inline_keyboard": [
+                    [
+                        {"text": "✅ Approve", "callback_data": f"app_dep_{tx_ref}_{db_phone}_{amt}"},
+                        {"text": "❌ Reject", "callback_data": f"rej_dep_{tx_ref}_{db_phone}"},
+                        {"text": "🚫 Ban", "callback_data": f"ban_user_{db_phone}"}
+                    ]
+                ]
+            }
+            send_telegram(admin_msg, reply_markup=keyboard)
+
+            requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage", json={
+                "chat_id": chat_id,
+                "text": "✅ የዲፖዚት ኤስኤምኤስ ጥያቄዎ ለአድሚን ተልኳል። ሲረጋገጥ ባላንስዎ ይሞላል!"
+            })
+            return "OK", 200
+
         if chat_id == str(ADMIN_ID):
             state = admin_state.find_one({"chat_id": chat_id})
             
@@ -1077,24 +1229,34 @@ def webhook():
                     send_telegram("❌ ትክክለኛ መረጃ አላስገቡም። እባክዎ እንደገና ይሞክሩ:\n`2026-10-01 2026-10-07 deposit`")
                 return "OK", 200
 
+        # === /deposit & /withdraw handlers ===
         if text.lower() in ["/deposit", "/withdraw"]:
             url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
             action_name = "ለማስገባት" if text.lower() == "/deposit" else "ወጪ ለማድረግ"
-            dep_keyboard = {
-                "inline_keyboard": [
-                    [
-                        {"text": "CBE BIRR", "callback_data": f"user_select_cbe_{text[1:]}"},
-                        {"text": "TELE BIRR", "callback_data": f"user_select_tele_{text[1:]}"}
+            
+            if text.lower() == "/deposit":
+                dep_keyboard = {
+                    "inline_keyboard": [
+                        [
+                            {"text": "CBE BIRR", "callback_data": "user_select_cbe"},
+                            {"text": "TELE BIRR", "callback_data": "user_select_tele"}
+                        ]
                     ]
-                ]
-            }
-            msg_text = f"💳 **የማስገቢያ መንገድ ይምረጡ (Select Deposit Method)**\n\nእባክዎ ሂሳብ {action_name} የሚጠቀሙበትን መንገድ ይምረጡ፦"
-            requests.post(url, json={
-                "chat_id": chat_id,
-                "text": msg_text,
-                "parse_mode": "Markdown",
-                "reply_markup": dep_keyboard
-            }, timeout=2)
+                }
+                msg_text = f"💳 **የማስገቢያ መንገድ ይምረጡ (Select Deposit Method)**\n\nእባክዎ ሂሳብ {action_name} የሚጠቀሙበትን መንገድ ይምረጡ፦"
+                requests.post(url, json={
+                    "chat_id": chat_id,
+                    "text": msg_text,
+                    "parse_mode": "Markdown",
+                    "reply_markup": dep_keyboard
+                }, timeout=2)
+            else:
+                # Withdraw መመሪያ
+                wit_msg = (
+                    "📤 **ብር ለማውጣት (Withdraw)**\n\n"
+                    "እባክዎ የሚወጣውን የብር መጠን እና የባንክ/ቴሌብር አካውንት ቁጥርዎን (እንዲሁም ስምዎን) ከዚህ በታች ባለው ዌብ-አፕ (Web App) ወይም በድጋፍ ሰጪ በኩል ያሳውቁን።"
+                )
+                requests.post(url, json={"chat_id": chat_id, "text": wit_msg, "parse_mode": "Markdown"}, timeout=2)
             return "OK", 200
 
         if text.lower().startswith("/transfer"):
@@ -1110,6 +1272,10 @@ def webhook():
                         return "OK", 200
                     
                     sender_phone = u_wallet.get("phone")
+                    if sender_phone == rec_phone:
+                        requests.post(url, json={"chat_id": chat_id, "text": "❌ ለራስዎ ገንዘብ ማስተላለፍ አይችሉም!"}, timeout=2)
+                        return "OK", 200
+
                     if u_wallet.get("balance", 0) < amt_val:
                         requests.post(url, json={"chat_id": chat_id, "text": "❌ በቂ ባላንስ የለዎትም!"}, timeout=2)
                         return "OK", 200
@@ -1119,30 +1285,39 @@ def webhook():
                         requests.post(url, json={"chat_id": chat_id, "text": "❌ ተቀባዩ ተጠቃሚ በሲስተሙ አልተገኘም!"}, timeout=2)
                         return "OK", 200
 
-                    tx_res = transactions.insert_one({
+                    # አውቶማቲክ P2P (Atomic Transfer)
+                    sender_updated = wallets.find_one_and_update(
+                        {"phone": sender_phone, "balance": {"$gte": amt_val}},
+                        {"$inc": {"balance": -amt_val}},
+                        return_document=True
+                    )
+                    if not sender_updated:
+                        requests.post(url, json={"chat_id": chat_id, "text": "❌ በቂ ባላንስ የለዎትም!"}, timeout=2)
+                        return "OK", 200
+
+                    rec_updated = wallets.find_one_and_update(
+                        {"phone": rec_phone},
+                        {"$inc": {"balance": amt_val}},
+                        return_document=True,
+                        upsert=True
+                    )
+
+                    transactions.insert_one({
                         "phone": sender_phone,
                         "receiver_phone": rec_phone,
                         "type": "transfer",
                         "amount": amt_val,
-                        "status": "pending",
+                        "status": "success",
                         "timestamp": datetime.utcnow()
                     })
-                    tx_ref = str(tx_res.inserted_id)
 
-                    admin_msg = f"🔄 *Transfer Pending Request*\n📤 From: `{sender_phone}`\n📥 To: `{rec_phone}`\n💵 Amount: `{amt_val}` ETB"
-                    kb = {
-                        "inline_keyboard": [
-                            [
-                                {"text": "✅ approved", "callback_data": f"app_trf_{tx_ref}_{sender_phone}_{rec_phone}_{amt_val}"},
-                                {"text": "❌ ሰርዝ (Reject)", "callback_data": f"rej_trf_{tx_ref}_{sender_phone}_{rec_phone}_{amt_val}"}
-                            ]
-                        ]
-                    }
-                    send_telegram(admin_msg, reply_markup=kb)
+                    notify_user_balance_update(sender_phone, sender_updated.get("balance", 0))
+                    if rec_updated:
+                        notify_user_balance_update(rec_phone, rec_updated.get("balance", 0))
 
                     requests.post(url, json={
                         "chat_id": chat_id,
-                        "text": f"⏳ የ **{amt_val} ETB** ትራንስፈር ጥያቄዎ ወደ አድሚን ተልኳል። አድሚኑ approved ሲያደርገው ባላንስዎ ተቀንሶ ለተቀባዩ ይደርሰዋል!",
+                        "text": f"✅ በተሳካ ሁኔታ **{amt_val} ETB** ለ `{rec_phone}` ተላልፏል!\n💰 ቀሪ ባላንስዎ፦ {sender_updated.get('balance', 0):,.2f} ETB",
                         "parse_mode": "Markdown"
                     }, timeout=2)
                 except ValueError:
@@ -1152,7 +1327,7 @@ def webhook():
                     "💸 **ብር ለማስተላለፍ (Transfer)**\n\n"
                     "የሚልኩለትን ስልክ እና ብር ያስገቡ ምሳሌ፦\n"
                     "`/transfer 0921523653 20`\n\n"
-                    "ከዛ እስከመረጡት መንገድ ወደ pending ይላቃል፤ አድሚኑ approved ሲያደርገው ለነሱ ባላንሳቸው ይሞላል።"
+                    "ዝውውሩ በሰከንዶች ውስጥ በአውቶማቲክ ይከናወናል!"
                 )
                 requests.post(url, json={"chat_id": chat_id, "text": msg_txt, "parse_mode": "Markdown"}, timeout=2)
             return "OK", 200
@@ -1279,9 +1454,12 @@ def webhook():
             cmd = parts[0] if parts else ""
 
             if cmd == "/admin":
+                pending_count = transactions.count_documents({"status": "pending"})
+                pending_label = f"🚨 የሚጠብቁ ጥያቄዎች ({pending_count})" if pending_count > 0 else "⏳ የሚጠብቁ ጥያቄዎች (0)"
+                
                 admin_keyboard = {
                     "inline_keyboard": [
-                        [{"text": "⏳ የሚጠብቁ ጥያቄዎችን አፅደቅ (Pending)", "callback_data": "admin_pending_req"}],
+                        [{"text": pending_label, "callback_data": "admin_pending_req"}],
                         [{"text": "🔗 የኤጀንት ሊንክ ማመንጫ (Gen Link)", "callback_data": "admin_gen_agent_link"}],
                         [{"text": "👥 የኤጀንት ስታቲስቲክስ (/agent)", "callback_data": "admin_agent_stats_guide"}],
                         [{"text": "📜 የትራንዛክሽን ታሪክ (በቀን እና ዓይነት)", "callback_data": "admin_history_req"}],
@@ -1315,7 +1493,7 @@ def webhook():
                     deposits = list(transactions.find({
                         "phone": {"$in": user_phones},
                         "type": "deposit",
-                        "status": "approved"
+                        "status": "success"
                     }))
                     total_dep_count = len(deposits)
                     total_dep_amt = sum([d.get("amount", 0) for d in deposits])
@@ -1323,7 +1501,7 @@ def webhook():
                     withdrawals = list(transactions.find({
                         "phone": {"$in": user_phones},
                         "type": "withdrawal",
-                        "status": "approved"
+                        "status": "success"
                     }))
                     total_wit_amt = sum([w.get("amount", 0) for w in withdrawals])
 
@@ -1358,35 +1536,33 @@ def webhook():
                         p_ph = p.get("phone")
                         p_amt = p.get("amount")
                         p_room = p.get("room", "N/A")
+                        p_date = (p.get("timestamp") + timedelta(hours=3)).strftime("%Y-%m-%d %H:%M") if p.get("timestamp") else "N/A"
                         
-                        if p_type == "TRANSFER":
-                            rec_ph = p.get("receiver_phone", "N/A")
-                            btn_code = f"app_trf_{p_id}_{p_ph}_{rec_ph}_{p_amt}"
-                            rej_code = f"rej_trf_{p_id}_{p_ph}_{rec_ph}_{p_amt}"
-                            kb = {
-                                "inline_keyboard": [
-                                    [
-                                        {"text": "✅ approved", "callback_data": btn_code},
-                                        {"text": "❌ ሰርዝ (Reject)", "callback_data": rej_code}
-                                    ]
+                        u_info = wallets.find_one({"phone": p_ph})
+                        f_name = u_info.get("first_name", "N/A") if u_info else "N/A"
+                        method_name = p.get("method", "TELEBIRR/CBE")
+
+                        btn_code = f"app_dep_{p_id}_{p_ph}_{p_amt}" if p_type == "DEPOSIT" else f"app_wit_{p_id}_{p_ph}_{p_amt}"
+                        rej_code = f"rej_dep_{p_id}_{p_ph}" if p_type == "DEPOSIT" else f"rej_wit_{p_id}_{p_ph}_{p_amt}"
+                        
+                        kb = {
+                            "inline_keyboard": [
+                                [
+                                    {"text": "✅ Approve", "callback_data": btn_code},
+                                    {"text": "❌ Reject", "callback_data": rej_code},
+                                    {"text": "🚫 Ban", "callback_data": f"ban_user_{p_ph}"}
                                 ]
-                            }
-                            send_telegram(f"⏳ *የሚጠብቅ Transfer ጥያቄ:*\n📤 From: `{p_ph}`\n📥 To: `{rec_ph}`\n💵 መጠን: `{p_amt}` ETB", reply_markup=kb)
-                        else:
-                            btn_code = f"app_dep_{p_id}_{p_ph}_{p_amt}" if p_type == "DEPOSIT" else f"app_wit_{p_id}_{p_ph}_{p_amt}"
-                            rej_code = f"rej_dep_{p_id}_{p_ph}" if p_type == "DEPOSIT" else f"rej_wit_{p_id}_{p_ph}_{p_amt}"
-                            kb = {
-                                "inline_keyboard": [
-                                    [
-                                        {"text": "✅ approved", "callback_data": btn_code},
-                                        {"text": "❌ ሰርዝ (Reject)", "callback_data": rej_code}
-                                    ],
-                                    [
-                                        {"text": "🚫 ተጠቃሚን ባን አድርግ (Ban)", "callback_data": f"ban_user_{p_ph}"}
-                                    ]
-                                ]
-                            }
-                            send_telegram(f"⏳ *የሚጠብቅ ጥያቄ ({p_type} - Room {p_room}):*\n📞 የስልክ ቁጥር: `{p_ph}`\n💵 መጠን: `{p_amt}` ETB", reply_markup=kb)
+                            ]
+                        }
+                        send_telegram(
+                            f"⏳ *የሚጠብቅ ጥያቄ ({p_type}):*\n"
+                            f"👤 First Name: {f_name}\n"
+                            f"📞 Phone: `{p_ph}`\n"
+                            f"💵 Amount: `{p_amt}` ETB\n"
+                            f"💳 Method: {method_name}\n"
+                            f"📅 Date: {p_date}",
+                            reply_markup=kb
+                        )
                 return "OK", 200
 
             elif cmd == "/block" and len(parts) > 1:
@@ -1454,36 +1630,31 @@ def webhook():
                 send_telegram(rep_text)
                 return "OK", 200
 
-        if text.lower().startswith("/play") or text.lower().startswith("/start"):
+        # === /start handler (ስልክ ቁጥር መጠየቂያ ሪፕላይ ኪቦርድ) ===
+        if text.lower().startswith("/start"):
             args = text.split()
             referred_by = sanitize_input(args[1]) if len(args) > 1 else None
             
-            u_10 = f"{WEB_APP_URL}"
-            u_20 = f"{WEB_APP_URL}/twenty"
-            u_50 = f"{WEB_APP_URL}/super"
-            u_super = f"{WEB_APP_URL}/superbesh"
-            
-            if referred_by:
-                u_10 += f"?ref={referred_by}"
-                u_20 += f"?ref={referred_by}"
-                u_50 += f"?ref={referred_by}"
-                u_super += f"?ref={referred_by}"
-
-            keyboard = {
-                "inline_keyboard": [
-                    [{"text": "🎮 PLAY | በ10 ብር", "web_app": {"url": u_10}}], 
-                    [{"text": "🎮 PLAY | በ20 ብር", "web_app": {"url": u_20}}], 
-                    [{"text": "🎮 PLAY | በ50 ብር", "web_app": {"url": u_50}}], 
-                    [{"text": "🎮 BeshBingo (ሳምንታዊ) | 50 ብር", "web_app": {"url": u_super}}],
-                    [{"text": "⚽ BeshBingo Bonus", "callback_data": "Besh_bingo_bonus"}]
-                ]
-            }
             url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
+            
+            contact_keyboard = {
+                "keyboard": [
+                    [{"text": "📱 ስልክ ቁጥር አጋራ (Share Phone Number)", "request_contact": True}]
+                ],
+                "resize_keyboard": True,
+                "one_time_keyboard": True
+            }
+            
+            start_msg = (
+                "እንኳን ወደ *በሽ ቢንጎ (Besh Bingo)* በሰላም መጡ! 🎮\n\n"
+                "ጨዋታውን ለመጀመር እና አካውንት ለመክፈት እባክዎ ከታች ያለውን **'ስልክ ቁጥር አጋራ'** የሚለውን ቁልፍ በመጫን ስልክ ቁጥርዎን ያጋሩ።"
+            )
+            
             requests.post(url, json={
                 "chat_id": chat_id,
-                "text": "🕹 *PLAY IN:*\nChoose a room to join the game:",
+                "text": start_msg,
                 "parse_mode": "Markdown",
-                "reply_markup": keyboard
+                "reply_markup": contact_keyboard
             }, timeout=2)
             return "OK", 200
 
@@ -1499,21 +1670,21 @@ def webhook():
         if data_str == "Besh_bingo_bonus":
             requests.post(answer_url, json={"callback_query_id": cq_id, "text": "የቦነስ ፕሮግራም በቅርቡ ይጀመራል!", "show_alert": True})
 
-        if data_str.startswith("user_select_cbe_"):
+        if data_str == "user_select_cbe":
             cbe_msg = (
                 "የ CBE-Birr አካውንት\n\n"
                 "CBE-BIRR - 0960736061   (ZEHARA)\n\n"
                 "መመሪያ\n\n"
                 "1. ከላይ ባለው የ CBE-Birr አካውንት Send money-individual በሚለው ገንዘቡን ያስገቡ\n\n"
                 "2. ብሩን ስትልኩ የከፈላችሁበትን መረጃ የያዝ አጭር የጹሁፍ መልክት(sms) ከ CBE ይደርሳችኋል\n"
-                "3. የደረሳችሁን አጭር የጹሁፍ መለክት(sms) ሙሉዉን ኮፒ(copy) በማረግ ከታሽ ባለው የቴሌግራም የጹሁፍ ማስገቢአው ላይ ፔስት(paste) በማረግ ይላኩት\n\n"
-                "የሚያጋጥማቹ የክፍያ ችግር ካለ @BeshBingoSupport በዚ ሳፖርት ማዉራት ይችላሉ"
+                "3. የደረሳችሁን አጭር የጹሁፍ መለክት(sms) ሙሉዉን ኮፒ(copy) በማረግ ከታች ባለው የቴሌግራም የጹሁፍ ማስገቢአው ላይ ፔስት(paste) በማረግ ይላኩት\n\n"
+                "የሚያጋጥማቹ የክፍያ ችግር ካለ @BeshBingoSupport በዚ ሰፖርት ማዉራት ይችላሉ"
             )
             requests.post(msg_send_url, json={"chat_id": chat_id, "text": cbe_msg}, timeout=2)
             requests.post(answer_url, json={"callback_query_id": cq_id})
             return "OK", 200
 
-        if data_str.startswith("user_select_tele_"):
+        if data_str == "user_select_tele":
             tele_msg = (
                 "የ TELE-Birr አካውንት  0960736061   (ZEHARA)\n\n"
                 "መመሪያ\n\n"
@@ -1580,35 +1751,33 @@ def webhook():
                         p_ph = p.get("phone")
                         p_amt = p.get("amount")
                         p_room = p.get("room", "N/A")
+                        p_date = (p.get("timestamp") + timedelta(hours=3)).strftime("%Y-%m-%d %H:%M") if p.get("timestamp") else "N/A"
                         
-                        if p_type == "TRANSFER":
-                            rec_ph = p.get("receiver_phone", "N/A")
-                            btn_code = f"app_trf_{p_id}_{p_ph}_{rec_ph}_{p_amt}"
-                            rej_code = f"rej_trf_{p_id}_{p_ph}_{rec_ph}_{p_amt}"
-                            kb = {
-                                "inline_keyboard": [
-                                    [
-                                        {"text": "✅ approved", "callback_data": btn_code},
-                                        {"text": "❌ ሰርዝ (Reject)", "callback_data": rej_code}
-                                    ]
+                        u_info = wallets.find_one({"phone": p_ph})
+                        f_name = u_info.get("first_name", "N/A") if u_info else "N/A"
+                        method_name = p.get("method", "TELEBIRR/CBE")
+
+                        btn_code = f"app_dep_{p_id}_{p_ph}_{p_amt}" if p_type == "DEPOSIT" else f"app_wit_{p_id}_{p_ph}_{p_amt}"
+                        rej_code = f"rej_dep_{p_id}_{p_ph}" if p_type == "DEPOSIT" else f"rej_wit_{p_id}_{p_ph}_{p_amt}"
+                        
+                        kb = {
+                            "inline_keyboard": [
+                                [
+                                    {"text": "✅ Approve", "callback_data": btn_code},
+                                    {"text": "❌ Reject", "callback_data": rej_code},
+                                    {"text": "🚫 Ban", "callback_data": f"ban_user_{p_ph}"}
                                 ]
-                            }
-                            send_telegram(f"⏳ *የሚጠብቅ Transfer ጥያቄ:*\n📤 From: `{p_ph}`\n📥 To: `{rec_ph}`\n💵 መጠን: `{p_amt}` ETB", reply_markup=kb)
-                        else:
-                            btn_code = f"app_dep_{p_id}_{p_ph}_{p_amt}" if p_type == "DEPOSIT" else f"app_wit_{p_id}_{p_ph}_{p_amt}"
-                            rej_code = f"rej_dep_{p_id}_{p_ph}" if p_type == "DEPOSIT" else f"rej_wit_{p_id}_{p_ph}_{p_amt}"
-                            kb = {
-                                "inline_keyboard": [
-                                    [
-                                        {"text": "✅ approved", "callback_data": btn_code},
-                                        {"text": "❌ ሰርዝ (Reject)", "callback_data": rej_code}
-                                    ],
-                                    [
-                                        {"text": "🚫 ተጠቃሚን ባን አድርግ (Ban)", "callback_data": f"ban_user_{p_ph}"}
-                                    ]
-                                ]
-                            }
-                            send_telegram(f"⏳ *የሚጠብቅ ጥያቄ ({p_type} - Room {p_room}):*\n📞 የስልክ ቁጥር: `{p_ph}`\n💵 መጠን: `{p_amt}` ETB", reply_markup=kb)
+                            ]
+                        }
+                        send_telegram(
+                            f"⏳ *የሚጠብቅ ጥያቄ ({p_type}):*\n"
+                            f"👤 First Name: {f_name}\n"
+                            f"📞 Phone: `{p_ph}`\n"
+                            f"💵 Amount: `{p_amt}` ETB\n"
+                            f"💳 Method: {method_name}\n"
+                            f"📅 Date: {p_date}",
+                            reply_markup=kb
+                        )
 
             elif data_str == "admin_show_all_bal":
                 all_users = list(wallets.find({}))
@@ -1623,76 +1792,6 @@ def webhook():
                 msg_text += f"\n💵 *አጠቃላይ የሲስተሙ ገንዘብ:* {total_sys_balance} ETB"
                 send_telegram(msg_text)
 
-            elif data_str.startswith("app_trf_"):
-                parts = data_str.split("_")
-                tx_id_str = parts[2]
-                sender_ph = parts[3]
-                rec_ph = parts[4]
-                amt = float(parts[5])
-
-                try:
-                    tx_updated = transactions.find_one_and_update(
-                        {"_id": ObjectId(tx_id_str), "status": "pending"},
-                        {"$set": {"status": "approved", "timestamp": datetime.utcnow()}}
-                    )
-                except Exception:
-                    tx_updated = transactions.find_one_and_update(
-                        {"phone": sender_ph, "receiver_phone": rec_ph, "status": "pending", "type": "transfer"},
-                        {"$set": {"status": "approved", "timestamp": datetime.utcnow()}}
-                    )
-
-                if tx_updated:
-                    sender_updated = wallets.find_one_and_update(
-                        {"phone": sender_ph, "balance": {"$gte": amt}},
-                        {"$inc": {"balance": -amt}},
-                        return_document=True
-                    )
-                    if sender_updated:
-                        rec_updated = wallets.find_one_and_update(
-                            {"phone": rec_ph},
-                            {"$inc": {"balance": amt}},
-                            return_document=True,
-                            upsert=True
-                        )
-                        notify_user_balance_update(sender_ph, sender_updated.get("balance", 0))
-                        if rec_updated:
-                            notify_user_balance_update(rec_ph, rec_updated.get("balance", 0))
-
-                        today_str = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
-                        
-                        sender_chat_id = sender_updated.get("chat_id")
-                        if sender_chat_id:
-                            try:
-                                requests.post(msg_send_url, json={
-                                    "chat_id": sender_chat_id,
-                                    "text": f"✅ የ **{amt} ETB** ትራንስፈር ጥያቄዎ ፀድቋል!\n📅 ቀን፦ {today_str}\n💰 ቀሪ ባላንስዎ፦ {sender_updated.get('balance', 0):,.2f} ETB",
-                                    "parse_mode": "Markdown"
-                                }, timeout=2)
-                            except: pass
-
-                        if rec_updated and rec_updated.get("chat_id"):
-                            try:
-                                requests.post(msg_send_url, json={
-                                    "chat_id": rec_updated.get("chat_id"),
-                                    "text": f"🎉 ከ `{sender_ph}` **{amt} ETB** ተላልፎልዎታል!\n📅 ቀን፦ {today_str}\n💰 ቀሪ ባላንስዎ፦ {rec_updated.get('balance', 0):,.2f} ETB",
-                                    "parse_mode": "Markdown"
-                                }, timeout=2)
-                            except: pass
-
-                        requests.post(answer_url, json={"callback_query_id": cq_id, "text": "Transfer Approved!"})
-                    else:
-                        requests.post(answer_url, json={"callback_query_id": cq_id, "text": "❌ የላኪው ባላንስ በቂ አይደለም!", "show_alert": True})
-                else:
-                    requests.post(answer_url, json={"callback_query_id": cq_id, "text": "⚠ ይህ ጥያቄ አስቀድሞ ፀድቋል ወይም ተሰርዟል!", "show_alert": True})
-
-            elif data_str.startswith("rej_trf_"):
-                parts = data_str.split("_")
-                try:
-                    transactions.update_one({"_id": ObjectId(parts[2]), "status": "pending"}, {"$set": {"status": "rejected"}})
-                except Exception:
-                    transactions.update_one({"phone": parts[3], "status": "pending", "type": "transfer"}, {"$set": {"status": "rejected"}})
-                requests.post(answer_url, json={"callback_query_id": cq_id, "text": "ትራንስፈር ጥያቄው ሪጀክት ተደርጓል።"})
-
             elif data_str.startswith("app_dep_"):
                 parts = data_str.split("_")
                 tx_id_str = parts[2]
@@ -1702,18 +1801,15 @@ def webhook():
                 try:
                     tx_updated = transactions.find_one_and_update(
                         {"_id": ObjectId(tx_id_str), "status": "pending"},
-                        {"$set": {"status": "approved", "timestamp": datetime.utcnow()}}
+                        {"$set": {"status": "success", "timestamp": datetime.utcnow()}}
                     )
                 except Exception:
                     tx_updated = transactions.find_one_and_update(
                         {"phone": phone_num, "status": "pending", "type": "deposit"},
-                        {"$set": {"status": "approved", "timestamp": datetime.utcnow()}}
+                        {"$set": {"status": "success", "timestamp": datetime.utcnow()}}
                     )
 
                 if tx_updated:
-                    tx_method = tx_updated.get("method", "CBE BIRR")
-                    tx_ref_id = tx_updated.get("tx_id", "N/A")
-
                     updated = wallets.find_one_and_update(
                         {"phone": phone_num}, 
                         {"$inc": {"balance": amt}}, 
@@ -1723,32 +1819,29 @@ def webhook():
                     new_bal = updated.get("balance", 0) if updated else 0
                     notify_user_balance_update(phone_num, new_bal)
                     
-                    admin_msg = (
-                        f"💰 *Deposit Request*\n"
-                        f"💳 Method: {tx_method}\n"
-                        f"📞 Phone: `{phone_num}`\n"
-                        f"💵 Amount: `{amt}` ETB\n"
-                        f"🆔 ID: `{tx_ref_id}`\n\n"
-                        f"✅ *APPROVED*\n"
-                        f"💰 አጠቃላይ ባላንስ: `{new_bal}` ETB"
-                    )
+                    today_str = (datetime.utcnow() + timedelta(hours=3)).strftime("%Y-%m-%d %H:%M")
+                    
+                    # በተን ማጥፊያ እና ኤዲት የማይሆን ጽሁፍ ማድረግ
                     try:
                         requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/editMessageText", json={
                             "chat_id": ADMIN_ID,
                             "message_id": cq["message"]["message_id"],
-                            "text": admin_msg,
-                            "parse_mode": "Markdown"
+                            "text": f"✅ *DEPOSIT APPROVED*\n📞 Phone: `{phone_num}`\n💵 Amount: `{amt}` ETB\n📅 Date: {today_str}\nStatus: *SUCCESS*",
+                            "parse_mode": "Markdown",
+                            "reply_markup": {"inline_keyboard": []}
                         }, timeout=2)
                     except Exception:
-                        send_telegram(admin_msg)
+                        pass
 
                     user_chat_id = updated.get("chat_id")
                     if user_chat_id:
                         try:
                             user_msg = (
                                 f"✅ *የዲፖዚት ጥያቄዎ ጸድቋል!*\n\n"
-                                f"💵 በሂሳብዎ ላይ *{amt} ETB* ተጨምሯል።\n"
-                                f"💰 አጠቃላይ ቀሪ ባላንስዎ: *{new_bal} ETB*"
+                                f"📅 ቀን፦ {today_str}\n"
+                                f"💳 ዘዴ፦ TELEBIRR/CBE\n"
+                                f"💵 የተጨመረው ብር፦ *{amt} ETB*\n"
+                                f"💰 አጠቃላይ ቀሪ ባላንስዎ፦ *{new_bal} ETB*"
                             )
                             requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage", json={
                                 "chat_id": user_chat_id,
@@ -1758,16 +1851,34 @@ def webhook():
                         except Exception as e:
                             print(f"Error sending user deposit notification: {e}")
 
-                    requests.post(answer_url, json={"callback_query_id": cq_id, "text": f"approved! {amt} ETB ገብቷል።"})
+                    requests.post(answer_url, json={"callback_query_id": cq_id, "text": f"Approved! {amt} ETB ገብቷል።"})
                 else:
                     requests.post(answer_url, json={"callback_query_id": cq_id, "text": "⚠ ይህ ጥያቄ አስቀድሞ ፀድቋል ወይም ተሰርዟል!", "show_alert": True})
             
             elif data_str.startswith("rej_dep_"):
                 parts = data_str.split("_")
                 try:
-                    transactions.update_one({"_id": ObjectId(parts[2]), "status": "pending"}, {"$set": {"status": "rejected"}})
+                    tx_updated = transactions.find_one_and_update(
+                        {"_id": ObjectId(parts[2]), "status": "pending"}, 
+                        {"$set": {"status": "rejected"}}
+                    )
                 except Exception:
-                    transactions.update_one({"phone": parts[3], "status": "pending", "type": "deposit"}, {"$set": {"status": "rejected"}})
+                    tx_updated = transactions.find_one_and_update(
+                        {"phone": parts[3], "status": "pending", "type": "deposit"}, 
+                        {"$set": {"status": "rejected"}}
+                    )
+                
+                if tx_updated:
+                    try:
+                        requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/editMessageText", json={
+                            "chat_id": ADMIN_ID,
+                            "message_id": cq["message"]["message_id"],
+                            "text": f"❌ *DEPOSIT REJECTED*\n📞 Phone: `{parts[3]}`\nStatus: *REJECTED*",
+                            "parse_mode": "Markdown",
+                            "reply_markup": {"inline_keyboard": []}
+                        }, timeout=2)
+                    except Exception:
+                        pass
                 
                 requests.post(answer_url, json={"callback_query_id": cq_id, "text": "ዲፖዚት ጥያቄው ሪጀክት ተደርጓል።"})
 
@@ -1780,33 +1891,80 @@ def webhook():
                 try:
                     tx_updated = transactions.find_one_and_update(
                         {"_id": ObjectId(tx_id_str), "status": "pending"},
-                        {"$set": {"status": "approved", "timestamp": datetime.utcnow()}}
+                        {"$set": {"status": "success", "timestamp": datetime.utcnow()}}
                     )
                 except Exception:
                     tx_updated = transactions.find_one_and_update(
                         {"phone": phone_num, "status": "pending", "type": "withdrawal"},
-                        {"$set": {"status": "approved", "timestamp": datetime.utcnow()}}
+                        {"$set": {"status": "success", "timestamp": datetime.utcnow()}}
                     )
 
                 if tx_updated:
-                    updated = wallets.find_one_and_update({"phone": phone_num, "balance": {"$gte": amt}}, {"$inc": {"balance": -amt}}, return_document=True)
-                    if updated:
-                        new_bal = updated.get("balance", 0)
-                        notify_user_balance_update(phone_num, new_bal)
-                        requests.post(answer_url, json={"callback_query_id": cq_id, "text": "approved!"})
-                    else:
-                        requests.post(answer_url, json={"callback_query_id": cq_id, "text": "❌ የተጠቃሚው ባላንስ በቂ አይደለም!", "show_alert": True})
+                    today_str = (datetime.utcnow() + timedelta(hours=3)).strftime("%Y-%m-%d %H:%M")
+                    try:
+                        requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/editMessageText", json={
+                            "chat_id": ADMIN_ID,
+                            "message_id": cq["message"]["message_id"],
+                            "text": f"✅ *WITHDRAWAL APPROVED*\n📞 Phone: `{phone_num}`\n💵 Amount: `{amt}` ETB\n📅 Date: {today_str}\nStatus: *SUCCESS*",
+                            "parse_mode": "Markdown",
+                            "reply_markup": {"inline_keyboard": []}
+                        }, timeout=2)
+                    except Exception:
+                        pass
+
+                    u_info = wallets.find_one({"phone": phone_num})
+                    if u_info and u_info.get("chat_id"):
+                        try:
+                            requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage", json={
+                                "chat_id": u_info.get("chat_id"),
+                                "text": f"✅ የውዝድሮዋል ጥያቄዎ ጸድቆ ገንዘቡ ተልኳል!\n📅 ቀን፦ {today_str}\n💵 መጠን፦ {amt} ETB",
+                                "parse_mode": "Markdown"
+                            }, timeout=2)
+                        except: pass
+
+                    requests.post(answer_url, json={"callback_query_id": cq_id, "text": "Withdrawal Approved!"})
                 else:
                     requests.post(answer_url, json={"callback_query_id": cq_id, "text": "⚠ ይህ ጥያቄ አስቀድሞ ፀድቋል ወይም ተሰርዟል!", "show_alert": True})
             
             elif data_str.startswith("rej_wit_"):
                 parts = data_str.split("_")
-                try:
-                    transactions.update_one({"_id": ObjectId(parts[2]), "status": "pending"}, {"$set": {"status": "rejected"}})
-                except Exception:
-                    transactions.update_one({"phone": parts[3], "status": "pending", "type": "withdrawal"}, {"$set": {"status": "rejected"}})
+                tx_id_str = parts[2]
+                phone_num = parts[3]
+                amt = float(parts[4])
 
-                requests.post(answer_url, json={"callback_query_id": cq_id, "text": "ዊዝድሮዋል ጥያቄው ሪጀክት ተደርጓል።"})
+                try:
+                    tx_updated = transactions.find_one_and_update(
+                        {"_id": ObjectId(tx_id_str), "status": "pending"},
+                        {"$set": {"status": "rejected"}}
+                    )
+                except Exception:
+                    tx_updated = transactions.find_one_and_update(
+                        {"phone": phone_num, "status": "pending", "type": "withdrawal"},
+                        {"$set": {"status": "rejected"}}
+                    )
+
+                if tx_updated:
+                    # ገንዘቡ ተመልሶ ወደ ተጠቃሚው ሂሳብ እንዲገባ ማድረግ
+                    u_up = wallets.find_one_and_update(
+                        {"phone": phone_num},
+                        {"$inc": {"balance": amt}},
+                        return_document=True
+                    )
+                    if u_up:
+                        notify_user_balance_update(phone_num, u_up.get("balance", 0))
+
+                    try:
+                        requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/editMessageText", json={
+                            "chat_id": ADMIN_ID,
+                            "message_id": cq["message"]["message_id"],
+                            "text": f"❌ *WITHDRAWAL REJECTED*\n📞 Phone: `{phone_num}`\n💵 Amount: `{amt}` ETB (Refunded)\nStatus: *REJECTED*",
+                            "parse_mode": "Markdown",
+                            "reply_markup": {"inline_keyboard": []}
+                        }, timeout=2)
+                    except Exception:
+                        pass
+
+                requests.post(answer_url, json={"callback_query_id": cq_id, "text": "ዊዝድሮዋል ጥያቄው ሪጀክት ተደርጎ ብሩ ተመልሷል።"})
 
     return "OK", 200
 
