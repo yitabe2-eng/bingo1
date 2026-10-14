@@ -730,7 +730,14 @@ def super_game_loop():
 @app.route('/10')
 @app.route('/ten')
 def index_10(): 
-    return render_template('index.html')
+    phone = sanitize_input(request.args.get('phone', ''))
+    user_bal = None
+    if phone:
+        formatted_ph = format_phone_number(phone)
+        u = wallets.find_one({"phone": formatted_ph})
+        if u:
+            user_bal = float(u.get("balance", 0.0))
+    return render_template('index.html', initial_balance=user_bal)
 
 @app.route('/20')
 @app.route('/twenty')
