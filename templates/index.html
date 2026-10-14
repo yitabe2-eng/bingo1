@@ -73,6 +73,7 @@
             color: #000000;
         }
 
+        /* LOBBY UI */
         #lobby-ui { 
             flex: 1; 
             display: flex; 
@@ -292,6 +293,7 @@
             flex-shrink: 0;
         }
 
+        /* GAME UI */
         #game-ui {
             flex: 1;
             display: flex;
@@ -302,19 +304,20 @@
             position: absolute;
             inset: 0;
         }
+        /* TOP STATS BAR & OVERLAPPING BALL CLUSTER */
         .game-top-bar {
             display: flex;
             align-items: center;
-            justify-content: space-between;
+            justify-content: flex-start;
             background: #0f172a;
-            height: 64px;
-            min-height: 64px;
-            max-height: 64px;
+            height: 52px;
+            min-height: 52px;
+            max-height: 52px;
             width: 100vw;
-            padding: 0 10px;
+            padding: 0 12px;
             position: relative;
             flex-shrink: 0;
-            z-index: 100;
+            z-index: 50;
             box-sizing: border-box;
             border-bottom: 1px solid #1e293b;
             overflow: visible !important;
@@ -353,27 +356,56 @@
         }
         .stat-val.gold { color: #ffcc00; }
 
-        /* RECENT BALLS PILL CONTAINER RIGHT NEXT TO BIG CIRCLE */
-        .top-right-balls-cluster {
+        /* ትልቁን ክብ ግማሽ ፐርቱን ከstats baru ግማሹን ከታች አድርገው stats baru ትልቁን ክብ እንዳይሸፍነው */
+        #ball-circle {
+            position: absolute;
+            right: 12px;
+            top: 8px; /* 44px inside stats bar (52 - 8 = 44px), 44px hanging below stats bar */
+            width: 88px;
+            height: 88px;
+            background: #2563eb;
+            color: #ffffff;
+            border-radius: 50%;
             display: flex;
             align-items: center;
-            gap: 8px;
-            position: relative;
-            z-index: 100;
+            justify-content: center;
+            font-size: 1.65rem;
+            font-weight: 900;
+            border: 4px solid #1d4ed8;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.55), inset 0 2px 4px rgba(255,255,255,0.4);
+            flex-shrink: 0;
+            text-align: center;
+            line-height: 1;
+            letter-spacing: -0.5px;
+            pointer-events: none;
+            transition: all 0.3s;
+            z-index: 9999 !important; /* stats baru እንዳይሸፍነው */
+        }
+        #ball-circle.countdown-state {
+            background: #1e293b;
+            border-color: #2563eb;
+            color: #60a5fa;
+            font-size: 2.2rem;
         }
 
+        /* ሶስቱን ክቦች ከstats baru ወደታች (ከ stats bar በታች ከትልቁ ክብ ጎን) */
         .recent-balls-pill {
+            position: absolute;
+            right: 108px; /* Directly to the left of the big ball */
+            top: 55px;   /* Positioned below the stats bar (stats bar height is 52px) */
             display: flex;
             align-items: center;
             gap: 6px;
-            background: #e2e8f0;
+            background: #ffffff;
             border-radius: 9999px;
             padding: 4px 8px;
-            box-shadow: inset 0 1px 3px rgba(0,0,0,0.15);
-            min-width: 102px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            border: 1px solid #cbd5e1;
+            min-width: 104px;
             height: 38px;
             justify-content: flex-end;
             transition: all 0.3s;
+            z-index: 9000 !important;
         }
 
         .recent-ball {
@@ -400,34 +432,6 @@
         .recent-ball.ball-n { background: #eab308; color: #000; border: 1px solid #b45309; }
         .recent-ball.ball-g { background: #16a34a; }
         .recent-ball.ball-o { background: #9333ea; }
-
-        #ball-circle {
-            width: 76px;
-            height: 76px;
-            background: #2563eb;
-            color: #ffffff;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.6rem;
-            font-weight: 900;
-            border: 4px solid #1d4ed8;
-            box-shadow: 0 6px 18px rgba(0,0,0,0.5), inset 0 2px 4px rgba(255,255,255,0.3);
-            flex-shrink: 0;
-            text-align: center;
-            line-height: 1;
-            letter-spacing: -0.5px;
-            pointer-events: none;
-            transition: all 0.3s;
-            position: relative;
-        }
-        #ball-circle.countdown-state {
-            background: #1e293b;
-            border-color: #2563eb;
-            color: #60a5fa;
-            font-size: 2.2rem;
-        }
 
         .game-main-content-row {
             display: flex;
@@ -747,7 +751,7 @@
         .bingo-btn:disabled { background: #94a3b8 !important; color: #e2e8f0 !important; cursor: not-allowed; }
         .bingo-btn span { font-size: 0.65rem; font-style: normal; opacity: 0.8; font-weight: bold; }
 
-        /* WINNER RESULT MODAL (MATCHES SCREENSHOT) */
+        /* WINNER RESULT MODAL EXACTLY AS IN SCREENSHOT */
         #result-modal {
             display: none;
             position: fixed;
@@ -1052,13 +1056,13 @@
                     </div>
                 </div>
 
-                <!-- TOP RIGHT CLUSTER: RECENT BALLS PILL DIRECTLY TO THE LEFT OF BIG CIRCLE -->
-                <div class="top-right-balls-cluster">
-                    <div class="recent-balls-pill" id="recent-balls-container">
-                        <!-- THE 3 CIRCLES APPEAR DYNAMICALLY AS BALLS ARE CALLED -->
-                    </div>
-                    <div id="ball-circle" class="countdown-state">3</div>
+                <!-- ሶስቱን ክቦች ከstats baru ወደታች (ከ stats bar በታች ከትልቁ ክብ ጎን) -->
+                <div class="recent-balls-pill" id="recent-balls-container" style="visibility:hidden;">
+                    <!-- THE 3 CIRCLES APPEAR DYNAMICALLY AS BALLS ARE CALLED -->
                 </div>
+                
+                <!-- ትልቁን ክብ ግማሽ ፐርቱን ከstats baru ግማሹን ከታች (stats baru እንዳይሸፍነው z-index: 9999) -->
+                <div id="ball-circle" class="countdown-state">3</div>
             </div>
 
             <div class="game-main-content-row">
@@ -1256,6 +1260,8 @@
         }
 
         // GAME UI REFRESH BUTTON HANDLER:
+        // አንድ ሰው ትንሽ ቢዘገይ ጨዋታው ጀምሮ በrefresh የመጀመሪያ የወጦ ሶስት ቁጥሮችን ማቅለሚያ እንድቻል
+        // አራት ቁጥሮች ከተጠሩ በኋላ ማቅለም አይቻልም
         function handleGameUiRefresh() {
             forceRecoveryRefresh();
             if (latestDrawnBallsGlobal.length >= 4) {
@@ -1263,6 +1269,7 @@
                 allowCatchUpMarking = false;
             } else if (latestDrawnBallsGlobal.length > 0 && latestDrawnBallsGlobal.length <= 3) {
                 allowCatchUpMarking = true;
+                // Automatically mark or allow marking for the first 3 balls
                 markEligibleCatchUpNumbers();
                 showNotification("🔄 ታድሷል! የመጀመሪያዎቹ 3 የወጡ ቁጥሮች ማቅለም ይችላሉ።", true);
             } else {
@@ -1297,6 +1304,7 @@
                 localStorage.setItem("bingo_marked_" + CURRENT_ROOM, JSON.stringify(stateObj));
             } catch(e) {}
 
+            // Re-render cards
             const cardArea = document.getElementById("card-area");
             if (cardArea && cardArea.children.length > 0) {
                 forceRecoveryRefresh();
@@ -1365,8 +1373,10 @@
                 document.getElementById("result-modal").style.display = "none";
                 
                 // 1. BIG BALL CIRCLE: NO "READY" TEXT!
+                // 3 ሰከንድ ካለቀ የመጀመሪያው ቁጥር ወዲያው ይወጣል
                 const ballEl = document.getElementById("ball-circle");
                 if (drawnBalls.length === 0) {
+                    // Pre-draw 3-second countdown without "READY"
                     ballEl.className = "countdown-state";
                     const timerVal = (d.ball_timer !== undefined && d.ball_timer > 0) ? d.ball_timer : 3;
                     ballEl.innerText = timerVal;
@@ -1379,6 +1389,10 @@
                 }
 
                 // 2. RECENT BALLS (3 CIRCLES RIGHT NEXT TO BIG CIRCLE)
+                // ሶስቱ ክቦች ቁጥሮቹ ከመጠራታቸው በፊት መታየት የለባቸውም
+                // የመጀመሪያው ቁጥር ከትልቁ ክብ ይጠራል
+                // ሁለተኛው ቁጥር ከትልቁ ክብ ሲወጣ የመጀመሪያው ቁጥር ከትልቁ ክብ ጎን ያለችው ክብ ላይ ይወጣል
+                // ሶስተኛ ቁጥር ትልቁ ክብ ላይ ሲወጣ ሁለተኛዋ ቁጥር ከትልቁ ክብ ጎን ካለችው የመጀመሪያው ቁጥር ከሁለተኛይቱ ክብ እያለ ወደሶስተኛዋ ክብ ይደርሳል
                 renderRecentBallsNextToBigCircle(drawnBalls);
 
                 renderMainBoard(drawnBalls);
@@ -1403,6 +1417,7 @@
                     cardArea.innerHTML = "";
                     myCards.forEach((cObj, i) => { renderCard(cObj.matrix, i, cObj.id); });
                 } else {
+                    // ጨዋታው ተጀምሮ ለሚመጡ waiting በሰጠሁህ ፎቶ መሰረት
                     cardArea.style.display = "none";
                     waitingScreen.style.display = "flex";
                 }
@@ -1413,21 +1428,27 @@
         }
 
         // RECENT BALLS ORDERING & VISIBILITY:
+        // [Circle 3 (3rd oldest)] [Circle 2 (2nd oldest)] [Circle 1 (next to big circle: most recent prior)]
         function renderRecentBallsNextToBigCircle(drawn) {
             const pill = document.getElementById("recent-balls-container");
             if (!pill) return;
             pill.innerHTML = "";
 
             if (!drawn || drawn.length <= 1) {
+                // When 0 or 1 ball drawn, previous balls do not exist yet.
+                // Do not display ghost/uncalled numbers!
                 pill.style.visibility = "hidden";
                 return;
             }
 
             pill.style.visibility = "visible";
 
+            // Balls prior to the current ball (drawn.slice(0, -1))
             const previousBalls = drawn.slice(0, -1);
+            // Up to 3 most recent previous balls, ordered oldest to newest:
+            // e.g. if previous are [B1, B2, B3], then circle 3 is B1, circle 2 is B2, circle 1 is B3
             const count = Math.min(3, previousBalls.length);
-            const slice = previousBalls.slice(-count);
+            const slice = previousBalls.slice(-count); // [oldest_of_the_three, ..., newest_prior]
 
             slice.forEach(bStr => {
                 let cleanNum = parseInt(String(bStr).replace(/[^0-9]/g, ""));
@@ -1447,6 +1468,7 @@
         }
 
         // SHOW WINNER RESULT MODAL (EXACTLY MATCHING SCREENSHOT)
+        // ከሁለት በላይ ከሆኑ ያንድኛውን user name & 2 other have won እንድል አንድ ከሆነ ግን has won
         function showResultModal(d, finalPrize) {
             const modal = document.getElementById("result-modal");
             if (!modal) return;
@@ -1473,6 +1495,9 @@
             document.getElementById("modal-each-prize-val").innerText = eachPrize;
 
             // 2. Headline:
+            // አንድ ከሆነ: "{user} has won!"
+            // ሁለት ከሆነ: "{user} and 1 other have won!"
+            // ከሁለት በላይ ከሆነ: "{user} and {count - 1} others have won!"
             const firstUser = (winnersList[0] && winnersList[0].username) ? winnersList[0].username : "Player";
             const userTag = document.getElementById("modal-head-user");
             const verbTag = document.getElementById("modal-head-verb");
@@ -1509,6 +1534,7 @@
             document.getElementById("modal-card-num").innerText = `CARD #${w.ticket_num || "--"}`;
             document.getElementById("modal-card-owner").innerText = w.username || "User";
 
+            // Grid
             const grid = document.getElementById("modal-card-grid");
             grid.innerHTML = "";
             const matrix = w.card || generateBingoCardForTicket(parseInt(w.ticket_num || "1"));
@@ -1537,6 +1563,7 @@
                 grid.appendChild(cell);
             });
 
+            // Dots & Navigation buttons
             const dotsRow = document.getElementById("modal-dots-row");
             dotsRow.innerHTML = "";
             const prevBtn = document.getElementById("modal-prev-btn");
@@ -1824,10 +1851,14 @@
                         }
 
                         // አራት ቁጥሮች ከተጠሩ በኋላ ማቅለም አይቻልም
+                        // When a player is unmarking, allow it.
+                        // When marking a number:
                         if (!markedSet.has(i)) {
                             const dIdx = getDrawnIndex(numVal);
                             const totalDrawn = latestDrawnBallsGlobal.length;
 
+                            // If this number came out in the first 3 balls, but now 4 or more balls have been called:
+                            // unless it was marked earlier or during the first 3 balls, it cannot be colored late!
                             if (totalDrawn >= 4 && dIdx < (totalDrawn - 1) && dIdx < 3 && !allowCatchUpMarking) {
                                 showNotification("⚠️ አራት ቁጥሮች ከተጠሩ በኋላ ያመለጡ ቁጥሮችን ማቅለም አይቻልም!");
                                 return;
