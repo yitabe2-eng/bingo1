@@ -228,7 +228,9 @@ def get_player_play_keyboard(phone, referred_by=None):
     u_20 = f"{WEB_APP_URL}/20?phone={phone}"
     u_50 = f"{WEB_APP_URL}/50?phone={phone}"
     u_100 = f"{WEB_APP_URL}/100?phone={phone}"
+    u_100 = f"{WEB_APP_URL}/100?phone={phone}"
     u_200 = f"{WEB_APP_URL}/200?phone={phone}"
+    u_500 = f"{WEB_APP_URL}/500?phone={phone}"
     u_super = f"{WEB_APP_URL}/superbesh"
     if referred_by:
         u_super += f"?ref={referred_by}"
@@ -247,9 +249,10 @@ def get_player_play_keyboard(phone, referred_by=None):
             ],
             [
                 {"text": "💎 PLAY | በ200 ብር", "web_app": {"url": u_200}},
-                {"text": "🏆 BeshBingo (ሳምንታዊ) | 50 ብር", "web_app": {"url": u_super}}
+                {"text": "👑 PLAY | በ500 ብር", "web_app": {"url": u_500}}
             ],
             [
+                {"text": "🏆 BeshBingo (ሳምንታዊ) | 50 ብር", "web_app": {"url": u_super}},
                 {"text": "⚽ BeshBingo Bonus", "callback_data": "Besh_bingo_bonus"}
             ]
         ]
@@ -286,6 +289,12 @@ game_states = {
         "winners_data": [], "winning_card": None, "winning_ticket_num": None, 
         "winning_indices": None, "winning_line_name": None, "all_cards": {}
     },
+    "500": {
+        "status": "lobby", "timer": 30, "ball_timer": 3, "pot": 0, "players": {}, 
+        "sold_tickets": {}, "current_ball": "--", "drawn_balls": [], "winner": None,
+        "winners_data": [], "winning_card": None, "winning_ticket_num": None, 
+        "winning_indices": None, "winning_line_name": None, "all_cards": {}
+    },
     "super": { 
         "status": "lobby", "timer": 30, "ball_timer": 3, "pot": 0, "players": {}, 
         "sold_tickets": {}, "current_ball": "--", "drawn_balls": [], "winner": None,
@@ -300,13 +309,14 @@ ROOM_PRICES = {
     "50": 50,
     "100": 100,
     "200": 200,
+    "500": 500,
     "super": 50
 }
 
 loop_started = False
-reset_task_references = {"10": None, "20": None, "50": None, "100": None, "200": None, "super": None}
-pending_claims = {"10": [], "20": [], "50": [], "100": [], "200": [], "super": []}
-claim_lock_active = {"10": False, "20": False, "50": False, "100": False, "200": False, "super": False}
+reset_task_references = {"10": None, "20": None, "50": None, "100": None, "200": None, "500": None, "super": None}
+pending_claims = {"10": [], "20": [], "50": [], "100": [], "200": [], "500": [], "super": []}
+claim_lock_active = {"10": False, "20": False, "50": False, "100": False, "200": False, "500": False, "super": False}
 
 def sanitize_input(text):
     if not text:
@@ -742,24 +752,59 @@ def index_10():
 @app.route('/20')
 @app.route('/twenty')
 def index_20():
-    return render_template('index2.html')
+    phone = sanitize_input(request.args.get('phone', ''))
+    user_bal = None
+    if phone:
+        u = wallets.find_one({"phone": format_phone_number(phone)})
+        if u:
+            user_bal = float(u.get("balance", 0.0))
+    return render_template('room20.html', initial_balance=user_bal)
 
 @app.route('/50')
 @app.route('/fifty')
-@app.route('/super')
 def index_50():
-    return render_template('index1.html')
+    phone = sanitize_input(request.args.get('phone', ''))
+    user_bal = None
+    if phone:
+        u = wallets.find_one({"phone": format_phone_number(phone)})
+        if u:
+            user_bal = float(u.get("balance", 0.0))
+    return render_template('room50.html', initial_balance=user_bal)
 
 @app.route('/100')
 @app.route('/hundred')
 def index_100():
-    return render_template('index4.html')
+    phone = sanitize_input(request.args.get('phone', ''))
+    user_bal = None
+    if phone:
+        u = wallets.find_one({"phone": format_phone_number(phone)})
+        if u:
+            user_bal = float(u.get("balance", 0.0))
+    return render_template('room100.html', initial_balance=user_bal)
 
 @app.route('/200')
 @app.route('/twohundred')
 def index_200():
-    return render_template('index5.html')
+    phone = sanitize_input(request.args.get('phone', ''))
+    user_bal = None
+    if phone:
+        u = wallets.find_one({"phone": format_phone_number(phone)})
+        if u:
+            user_bal = float(u.get("balance", 0.0))
+    return render_template('room200.html', initial_balance=user_bal)
 
+@app.route('/500')
+@app.route('/fivehundred')
+def index_500():
+    phone = sanitize_input(request.args.get('phone', ''))
+    user_bal = None
+    if phone:
+        u = wallets.find_one({"phone": format_phone_number(phone)})
+        if u:
+            user_bal = float(u.get("balance", 0.0))
+    return render_template('room500.html', initial_balance=user_bal)
+
+@app.route('/super')
 @app.route('/superbesh')
 def index_superbesh():
     return render_template('index3.html')
@@ -2481,6 +2526,7 @@ def handle_connect():
         socketio.start_background_task(lambda: run_game_loop("50"))
         socketio.start_background_task(lambda: run_game_loop("100"))
         socketio.start_background_task(lambda: run_game_loop("200"))
+        socketio.start_background_task(lambda: run_game_loop("500"))
         socketio.start_background_task(super_game_loop)
         
     broadcast_game_state("10")
@@ -2488,6 +2534,7 @@ def handle_connect():
     broadcast_game_state("50")
     broadcast_game_state("100")
     broadcast_game_state("200")
+    broadcast_game_state("500")
     broadcast_game_state("super")
 
 if __name__ == '__main__':
