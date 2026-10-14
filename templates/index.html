@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+[cite: 2]<!DOCTYPE html>
 <html lang="am">
 <head>
     <meta charset="UTF-8">
@@ -123,7 +123,6 @@
         .badge-time { background: #1e293b; color: #ffffff; }
         .badge-time .badge-label { color: #f87171; }
 
-        /* BALANCE: READ-ONLY, NO DEPOSIT POPUP */
         .badge-balance { background: #10b981; color: #ffffff; cursor: default; }
         .badge-balance .badge-label { color: #d1fae5; }
         .badge-balance .badge-val { font-size: 0.72rem; }
@@ -218,19 +217,19 @@
         .slot-card.active-cartela {
             border: 2px solid #f59e0b;
             background: #ffffff;
-            padding: 3px;
+            padding: 2px;
             justify-content: space-between;
             box-shadow: 0 2px 6px rgba(245, 158, 11, 0.2);
         }
         .cartela-top-info {
             width: 100%;
             display: flex;
-            justify-content: space-between;
-            font-size: 0.65rem;
+            justify-content: center;
+            font-size: 0.5rem;
             font-weight: 900;
             color: #b45309;
             border-bottom: 1px solid #fef3c7;
-            padding-bottom: 2px;
+            padding-bottom: 1px;
         }
         .cartela-bingo-header {
             display: grid;
@@ -239,9 +238,9 @@
             width: 100%;
             text-align: center;
             color: white;
-            font-size: 0.6rem;
+            font-size: 0.55rem;
             font-weight: 900;
-            margin: 3px 0;
+            margin: 2px 0;
         }
         .cartela-bingo-header div:nth-child(1) { background: #2563eb; border-radius: 2px; }
         .cartela-bingo-header div:nth-child(2) { background: #ef4444; border-radius: 2px; }
@@ -252,19 +251,19 @@
         .cartela-5x5-grid {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
-            gap: 2px;
+            gap: 1px;
             width: 100%;
             background: #f1f5f9;
-            padding: 2px;
+            padding: 1px;
             border-radius: 4px;
             box-sizing: border-box;
         }
         .cartela-5x5-cell {
-            height: 16px;
+            height: 14px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 0.58rem;
+            font-size: 0.5rem;
             font-weight: 900;
             background: #ffffff;
             color: #1e293b;
@@ -274,13 +273,6 @@
         }
         .cartela-5x5-cell.free { background: #f59e0b; color: #000000; border-color: #d97706; }
         .cartela-5x5-cell.hit { background: #10b981; color: #ffffff; border-color: #059669; }
-        .cartela-bottom-info {
-            font-size: 0.6rem;
-            color: #b45309;
-            font-weight: 900;
-            text-transform: uppercase;
-            margin-top: 2px;
-        }
 
         .scanner-round-btn {
             width: 46px;
@@ -406,7 +398,7 @@
             z-index: 30;
             display: flex;
             align-items: center;
-            justify-content: flex-end;
+            justify-content: flex-start;
             padding: 0 110px 0 14px;
             box-sizing: border-box;
         }
@@ -525,7 +517,6 @@
             justify-content: space-between;
         }
 
-        /* UNCALLED BALLS: PLAIN WHITE/LIGHT, CALLED BALLS: VIBRANT GREEN */
         .ball-dot {
             flex: 1;
             min-height: 0;
@@ -565,14 +556,14 @@
             border: 1px solid #1e293b;
             margin-top: auto;
         }
-        .room-footer-bar span {
-            font-size: 0.65rem;
-            letter-spacing: 1px;
-            color: #94a3b8;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            cursor: pointer;
+        .room-footer-bar select {
+            background: #1e293b;
+            color: #f59e0b;
+            border: 1px solid #f59e0b;
+            border-radius: 4px;
+            font-weight: 900;
+            font-size: 0.7rem;
+            padding: 2px 4px;
         }
 
         .game-right-panel {
@@ -594,6 +585,9 @@
             gap: 6px;
             overflow-y: auto;
             flex: 1;
+        }
+        #card-area.single-card {
+            margin-top: 35px;
         }
 
         .waiting-screen-container {
@@ -736,7 +730,6 @@
             font-size: 0.85rem; 
             cursor: default;
         }
-        /* AUTO-ASSIST: HIGHLIGHT 1 REMAINING NUMBER FOR BINGO */
         .cell.one-away-hint {
             animation: pulseHint 1s infinite alternate;
             border: 2px solid #ec4899 !important;
@@ -800,7 +793,6 @@
         <div id="inline-notification"></div>
 
         <div id="lobby-ui">
-            <!-- TOP STATS BAR -->
             <div class="stats-badges-bar">
                 <div class="badge-pill badge-room">
                     <span class="badge-label">ROOM</span>
@@ -814,19 +806,16 @@
                     <span class="badge-label">TIME</span>
                     <span class="badge-val" id="timer">30s</span>
                 </div>
-                <!-- READ-ONLY BALANCE (NO DEPOSIT POPUP) -->
                 <div class="badge-pill badge-balance" title="ቀሪ ሂሳብ">
                     <span class="badge-label">BALANCE</span>
                     <span class="badge-val" id="lobby-balance-val">0.00 ETB</span>
                 </div>
             </div>
 
-            <!-- 500 TICKETS GRID -->
             <div class="grid-container-photo">
                 <div class="grid-8-cols" id="ticket-area"></div>
             </div>
 
-            <!-- BOTTOM TRAY -->
             <div class="bottom-slots-tray">
                 <div class="slot-card empty" id="slot-1-box" onclick="showNotification('እባክዎ ከላይ ካሉት ቁጥሮች ካርቴላ ይምረጡ')">
                     <div class="slot-icon">+</div>
@@ -867,9 +856,7 @@
             </div>
 
             <div class="sub-header-row">
-                <div class="recent-balls-pill" id="recent-balls-container">
-                    <span style="font-size:0.65rem; color:#94a3b8; font-weight:bold; padding:0 4px;">RECENT:</span>
-                </div>
+                <div class="recent-balls-pill" id="recent-balls-container"></div>
             </div>
 
             <div class="game-main-content-row">
@@ -882,8 +869,17 @@
                     </div>
 
                     <div class="room-footer-bar">
-                        <span id="room-text-lbl" onclick="toggleViewMode()">ROOM 10 💰</span>
-                        <span onclick="forceRecoveryRefresh()">🔄 REFRESH</span>
+                        <span>
+                            ROOM: 
+                            <select id="room-selector" onchange="changeRoom(this.value)">
+                                <option value="10" selected>ROOM 10</option>
+                                <option value="20">ROOM 20</option>
+                                <option value="50">ROOM 50</option>
+                                <option value="100">ROOM 100</option>
+                                <option value="200">ROOM 200</option>
+                            </select>
+                        </span>
+                        <span onclick="refreshWithFirstThree()">🔄 REFRESH</span>
                     </div>
                 </div>
 
@@ -907,7 +903,6 @@
         </div>
     </div>
 
-    <!-- RESULT MODAL -->
     <div id="result-modal">
         <div class="result-box">
             <h2 style="color:#f59e0b; margin:0 0 10px 0; font-size:1.4rem;">🏆 ጨዋታው ተጠናቋል!</h2>
@@ -918,17 +913,17 @@
     </div>
 
     <script>
-        const CURRENT_ROOM = "10";
-        const ROOM_PRICE = 10;
+        let CURRENT_ROOM = "10";
+        let ROOM_PRICE = 10;
         let phone = "";
         let username = "Player";
         let balance = 0.00;
         let isProcessingBuy = false;
         let socket = null;
         let latestDrawnBallsGlobal = [];
-        let cardMatricesMap = {}; // ticketId -> matrix (cached for consistency)
-        let playerMarkedState = {}; // ticketId -> Set of marked indices
-        let disqualifiedCards = new Set(); // set of ticketIds disqualified for bogus claims
+        let cardMatricesMap = {}; 
+        let playerMarkedState = {}; 
+        let disqualifiedCards = new Set(); 
 
         window.onload = function() {
             if (window.Telegram && window.Telegram.WebApp) {
@@ -942,7 +937,6 @@
             const urlParams = new URLSearchParams(window.location.search);
             phone = urlParams.get("phone") || localStorage.getItem("phone") || "";
 
-            // Restore marked states from localStorage
             try {
                 const saved = localStorage.getItem("bingo_marked_" + CURRENT_ROOM);
                 if (saved) {
@@ -974,16 +968,10 @@
             initWebSocket();
         }
 
-        function toggleViewMode() {
-            const lobby = document.getElementById("lobby-ui");
-            const game = document.getElementById("game-ui");
-            if (lobby.style.display === "none") {
-                lobby.style.display = "flex";
-                game.style.display = "none";
-            } else {
-                lobby.style.display = "none";
-                game.style.display = "flex";
-            }
+        function changeRoom(newRoom) {
+            CURRENT_ROOM = newRoom;
+            ROOM_PRICE = parseInt(newRoom);
+            window.location.href = `/${newRoom}?phone=${phone}`;
         }
 
         function updateBalanceUI() {
@@ -1015,7 +1003,6 @@
                         applyGameStateData(d);
                     });
 
-                    // AUTOMATIC REAL-TIME BALANCE UPDATE WHEN ADMIN APPROVES
                     socket.on("balance_update", function(data) {
                         if (phoneMatches(data.phone, phone)) {
                             balance = parseFloat(data.balance);
@@ -1038,6 +1025,22 @@
                     applyGameStateData(d);
                 }
             }).catch(() => {});
+        }
+
+        function refreshWithFirstThree() {
+            if (!latestDrawnBallsGlobal || latestDrawnBallsGlobal.length === 0) return;
+            let firstThree = latestDrawnBallsGlobal.slice(0, 3);
+            let myCards = document.querySelectorAll(".bingo-card-wrapper");
+            myCards.forEach(cardWrap => {
+                let cells = cardWrap.querySelectorAll(".cell");
+                cells.forEach(cell => {
+                    let num = parseInt(cell.innerText);
+                    if (firstThree.map(b => parseInt(String(b).replace(/[^0-9]/g, ""))).includes(num)) {
+                        cell.classList.add("selected");
+                    }
+                });
+            });
+            showNotification("የመጀመሪያዎቹ ሶስት ቁጥሮች ታቅልመዋል!", true);
         }
 
         function applyGameStateData(d) {
@@ -1065,7 +1068,6 @@
                 }
             }
 
-            // CACHE CARDS FOR CONSISTENCY BETWEEN LOBBY SLOTS AND GAMEPLAY
             if (d.all_cards) {
                 for (let tid in d.all_cards) {
                     cardMatricesMap[String(tid)] = d.all_cards[tid];
@@ -1088,7 +1090,6 @@
                 document.getElementById("game-ui").style.display="flex"; 
                 document.getElementById("result-modal").style.display = "none";
                 
-                // BALL CIRCLE & 3-SECOND PRE-DRAW COUNTDOWN
                 const ballEl = document.getElementById("ball-circle");
                 if (d.ball_timer !== undefined && d.ball_timer > 0 && drawnBalls.length === 0) {
                     ballEl.className = "countdown-state";
@@ -1098,13 +1099,12 @@
                     ballEl.innerText = d.current_ball;
                 } else {
                     ballEl.className = "countdown-state";
-                    ballEl.innerText = "READY";
+                    ballEl.innerText = "";
                 }
 
                 renderRecentBalls(drawnBalls);
                 renderMainBoard(drawnBalls);
 
-                // Check cards belonging to this player
                 let myCards = [];
                 if (d.sold_tickets) {
                     for (let ticketId in d.sold_tickets) {
@@ -1123,9 +1123,13 @@
                     cardArea.style.display = "flex";
                     waitingScreen.style.display = "none";
                     cardArea.innerHTML = "";
+                    if (myCards.length === 1) {
+                        cardArea.className = "single-card";
+                    } else {
+                        cardArea.className = "";
+                    }
                     myCards.forEach((cObj, i) => { renderCard(cObj.matrix, i, cObj.id); });
                 } else {
-                    // LATE ARRIVAL WAITING SCREEN
                     cardArea.style.display = "none";
                     waitingScreen.style.display = "flex";
                 }
@@ -1204,8 +1208,7 @@
 
                 box.innerHTML = `
                     <div class="cartela-top-info">
-                        <span>CARD #${ticketObj.id}</span>
-                        <span style="color:#ef4444; font-weight:900;">መመለሻ (REFUND)</span>
+                        <span>card #${ticketObj.id}</span>
                     </div>
                     <div class="cartela-bingo-header">
                         <div>B</div><div>I</div><div>N</div><div>G</div><div>O</div>
@@ -1213,7 +1216,6 @@
                     <div class="cartela-5x5-grid">
                         ${cellsHtml}
                     </div>
-                    <div class="cartela-bottom-info">SLOT ${slotIndex} (ለመመለስ ይጫኑ)</div>
                 `;
             } else {
                 box.className = "slot-card empty";
@@ -1249,7 +1251,6 @@
                 if(sold && sold[i]) { 
                     const isMine = phoneMatches(sold[i], phone);
                     box.className = isMine ? "t-box mine" : "t-box sold"; 
-                    // CLICKING OWN TICKET IN LOBBY REFUNDS IMMEDIATELY WITHOUT PROMPT
                     box.onclick = isMine ? () => refund(i) : null;
                 } else { 
                     box.className="t-box"; 
@@ -1261,14 +1262,12 @@
         function buy(n) {
             if (isProcessingBuy) return;
 
-            // 1. CHECK MAX 2 TICKETS PER PLAYER
             const soldCount = document.querySelectorAll(".t-box.mine").length;
             if (soldCount >= 2) {
                 showNotification("❌ ከአንድ ተጨዋች 2 ካርቴላ በላይ መግዛት አይቻልም!");
                 return;
             }
 
-            // 2. CHECK BALANCE
             if (balance < ROOM_PRICE) {
                 showNotification("❌ በቂ ሒሳብ የለዎትም!");
                 return;
@@ -1305,7 +1304,6 @@
             });
         }
 
-        // REFUND: NO CONFIRMATION PROMPT AS REQUESTED
         function refund(n) {
             balance += ROOM_PRICE;
             updateBalanceUI();
@@ -1325,11 +1323,10 @@
         function renderRecentBalls(drawn) {
             const pill = document.getElementById("recent-balls-container");
             if (!pill) return;
-            pill.innerHTML = `<span style="font-size:0.65rem; color:#94a3b8; font-weight:bold; padding:0 4px;">RECENT:</span>`;
+            pill.innerHTML = "";
             if (!drawn || drawn.length === 0) return;
 
-            // Show up to the last 3 balls
-            const recent = drawn.slice(-3).reverse();
+            const recent = drawn.slice(0, 3);
             recent.forEach(bStr => {
                 let cleanNum = parseInt(String(bStr).replace(/[^0-9]/g, ""));
                 let letter = "B";
@@ -1377,206 +1374,7 @@
             return latestDrawnBallsGlobal.some(b => parseInt(String(b).replace(/[^0-9]/g, "")) === n);
         }
 
-        // AUTO-ASSIST: CHECK IF A LINE IS 1 NUMBER AWAY FROM BINGO
         function getOneAwayIndices(matrix, markedSet) {
             const lines = [
-                // Rows
                 [0,1,2,3,4], [5,6,7,8,9], [10,11,12,13,14], [15,16,17,18,19], [20,21,22,23,24],
-                // Columns
-                [0,5,10,15,20], [1,6,11,16,21], [2,7,12,17,22], [3,8,13,18,23], [4,9,14,19,24],
-                // Diagonals
-                [0,6,12,18,24], [4,8,12,16,20],
-                // Four Corners
-                [0,4,20,24]
-            ];
-
-            const hints = new Set();
-            lines.forEach(line => {
-                let unhit = [];
-                line.forEach(idx => {
-                    if (idx === 12 || matrix[idx] === 0) return; // Center star is free
-                    if (!markedSet.has(idx)) {
-                        unhit.push(idx);
-                    }
-                });
-                if (unhit.length === 1) {
-                    hints.add(unhit[0]);
-                }
-            });
-            return hints;
-        }
-
-        function renderCard(card, index, cardId) {
-            const wrap = document.createElement("div"); 
-            const isDisqualified = disqualifiedCards.has(String(cardId));
-            wrap.className = "bingo-card-wrapper" + (isDisqualified ? " disqualified" : "");
-            wrap.id = "card-wrap-" + cardId;
-            
-            if (isDisqualified) {
-                const badge = document.createElement("div");
-                badge.className = "disqualified-badge";
-                badge.innerText = "DISQUALIFIED";
-                wrap.appendChild(badge);
-            }
-
-            wrap.innerHTML += `<div class="bingo-card-header"><div>B</div><div>I</div><div>N</div><div>G</div><div>O</div></div>`;
-            
-            const grid = document.createElement("div"); 
-            grid.className = "bingo-card";
-            
-            if (!playerMarkedState[cardId]) {
-                playerMarkedState[cardId] = new Set();
-            }
-            const markedSet = playerMarkedState[cardId];
-            const oneAwayHints = getOneAwayIndices(card, markedSet);
-
-            card.forEach((n, i) => {
-                const cell = document.createElement("div"); 
-                const numVal = parseInt(n);
-                const isCenter = (i === 12 || numVal === 0);
-
-                if (isCenter) { 
-                    cell.className = "cell free selected"; 
-                    cell.innerText = "★"; 
-                } else { 
-                    const isMarked = markedSet.has(i);
-                    let cls = "cell";
-                    if (isMarked) cls += " selected";
-                    else if (oneAwayHints.has(i) && isNumberDrawn(numVal)) cls += " one-away-hint";
-
-                    cell.className = cls;
-                    cell.innerText = n; 
-
-                    cell.onclick = () => {
-                        if (isDisqualified) return;
-
-                        // RULE: CANNOT COLOR BEFORE NUMBER IS DRAWN!
-                        if (!isNumberDrawn(numVal)) {
-                            showNotification("⚠️ ቁጥር " + numVal + " ገና አልተጠራም!");
-                            return;
-                        }
-
-                        if (markedSet.has(i)) {
-                            markedSet.delete(i);
-                            cell.classList.remove("selected");
-                        } else {
-                            markedSet.add(i);
-                            cell.classList.add("selected");
-                            cell.classList.remove("one-away-hint");
-                        }
-
-                        // SAVE MARKED STATE ACROSS APP SWITCHING
-                        try {
-                            const stateObj = {};
-                            for (let k in playerMarkedState) {
-                                stateObj[k] = Array.from(playerMarkedState[k]);
-                            }
-                            localStorage.setItem("bingo_marked_" + CURRENT_ROOM, JSON.stringify(stateObj));
-                        } catch(e) {}
-                    };
-                }
-                grid.appendChild(cell);
-            });
-            wrap.appendChild(grid);
-
-            const bingoBtn = document.createElement("button");
-            bingoBtn.className = "bingo-btn";
-            bingoBtn.disabled = isDisqualified;
-            bingoBtn.innerHTML = `BINGO! <span>#${cardId}</span>`;
-            bingoBtn.onclick = () => {
-                if (isDisqualified) return;
-                claimSpecificCard(cardId, card, markedSet, wrap, bingoBtn);
-            };
-            wrap.appendChild(bingoBtn);
-
-            document.getElementById("card-area").appendChild(wrap);
-        }
-
-        // WINNING PATTERN CHECK (4 TYPES)
-        function checkCardBingoWin(matrix, markedSet) {
-            const isHit = (idx) => (idx === 12 || matrix[idx] === 0 || markedSet.has(idx));
-
-            // 1. Horizontal Rows
-            for (let r=0; r<5; r++) {
-                let rowFull = true;
-                for (let c=0; c<5; c++) {
-                    if (!isHit(r*5 + c)) { rowFull = false; break; }
-                }
-                if (rowFull) return { won: true, type: "Horizontal Row" };
-            }
-
-            // 2. Vertical Columns
-            for (let c=0; c<5; c++) {
-                let colFull = true;
-                for (let r=0; r<5; r++) {
-                    if (!isHit(r*5 + c)) { colFull = false; break; }
-                }
-                if (colFull) return { won: true, type: "Vertical Column" };
-            }
-
-            // 3. Diagonal 1 (Top-Left to Bottom-Right)
-            if (isHit(0) && isHit(6) && isHit(12) && isHit(18) && isHit(24)) {
-                return { won: true, type: "Diagonal (Main)" };
-            }
-
-            // Diagonal 2 (Top-Right to Bottom-Left)
-            if (isHit(4) && isHit(8) && isHit(12) && isHit(16) && isHit(20)) {
-                return { won: true, type: "Diagonal (Reverse)" };
-            }
-
-            // 4. Four Corners
-            if (isHit(0) && isHit(4) && isHit(20) && isHit(24)) {
-                return { won: true, type: "Four Corners" };
-            }
-
-            return { won: false };
-        }
-
-        function claimSpecificCard(targetCardId, matrix, markedSet, cardWrapEl, btnEl) {
-            // DISQUALIFICATION CHECK FOR BOGUS BINGO CLICK
-            const winCheck = checkCardBingoWin(matrix, markedSet);
-            if (!winCheck.won) {
-                // DISQUALIFY THIS CARD
-                disqualifiedCards.add(String(targetCardId));
-                cardWrapEl.classList.add("disqualified");
-                btnEl.disabled = true;
-
-                if (!cardWrapEl.querySelector(".disqualified-badge")) {
-                    const b = document.createElement("div");
-                    b.className = "disqualified-badge";
-                    b.innerText = "DISQUALIFIED";
-                    cardWrapEl.appendChild(b);
-                }
-
-                showNotification("❌ የተሳሳተ ቢንጎ! ካርቴላ #" + targetCardId + " ተሰርዟል (Disqualified)!");
-                return;
-            }
-
-            // VALID BINGO CLAIM -> SEND TO SERVER
-            if (btnEl) btnEl.disabled = true;
-            fetch("/claim_bingo", { 
-                method:"POST", 
-                headers:{ "Content-Type":"application/json" }, 
-                body: JSON.stringify({ 
-                    phone: phone, 
-                    room: CURRENT_ROOM, 
-                    ticket_num: targetCardId,
-                    line_name: winCheck.type
-                }) 
-            })
-            .then(r => r.json())
-            .then(d => { 
-                if(!d || !d.success) { 
-                    showNotification(d.msg || "ቢንጎው አልተሳካም!");
-                    if(btnEl) btnEl.disabled = false; 
-                } else {
-                    showNotification("🎉 ድል! ቢንጎዎ ተረጋግጧል!", true);
-                    const audio = document.getElementById("win-horn");
-                    if (audio) audio.play().catch(() => {});
-                    forceRecoveryRefresh();
-                }
-            }).catch(() => { if(btnEl) btnEl.disabled = false; }); 
-        }
-    </script>
-</body>
-</html>
+                [0,5,10,15,20], [1,6,11,16,21],
