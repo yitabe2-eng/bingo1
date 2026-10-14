@@ -376,13 +376,13 @@ def set_bot_commands():
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/setMyCommands"
     
     default_commands = [
-        {"command": "play", "description": "🎮 ጨዋታ ይምረጡ"},
-        {"command": "deposit", "description": "📥 ሂሳብ ለመሙላት (Deposit)"},
-        {"command": "withdraw", "description": "📤 ብር ወጪ ለማድረግ (Withdraw)"},
-        {"command": "transfer", "description": "💸 ብር ለማስተላለፍ (Transfer)"},
-        {"command": "balance", "description": "💰 ቀሪ (Balance)"},
-        {"command": "history", "description": "📥 የትራንዛክሽን ታሪክ"},
-        {"command": "instruction", "description": "ℹ️ የጨዋታ ህጎች"}
+        {"command": "play", "description": "🎮 choice game"},
+        {"command": "deposit", "description": "📥 Deposit"},
+        {"command": "withdraw", "description": "📤 Withdraw"},
+        {"command": "transfer", "description": "💸 Transfer"},
+        {"command": "balance", "description": "💰 Balance"},
+        {"command": "history", "description": "📥 History"},
+        {"command": "instruction", "description": "ℹ️ instruction"}
     ]
     try:
         requests.post(url, json={"commands": default_commands}, timeout=3)
