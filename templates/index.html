@@ -1008,11 +1008,25 @@
                     <span class="badge-label">TIME</span>
                     <span class="badge-val" id="timer">30s</span>
                 </div>
-                <!-- READ-ONLY BALANCE -->
+                <!-- READ-ONLY BALANCE (SHOWS ACTUAL BALANCE FROM START - NO 0 FLICKER) -->
                 <div class="badge-pill badge-balance" title="ቀሪ ሂሳብ">
                     <span class="badge-label">BALANCE</span>
-                    <span class="badge-val" id="lobby-balance-val">0.00 ETB</span>
+                    <span class="badge-val" id="lobby-balance-val">{% if initial_balance is defined and initial_balance is not none %}{{ "%.2f"|format(initial_balance) }} ETB{% else %}-- ETB{% endif %}</span>
                 </div>
+                <script>
+                    (function(){
+                        try {
+                            var p = new URLSearchParams(window.location.search).get("phone") || localStorage.getItem("phone") || "";
+                            var cb = localStorage.getItem("cached_balance_" + p);
+                            if (cb && !isNaN(parseFloat(cb))) {
+                                var el = document.getElementById("lobby-balance-val");
+                                if (el && (el.innerText.includes("--") || el.innerText === "0.00 ETB")) {
+                                    el.innerText = Number(cb).toFixed(2) + " ETB";
+                                }
+                            }
+                        } catch(e){}
+                    })();
+                </script>
             </div>
 
             <!-- 500 TICKETS GRID -->
@@ -1178,6 +1192,18 @@
             const urlParams = new URLSearchParams(window.location.search);
             phone = urlParams.get("phone") || localStorage.getItem("phone") || "";
 
+            // 1. መጀመሪያውኑ ትክክለኛው ባላንስ እንዲታይ (0 ሁኖ እንዳይመጣ)
+            const serverInitialBalStr = "{{ initial_balance if initial_balance is defined and initial_balance is not none else '' }}";
+            if (serverInitialBalStr !== "" && !isNaN(parseFloat(serverInitialBalStr))) {
+                balance = parseFloat(serverInitialBalStr);
+                try { localStorage.setItem("cached_balance_" + phone, balance); } catch(e) {}
+            } else {
+                const cached = localStorage.getItem("cached_balance_" + phone);
+                if (cached !== null && !isNaN(parseFloat(cached))) {
+                    balance = parseFloat(cached);
+                }
+            }
+
             try {
                 const saved = localStorage.getItem("bingo_marked_" + CURRENT_ROOM);
                 if (saved) {
@@ -1224,6 +1250,9 @@
         function updateBalanceUI() {
             let bEl = document.getElementById("lobby-balance-val");
             if (bEl) bEl.innerText = Number(balance).toFixed(2) + " ETB";
+            if (phone) {
+                try { localStorage.setItem("cached_balance_" + phone, balance); } catch(e) {}
+            }
         }
 
         function phoneMatches(p1, p2) {
@@ -1417,7 +1446,11 @@
                     cardArea.style.display = "flex";
                     waitingScreen.style.display = "none";
                     cardArea.innerHTML = "";
-                    myCards.forEach((cObj, i) => { renderCard(cObj.matrix, i, cObj.id); });
+                    myCards.forEach((cObj, i) => { 
+                        // 4. አንድ ሰው ለማሸነፍ አንድ ቁጥር እየጠበቀ ከሆነ ያች ቁጥር automatic ትቀልማለች
+                        checkAndAutoMarkWinningNumber(cObj.matrix, cObj.id, drawnBalls);
+                        renderCard(cObj.matrix, i, cObj.id); 
+                    });
                 } else {
                     // ጨዋታው ተጀምሮ ለሚመጡ waiting በሰጠሁህ ፎቶ መሰረት
                     cardArea.style.display = "none";
@@ -1742,7 +1775,7 @@
                 if(d.success) {
                     balance = parseFloat(d.balance);
                     updateBalanceUI();
-                    showNotification(`✅ ካርቴላ #${n} ተመርጧል!`, true);
+                    // ካርቴላ ሲገዛ notification አያስፈልግም
                 } else {
                     balance += ROOM_PRICE;
                     updateBalanceUI();
@@ -1760,7 +1793,7 @@
         function refund(n) {
             balance += ROOM_PRICE;
             updateBalanceUI();
-            showNotification(`🔄 ካርቴላ #${n} ተመላሽ ተደርጓል!`, true);
+            // ካርቴላ ሲመለስ notification አያስፈልግም
 
             fetch("/cancel_ticket", { 
                 method:"POST", headers:{"Content-Type":"application/json"}, 
@@ -1808,6 +1841,66 @@
             return latestDrawnBallsGlobal.findIndex(b => parseInt(String(b).replace(/[^0-9]/g, "")) === n);
         }
 
+        // 4. አንድ ሰው ለማሸነፍ አንድ ቁጥር እየጠበቀ ከሆነ ያች ቁጥር automatic እንድትቀልም
+        // (እሱ ሳይነካ ትቀልማለች እሱ ቢንጎ ማለት ነው የሚጠበቅበት)
+        function checkAndAutoMarkWinningNumber(matrix, cardId, drawn) {
+            if (!drawn || drawn.length === 0) return;
+            if (!playerMarkedState[cardId]) {
+                playerMarkedState[cardId] = new Set();
+            }
+            const markedSet = playerMarkedState[cardId];
+            const isHit = (idx) => (idx === 12 || matrix[idx] === 0 || markedSet.has(idx));
+
+            const drawnNumbersSet = new Set(
+                drawn.map(b => parseInt(String(b).replace(/[^0-9]/g, "")))
+            );
+
+            const winningPatterns = [
+                // 5 አግድም ረድፎች (Rows)
+                [0, 1, 2, 3, 4],
+                [5, 6, 7, 8, 9],
+                [10, 11, 12, 13, 14],
+                [15, 16, 17, 18, 19],
+                [20, 21, 22, 23, 24],
+                // 5 ቁልቁል አምዶች (Columns)
+                [0, 5, 10, 15, 20],
+                [1, 6, 11, 16, 21],
+                [2, 7, 12, 17, 22],
+                [3, 8, 13, 18, 23],
+                [4, 9, 14, 19, 24],
+                // 2 ዲያጎናሎች (Diagonals)
+                [0, 6, 12, 18, 24],
+                [4, 8, 12, 16, 20],
+                // 4 ማዕዘኖች (Four Corners)
+                [0, 4, 20, 24]
+            ];
+
+            let autoMarkedSomething = false;
+            winningPatterns.forEach(pattern => {
+                const missingIndices = pattern.filter(idx => !isHit(idx));
+                // ለማሸነፍ በትክክል 1 ቁጥር ብቻ እየጠበቀ ከሆነ (1-to-go)
+                if (missingIndices.length === 1) {
+                    const missingIdx = missingIndices[0];
+                    const waitingNumber = parseInt(matrix[missingIdx]);
+                    // ያች ቁጥር በኳሶቹ ውስጥ ተጠርታ ከሆነ ሳያነካ በራሷ automatic ትቀልማለች
+                    if (drawnNumbersSet.has(waitingNumber) && !markedSet.has(missingIdx)) {
+                        markedSet.add(missingIdx);
+                        autoMarkedSomething = true;
+                    }
+                }
+            });
+
+            if (autoMarkedSomething) {
+                try {
+                    const stateObj = {};
+                    for (let k in playerMarkedState) {
+                        stateObj[k] = Array.from(playerMarkedState[k]);
+                    }
+                    localStorage.setItem("bingo_marked_" + CURRENT_ROOM, JSON.stringify(stateObj));
+                } catch(e) {}
+            }
+        }
+
         function renderCard(card, index, cardId) {
             const wrap = document.createElement("div"); 
             const isDisqualified = disqualifiedCards.has(String(cardId));
@@ -1852,17 +1945,15 @@
                             return;
                         }
 
-                        // አራት ቁጥሮች ከተጠሩ በኋላ ማቅለም አይቻልም
-                        // When a player is unmarking, allow it.
-                        // When marking a number:
+                        // 3. አንድ ቁጥር ተጠርቶ ማቅለም የሚቻለው ከሱ በኋላ 4 ቁጥሮች እስከሚጠሩ ድረስ ነው
                         if (!markedSet.has(i)) {
                             const dIdx = getDrawnIndex(numVal);
                             const totalDrawn = latestDrawnBallsGlobal.length;
+                            const ballsCalledAfter = (totalDrawn - 1) - dIdx;
 
-                            // If this number came out in the first 3 balls, but now 4 or more balls have been called:
-                            // unless it was marked earlier or during the first 3 balls, it cannot be colored late!
-                            if (totalDrawn >= 4 && dIdx < (totalDrawn - 1) && dIdx < 3 && !allowCatchUpMarking) {
-                                showNotification("⚠️ አራት ቁጥሮች ከተጠሩ በኋላ ያመለጡ ቁጥሮችን ማቅለም አይቻልም!");
+                            // ከሱ በኋላ ከ 4 ቁጥሮች በላይ ከተጠሩ ማቅለም አይፈቀድም
+                            if (ballsCalledAfter > 4 && !allowCatchUpMarking) {
+                                showNotification(`⚠️ ቁጥር ${numVal} ከተጠራ ${ballsCalledAfter} ቁጥሮች ስላለፉ ማቅለም አይፈቀድም! (ገደብ፦ 4 ቁጥሮች)`);
                                 return;
                             }
                         }
@@ -1892,6 +1983,14 @@
             bingoBtn.className = "bingo-btn";
             bingoBtn.disabled = isDisqualified;
             bingoBtn.innerHTML = `BINGO! <span>#${cardId}</span>`;
+
+            // ማሸነፉ ከተረጋገጠ አዝራሩ በደማቅ እንዲበራ (እሱ ቢንጎ ማለት ነው የሚጠበቅበት)
+            const winCheckNow = checkCardBingoWin(card, markedSet);
+            if (winCheckNow.won && !isDisqualified) {
+                bingoBtn.style.background = "linear-gradient(135deg, #10b981 0%, #059669 100%)";
+                bingoBtn.style.boxShadow = "0 0 16px rgba(16, 185, 129, 0.7)";
+            }
+
             bingoBtn.onclick = () => {
                 if (isDisqualified) return;
                 claimSpecificCard(cardId, card, markedSet, wrap, bingoBtn);
