@@ -1447,7 +1447,7 @@
 
         function handleGameUiRefresh() {
             forceRecoveryRefresh();
-            if (latestDrawnBallsGlobal.length >= 75) {
+            if (latestDrawnBallsGlobal.length >= 4) {
                 showNotification("⚠️ 4 ቁጥሮች ከተጠሩ በኋላ ያመለጡ ቁጥሮችን ማቅለም አይቻልም!");
                 allowCatchUpMarking = false;
             } else if (latestDrawnBallsGlobal.length > 0 && latestDrawnBallsGlobal.length <= 3) {
