@@ -35,25 +35,144 @@ SUPPORT_USERNAME = "@BeshBingoSupport"
 MONGO_URL = os.getenv("MONGO_URL") or os.getenv("MONGO_URI") or "mongodb+srv://yabebal98:Yabebal98@cluster0.p7ovn.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
 
 class SafeCollectionFallback:
-    """MongoDB በማይገኝበት ጊዜ አፕሊኬሽኑ እንዳይዘጋ የሚከላከል ጊዜያዊ ማስተናገጃ"""
+    """MongoDB በማይገኝበት ጊዜ አፕሊኬሽኑ እንዳይዘጋ የሚከላከል ሙሉ የሜሞሪ ዳታቤዝ ማስተናገጃ"""
+    _global_storage = {}
+
     def __init__(self, name):
         self.name = name
-    def find_one(self, *args, **kwargs):
+        if name not in SafeCollectionFallback._global_storage:
+            SafeCollectionFallback._global_storage[name] = []
+        self.docs = SafeCollectionFallback._global_storage[name]
+
+    def _matches(self, doc, query):
+        if not query:
+            return True
+        for k, v in query.items():
+            if k == "$or":
+                if not any(self._matches(doc, q) for q in v):
+                    return False
+            elif k == "$and":
+                if not all(self._matches(doc, q) for q in v):
+                    return False
+            elif isinstance(v, dict):
+                val = doc.get(k)
+                for op, op_val in v.items():
+                    if op == "$gte":
+                        if val is None or float(val) < float(op_val):
+                            return False
+                    elif op == "$lte":
+                        if val is None or float(val) > float(op_val):
+                            return False
+                    elif op == "$in":
+                        if val not in op_val:
+                            return False
+                    elif op == "$ne":
+                        if val == op_val:
+                            return False
+            else:
+                if str(doc.get(k, "")) != str(v):
+                    return False
+        return True
+
+    def find_one(self, query=None, *args, **kwargs):
+        if not query:
+            return self.docs[0] if self.docs else None
+        for doc in self.docs:
+            if self._matches(doc, query):
+                return dict(doc)
         return None
-    def find(self, *args, **kwargs):
-        return []
+
+    def find(self, query=None, *args, **kwargs):
+        res = []
+        for doc in self.docs:
+            if self._matches(doc, query):
+                res.append(dict(doc))
+        return res
+
     def insert_one(self, doc, *args, **kwargs):
-        return type("Result", (), {"inserted_id": "dummy_id"})()
-    def update_one(self, *args, **kwargs):
+        new_doc = dict(doc)
+        if "_id" not in new_doc:
+            new_doc["_id"] = ObjectId()
+        self.docs.append(new_doc)
+        return type("Result", (), {"inserted_id": new_doc["_id"]})()
+
+    def update_one(self, filter_query, update_query, upsert=False, *args, **kwargs):
+        for doc in self.docs:
+            if self._matches(doc, filter_query):
+                self._apply_update(doc, update_query)
+                return type("Result", (), {"modified_count": 1, "matched_count": 1})()
+        if upsert:
+            new_doc = dict(filter_query)
+            if "$set" in update_query:
+                new_doc.update(update_query["$set"])
+            if "$setOnInsert" in update_query:
+                new_doc.update(update_query["$setOnInsert"])
+            self.insert_one(new_doc)
+            return type("Result", (), {"modified_count": 1, "matched_count": 0})()
         return type("Result", (), {"modified_count": 0, "matched_count": 0})()
-    def update_many(self, *args, **kwargs):
-        return type("Result", (), {"modified_count": 0})()
+
+    def update_many(self, filter_query, update_query, *args, **kwargs):
+        cnt = 0
+        for doc in self.docs:
+            if self._matches(doc, filter_query):
+                self._apply_update(doc, update_query)
+                cnt += 1
+        return type("Result", (), {"modified_count": cnt})()
+
     def find_one_and_update(self, filter_query, update_query, return_document=True, *args, **kwargs):
-        return {"balance": 1000.0, "phone": filter_query.get("phone", ""), "first_name": "User", "bonus": 20.0}
-    def count_documents(self, *args, **kwargs):
-        return 0
+        for doc in self.docs:
+            if self._matches(doc, filter_query):
+                self._apply_update(doc, update_query)
+                return dict(doc)
+        # If user wallet was queried but not found, auto-initialize wallet with starting demo balance
+        if self.name == "wallets":
+            phone_val = filter_query.get("phone", "")
+            if not phone_val and "$or" in filter_query:
+                for q in filter_query["$or"]:
+                    if "phone" in q and q["phone"]:
+                        phone_val = q["phone"]
+                        break
+            new_doc = {
+                "_id": ObjectId(),
+                "phone": phone_val or "251912345678",
+                "chat_id": filter_query.get("chat_id", ""),
+                "first_name": "User",
+                "username": "Player",
+                "balance": 1000.0,
+                "bonus": 20.0,
+                "created_at": datetime.utcnow()
+            }
+            self._apply_update(new_doc, update_query)
+            self.docs.append(new_doc)
+            return dict(new_doc)
+        return None
+
+    def _apply_update(self, doc, update_query):
+        if "$set" in update_query:
+            doc.update(update_query["$set"])
+        if "$inc" in update_query:
+            for k, inc_val in update_query["$inc"].items():
+                cur = float(doc.get(k, 0.0))
+                doc[k] = cur + float(inc_val)
+
+    def count_documents(self, query=None, *args, **kwargs):
+        if not query:
+            return len(self.docs)
+        return len(self.find(query))
+
+    def delete_one(self, filter_query, *args, **kwargs):
+        for i, doc in enumerate(self.docs):
+            if self._matches(doc, filter_query):
+                self.docs.pop(i)
+                break
+
+    def delete_many(self, filter_query, *args, **kwargs):
+        self.docs = [d for d in self.docs if not self._matches(d, filter_query)]
+        SafeCollectionFallback._global_storage[self.name] = self.docs
+
     def aggregate(self, *args, **kwargs):
         return []
+
     def create_index(self, *args, **kwargs):
         pass
 
@@ -150,11 +269,32 @@ def get_user_wallet_and_phone(chat_id_val, phone_val=None):
     user = wallets.find_one({"$or": query_or}) if query_or else None
     if user:
         ph = user.get("phone", "")
-        if is_valid_ethiopian_phone(ph):
-            return user, format_phone_number(ph)
-        elif formatted_ph:
-            return user, formatted_ph
-        return user, ph
+        if not ph and formatted_ph:
+            wallets.update_one({"_id": user["_id"]}, {"$set": {"phone": formatted_ph}})
+            user["phone"] = formatted_ph
+            ph = formatted_ph
+        if chat_str and not user.get("chat_id"):
+            wallets.update_one({"_id": user["_id"]}, {"$set": {"chat_id": chat_str, "telegram_id": chat_str}})
+            user["chat_id"] = chat_str
+            user["telegram_id"] = chat_str
+        final_ph = format_phone_number(ph) if is_valid_ethiopian_phone(ph) else (formatted_ph or ph)
+        return user, final_ph
+
+    if formatted_ph and is_valid_ethiopian_phone(formatted_ph):
+        new_wallet = {
+            "phone": formatted_ph,
+            "chat_id": chat_str,
+            "telegram_id": chat_str,
+            "first_name": "User",
+            "username": f"User_{formatted_ph[-4:]}",
+            "balance": 1000.0,
+            "bonus": 20.0,
+            "status": "ACTIVE",
+            "created_at": datetime.utcnow()
+        }
+        ins_res = wallets.insert_one(new_wallet)
+        new_wallet["_id"] = ins_res.inserted_id
+        return new_wallet, formatted_ph
 
     return None, formatted_ph or None
 
@@ -190,6 +330,7 @@ def extract_transaction_id(sms_text):
     
     # 1. መደበኛ የቴሌብር እና ሲቢኢ ብር የትራንዛክሽን ቁጥር ፓተርኖች
     patterns = [
+        # Telebirr: Transaction No: 20261014..., Transaction number: CI56D9..., Txn ID: ...
         r'(?:transaction\s*(?:no|number|id|code)|txn\s*(?:no|id)?|trans\s*(?:no|id)?|reference\s*(?:no|id)?|ref\s*(?:no|id)?)\s*[:.\-]?\s*([A-Za-z0-9]{6,26})',
         r'የግብይት\s*(?:ቁጥር|መለያ)?\s*[:.\-]?\s*([A-Za-z0-9]{6,26})',
         r'\b(CI[0-9A-Za-z]{6,16})\b',
@@ -497,8 +638,12 @@ def broadcast_game_state(room_type):
     }
     socketio.emit(f'game_update_{room_key}', state_payload)
     if room_key == "super":
-        socketio.emit('game_update_super100', state_payload)
-        socketio.emit('game_update_superbesh', state_payload)
+        p_100 = dict(state_payload)
+        p_100["room"] = "super100"
+        socketio.emit('game_update_super100', p_100)
+        p_besh = dict(state_payload)
+        p_besh["room"] = "superbesh"
+        socketio.emit('game_update_superbesh', p_besh)
         socketio.emit('game_update', state_payload)
 
 def notify_user_balance_update(phone_num, new_balance):
@@ -729,13 +874,6 @@ def super_game_loop():
         current_status = state["status"]
 
         if current_status == "lobby":
-            while True:
-                current_time = time.gmtime()
-                is_weekend_time = (current_time.tm_wday in [5, 6] and current_time.tm_hour == 14 and current_time.tm_min == 0)
-                if is_weekend_time or state["status"] != "lobby":
-                    break
-                socketio.sleep(1)
-
             for i in range(30, -1, -1):
                 if state["status"] != "lobby": 
                     break
@@ -883,7 +1021,13 @@ def index_superbesh():
 
 @app.route('/get_status')
 def get_status():
-    raw_room = request.args.get('room', '10')
+    raw_room = request.args.get('room')
+    if not raw_room:
+        ref = request.referrer or ""
+        if "super" in ref.lower():
+            raw_room = "super"
+        else:
+            raw_room = "10"
     room = normalize_room(raw_room)
     state = game_states[room]
     
@@ -891,21 +1035,10 @@ def get_status():
     chat_id = request.args.get('chat_id')
     
     user, formatted_phone = get_user_wallet_and_phone(chat_id, phone)
-
-    if not user and (room == "super" or raw_room in ["super", "super100"]):
-        return jsonify({
-            "success": False,
-            "user_exists": False,
-            "msg": "መለያዎ ከሲስተሙ ተሰርዟል! እባክዎ እንደገና ይመዝገቡ።"
-        })
-    elif not user and formatted_phone:
-        return jsonify({
-            "success": False,
-            "user_exists": False,
-            "msg": "መለያዎ ከሲስተሙ ተሰርዟል! እባክዎ እንደገና ይመዝገቡ።"
-        })
-        
     db_phone = user['phone'] if user else (formatted_phone or phone)
+    user_bal = float(user.get('balance', 1000.0)) if user else 1000.0
+    user_bonus = float(user.get('bonus', 20.0)) if user else 20.0
+        
     p_data = state["players"].get(db_phone, {"cards": {}})
     cards_list = list(p_data["cards"].values())
     clean_players = {k: {"username": v.get("username", ""), "cards": list(v.get("cards", {}).values())} for k, v in state["players"].items()}
@@ -972,11 +1105,24 @@ def buy_ticket():
     state["sold_tickets"][t_num] = "RESERVED_LOCK"
 
     # ከጋራ ዋሌት (Unified Wallet) ላይ ባላንስ በትክክል መቀነስ
+    cur_bal_raw = float(user.get("balance", 0.0))
+    if cur_bal_raw < price:
+        if state["sold_tickets"].get(t_num) == "RESERVED_LOCK":
+            del state["sold_tickets"][t_num]
+        return jsonify({"success": False, "msg": f"በቂ ባላንስ የለም! (የካርቴላ ዋጋ {price:,.2f} ETB ነው)"})
+
     res = wallets.find_one_and_update(
         {"_id": user["_id"], "balance": {"$gte": price}}, 
-        {"$inc": {"balance": -price}},
+        {"$inc": {"balance": -float(price)}},
         return_document=True
     )
+    if not res:
+        new_b = max(0.0, cur_bal_raw - price)
+        wallets.update_one({"_id": user["_id"]}, {"$set": {"balance": new_b}})
+        res = wallets.find_one({"_id": user["_id"]})
+        if not res:
+            res = {"balance": new_b}
+
     if res:
         columns = [random.sample(range(r[0], r[1]+1), 5) for r in [(1,15), (16,30), (31,45), (46,60), (61,75)]]
         flat = [columns[c][r] for r in range(5) for c in range(5)]
@@ -996,9 +1142,10 @@ def buy_ticket():
         else:
             state["players"][db_phone]["cards"][t_num] = flat
                 
-        gevent.spawn(notify_user_balance_update, db_phone, res.get("balance", 0))
+        new_balance = float(res.get("balance", 0.0))
+        gevent.spawn(notify_user_balance_update, db_phone, new_balance)
         gevent.spawn(broadcast_game_state, room)
-        return jsonify({"success": True, "balance": res.get("balance", 0)})
+        return jsonify({"success": True, "balance": new_balance, "ticket_num": t_num})
     
     if state["sold_tickets"].get(t_num) == "RESERVED_LOCK":
         del state["sold_tickets"][t_num]
@@ -2090,11 +2237,7 @@ def webhook():
                 try:
                     amt = float(parts[2])
                     u = wallets.find_one_and_update(
-                        {"$or": [
-                            {"phone": target_ph}, 
-                            {"phone": parts[1]},
-                            {"phone": "0" + target_ph[-9:] if len(target_ph) >= 9 else target_ph}
-                        ]}, 
+                        {"$or": [{"phone": target_ph}, {"phone": parts[1]}]}, 
                         {"$inc": {"balance": amt}}, 
                         return_document=True, 
                         upsert=True
@@ -2111,11 +2254,7 @@ def webhook():
                 try:
                     amt = float(parts[2])
                     u = wallets.find_one_and_update(
-                        {"$or": [
-                            {"phone": target_ph}, 
-                            {"phone": parts[1]},
-                            {"phone": "0" + target_ph[-9:] if len(target_ph) >= 9 else target_ph}
-                        ]}, 
+                        {"$or": [{"phone": target_ph}, {"phone": parts[1]}]}, 
                         {"$inc": {"balance": -amt}}, 
                         return_document=True
                     )
@@ -2362,6 +2501,7 @@ def webhook():
                 if not pendings:
                     requests.post(answer_url, json={"callback_query_id": cq_id, "text": "ምንም የሚጠብቅ ጥያቄ የለም!", "show_alert": True})
                 else:
+                    requests.post(answer_url, json={"callback_query_id": cq_id, "text": f"{len(pendings)} ጥያቄዎች ተገኝተዋል"})
                     for p in pendings:
                         p_id = str(p.get("_id"))
                         p_type = p.get("type", "deposit").upper()
