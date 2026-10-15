@@ -252,7 +252,7 @@ def get_player_play_keyboard(phone, referred_by=None):
                 {"text": "👑 PLAY | በ500 ብር", "web_app": {"url": u_500}}
             ],
             [
-                {"text": "🏆 BeshBingo (ሳምንታዊ) | 50 ብር", "web_app": {"url": u_super}},
+                {"text": "🏆 BeshBingo (ሳምንታዊ) | 100ብር", "web_app": {"url": u_super}},
                 {"text": "⚽ BeshBingo Bonus", "callback_data": "Besh_bingo_bonus"}
             ]
         ]
@@ -310,7 +310,7 @@ ROOM_PRICES = {
     "100": 100,
     "200": 200,
     "500": 500,
-    "super": 50
+    "super": 100
 }
 
 loop_started = False
@@ -702,7 +702,7 @@ def super_game_loop():
                         state["winning_ticket_num"] = None
                         state["winning_indices"] = None
                         state["winning_line_name"] = None
-                        send_telegram("ℹ️ ተጫዋቾች ከሁለት ስለወረዱ የሳምንቱ መጨረሻ ጨዋታው ተቋርቋል።")
+                        send_telegram("ℹ️ ተጫዋቾች ከሁለት ስለወረዱ የሳምንቱ መጨረሻ ጨዋታው ተቋርጧል።")
                         break
 
                     state["current_ball"] = b
