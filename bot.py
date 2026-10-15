@@ -252,7 +252,7 @@ def get_player_play_keyboard(phone, referred_by=None):
                 {"text": "👑 PLAY | በ500 ብር", "web_app": {"url": u_500}}
             ],
             [
-                {"text": "🏆 BeshBingo (ሳምንታዊ) | 100ብር", "web_app": {"url": u_super}},
+                {"text": "🏆 ሳምንታዊ | 100ብር", "web_app": {"url": u_super}},
                 {"text": "⚽ BeshBingo Bonus", "callback_data": "Besh_bingo_bonus"}
             ]
         ]
@@ -376,7 +376,7 @@ def set_bot_commands():
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/setMyCommands"
     
     default_commands = [
-        {"command": "play", "description": "🎮 choice game"},
+        {"command": "play", "description": "🎮 Play"},
         {"command": "deposit", "description": "📥 Deposit"},
         {"command": "withdraw", "description": "📤 Withdraw"},
         {"command": "transfer", "description": "💸 Transfer"},
