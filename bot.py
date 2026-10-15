@@ -807,7 +807,13 @@ def index_500():
 @app.route('/super')
 @app.route('/superbesh')
 def index_superbesh():
-    return render_template('index3.html')
+    phone = sanitize_input(request.args.get('phone', ''))
+    user_bal = None
+    if phone:
+        u = wallets.find_one({"phone": format_phone_number(phone)})
+        if u:
+            user_bal = float(u.get("balance", 0.0))
+    return render_template('index3.html', initial_balance=user_bal)
 
 @app.route('/get_status')
 def get_status():
