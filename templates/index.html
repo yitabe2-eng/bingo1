@@ -66,6 +66,7 @@
             transform: translateX(-50%);
             z-index: 5000;
             box-shadow: 0 6px 16px rgba(0,0,0,0.4);
+            transition: opacity 0.2s ease;
         }
         #inline-notification.success {
             background: #10b981;
@@ -291,7 +292,9 @@
             cursor: pointer;
             box-shadow: 0 4px 10px rgba(0,0,0,0.3);
             flex-shrink: 0;
+            transition: transform 0.15s;
         }
+        .scanner-round-btn:active { transform: rotate(180deg) scale(0.92); }
 
         /* GAME UI */
         #game-ui {
@@ -378,7 +381,7 @@
             line-height: 1;
             letter-spacing: -0.5px;
             pointer-events: none;
-            transition: all 0.3s;
+            transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.25s ease;
             z-index: 9999 !important; /* stats baru እንዳይሸፍነው */
         }
         #ball-circle.countdown-state {
@@ -386,6 +389,9 @@
             border-color: #2563eb;
             color: #60a5fa;
             font-size: 2.2rem;
+        }
+        #ball-circle.pulse-pop {
+            transform: scale(1.08);
         }
 
         /* ሶስቱን ክቦች ከstats baru ወደታች (ከ stats bar በታች ከትልቁ ክብ ጎን) */
@@ -533,7 +539,7 @@
             border: 1px solid #cbd5e1;
             letter-spacing: -0.5px;
             box-sizing: border-box;
-            transition: background-color 0.2s, color 0.2s;
+            transition: background-color 0.15s, color 0.15s, transform 0.15s;
         }
         .ball-dot.active { 
             background: #16a34a !important; 
@@ -649,7 +655,11 @@
             border: 1px solid #cbd5e1;
             flex-shrink: 0;
             position: relative;
-            transition: opacity 0.3s;
+            transition: opacity 0.3s, border-color 0.2s, box-shadow 0.2s;
+        }
+        .bingo-card-wrapper.ready-win {
+            border: 2px solid #10b981 !important;
+            box-shadow: 0 0 16px rgba(16, 185, 129, 0.35) !important;
         }
         .bingo-card-wrapper.disqualified {
             opacity: 0.55;
@@ -715,13 +725,26 @@
             cursor: pointer; 
             border-radius: 4px;
             border: 1px solid #cbd5e1;
-            transition: all 0.15s;
+            transition: transform 0.08s ease, background-color 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease;
+        }
+        .cell:active {
+            transform: scale(0.92);
         }
         .cell.selected { 
             background: var(--gold-light) !important; 
             color: #000000 !important; 
             border-color: #d97706 !important; 
             box-shadow: inset 0 0 4px rgba(217, 119, 6, 0.4);
+        }
+        .cell.winning-line-cell {
+            background: #22c55e !important;
+            color: #ffffff !important;
+            border-color: #16a34a !important;
+            animation: pulseWinCell 1.2s infinite alternate;
+        }
+        @keyframes pulseWinCell {
+            0% { transform: scale(1); box-shadow: 0 0 4px rgba(34, 197, 94, 0.5); }
+            100% { transform: scale(1.05); box-shadow: 0 0 10px rgba(34, 197, 94, 0.9); }
         }
         .cell.free { 
             background: #2563eb !important; 
@@ -749,9 +772,24 @@
             align-items: center;
             justify-content: center;
             gap: 6px;
+            transition: all 0.15s ease;
+            position: relative;
+            overflow: hidden;
         }
-        .bingo-btn:disabled { background: #94a3b8 !important; color: #e2e8f0 !important; cursor: not-allowed; }
-        .bingo-btn span { font-size: 0.65rem; font-style: normal; opacity: 0.8; font-weight: bold; }
+        .bingo-btn:active:not(:disabled) {
+            transform: scale(0.97);
+        }
+        .bingo-btn.ready-to-win {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.8), 0 4px 10px rgba(5, 150, 105, 0.4) !important;
+            animation: excitedBingoPulse 0.9s infinite alternate;
+        }
+        @keyframes excitedBingoPulse {
+            0% { transform: scale(1); filter: brightness(1); }
+            100% { transform: scale(1.02); filter: brightness(1.15); box-shadow: 0 0 24px rgba(16, 185, 129, 1); }
+        }
+        .bingo-btn:disabled { background: #94a3b8 !important; color: #e2e8f0 !important; cursor: not-allowed; animation: none !important; }
+        .bingo-btn span { font-size: 0.65rem; font-style: normal; opacity: 0.9; font-weight: bold; }
 
         /* WINNER RESULT MODAL EXACTLY AS IN SCREENSHOT */
         #result-modal {
@@ -778,6 +816,11 @@
             flex-direction: column;
             align-items: center;
             position: relative;
+            animation: modalPopIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        @keyframes modalPopIn {
+            0% { opacity: 0; transform: scale(0.85); }
+            100% { opacity: 1; transform: scale(1); }
         }
         .modal-top-counts-row {
             display: flex;
@@ -1179,6 +1222,7 @@
         let winnersList = [];
         let currentWinnerIndex = 0;
         let allowCatchUpMarking = false; // Enabled when REFRESH is clicked for first 3 balls
+        let isClaiming = false; // Ultra-fast debounce guard
 
         window.onload = function() {
             if (window.Telegram && window.Telegram.WebApp) {
@@ -1225,7 +1269,7 @@
             el.className = isSuccess ? "success" : "";
             el.style.display = "block";
             clearTimeout(el._t);
-            el._t = setTimeout(() => { el.style.display = "none"; }, 3000);
+            el._t = setTimeout(() => { el.style.display = "none"; }, 2500);
         }
 
         function showGameUI() {
@@ -1268,7 +1312,7 @@
                     socket = io({
                         reconnection: true,
                         reconnectionAttempts: Infinity,
-                        reconnectionDelay: 500
+                        reconnectionDelay: 400
                     });
 
                     socket.on("connect", function() {
@@ -1300,7 +1344,6 @@
                 allowCatchUpMarking = false;
             } else if (latestDrawnBallsGlobal.length > 0 && latestDrawnBallsGlobal.length <= 3) {
                 allowCatchUpMarking = true;
-                // Automatically mark or allow marking for the first 3 balls
                 markEligibleCatchUpNumbers();
                 showNotification("🔄 ታድሷል! የመጀመሪያዎቹ 3 የወጡ ቁጥሮች ማቅለም ይችላሉ።", true);
             } else {
@@ -1325,8 +1368,15 @@
                         markedSet.add(idx);
                     }
                 });
+                
+                // Immediately refresh the card's visual state & BINGO status
+                updateCardVisuals(cardId, matrix, markedSet);
             }
 
+            persistMarkedState();
+        }
+
+        function persistMarkedState() {
             try {
                 const stateObj = {};
                 for (let k in playerMarkedState) {
@@ -1334,12 +1384,6 @@
                 }
                 localStorage.setItem("bingo_marked_" + CURRENT_ROOM, JSON.stringify(stateObj));
             } catch(e) {}
-
-            // Re-render cards
-            const cardArea = document.getElementById("card-area");
-            if (cardArea && cardArea.children.length > 0) {
-                forceRecoveryRefresh();
-            }
         }
 
         function forceRecoveryRefresh() {
@@ -1393,6 +1437,7 @@
                 disqualifiedCards.clear();
                 playerMarkedState = {};
                 allowCatchUpMarking = false;
+                isClaiming = false;
                 try { localStorage.removeItem("bingo_marked_" + CURRENT_ROOM); } catch(e) {}
                 initTicketsOnce(); 
                 renderTickets(d.sold_tickets || {});
@@ -1402,6 +1447,7 @@
                 document.getElementById("lobby-ui").style.display="none"; 
                 document.getElementById("game-ui").style.display="flex"; 
                 document.getElementById("result-modal").style.display = "none";
+                isClaiming = false;
                 
                 // 1. BIG BALL CIRCLE: NO "READY" TEXT!
                 // 3 ሰከንድ ካለቀ የመጀመሪያው ቁጥር ወዲያው ይወጣል
@@ -1412,7 +1458,11 @@
                     const timerVal = (d.ball_timer !== undefined && d.ball_timer > 0) ? d.ball_timer : 3;
                     ballEl.innerText = timerVal;
                 } else if (d.current_ball && d.current_ball !== "--") {
-                    ballEl.className = "";
+                    if (ballEl.innerText !== d.current_ball) {
+                        ballEl.classList.remove("countdown-state");
+                        ballEl.classList.add("pulse-pop");
+                        setTimeout(() => ballEl.classList.remove("pulse-pop"), 200);
+                    }
                     ballEl.innerText = d.current_ball;
                 } else {
                     ballEl.className = "countdown-state";
@@ -1420,10 +1470,6 @@
                 }
 
                 // 2. RECENT BALLS (3 CIRCLES RIGHT NEXT TO BIG CIRCLE)
-                // ሶስቱ ክቦች ቁጥሮቹ ከመጠራታቸው በፊት መታየት የለባቸውም
-                // የመጀመሪያው ቁጥር ከትልቁ ክብ ይጠራል
-                // ሁለተኛው ቁጥር ከትልቁ ክብ ሲወጣ የመጀመሪያው ቁጥር ከትልቁ ክብ ጎን ያለችው ክብ ላይ ይወጣል
-                // ሶስተኛ ቁጥር ትልቁ ክብ ላይ ሲወጣ ሁለተኛዋ ቁጥር ከትልቁ ክብ ጎን ካለችው የመጀመሪያው ቁጥር ከሁለተኛይቱ ክብ እያለ ወደሶስተኛዋ ክብ ይደርሳል
                 renderRecentBallsNextToBigCircle(drawnBalls);
 
                 renderMainBoard(drawnBalls);
@@ -1445,14 +1491,10 @@
                 if(myCards.length > 0) {
                     cardArea.style.display = "flex";
                     waitingScreen.style.display = "none";
-                    cardArea.innerHTML = "";
-                    myCards.forEach((cObj, i) => { 
-                        // 4. አንድ ሰው ለማሸነፍ አንድ ቁጥር እየጠበቀ ከሆነ ያች ቁጥር automatic ትቀልማለች
-                        checkAndAutoMarkWinningNumber(cObj.matrix, cObj.id, drawnBalls);
-                        renderCard(cObj.matrix, i, cObj.id); 
-                    });
+                    
+                    // SMART IN-PLACE DOM RECONCILIATION FOR INSTANT ZERO-LAG PERFORMANCE
+                    renderOrUpdatePlayerCards(myCards, drawnBalls);
                 } else {
-                    // ጨዋታው ተጀምሮ ለሚመጡ waiting በሰጠሁህ ፎቶ መሰረት
                     cardArea.style.display = "none";
                     waitingScreen.style.display = "flex";
                 }
@@ -1460,6 +1502,37 @@
             else if(d.status === "result") {
                 showResultModal(d, finalPrize);
             }
+        }
+
+        // SMART ZERO-LAG CARD RENDERING (Reuses DOM nodes, updates cells and BINGO button instantly)
+        function renderOrUpdatePlayerCards(myCards, drawnBalls) {
+            const cardArea = document.getElementById("card-area");
+            if (!cardArea) return;
+
+            // Remove cards no longer in myCards
+            const existingWraps = Array.from(cardArea.querySelectorAll(".bingo-card-wrapper"));
+            const currentIds = new Set(myCards.map(c => String(c.id)));
+            existingWraps.forEach(wrap => {
+                const cId = wrap.getAttribute("data-card-id");
+                if (!currentIds.has(cId)) {
+                    wrap.remove();
+                }
+            });
+
+            myCards.forEach((cObj, i) => {
+                // 4. አንድ ሰው ለማሸነፍ አንድ ቁጥር እየጠበቀ ከሆነ ያች ቁጥር automatic ትቀልማለች
+                checkAndAutoMarkWinningNumber(cObj.matrix, cObj.id, drawnBalls);
+
+                let wrap = document.getElementById("card-wrap-" + cObj.id);
+                if (!wrap) {
+                    // Create card once
+                    renderCard(cObj.matrix, i, cObj.id);
+                } else {
+                    // Update cells and BINGO button in-place with zero layout disruption
+                    const markedSet = playerMarkedState[cObj.id] || new Set();
+                    updateCardVisuals(cObj.id, cObj.matrix, markedSet);
+                }
+            });
         }
 
         // RECENT BALLS ORDERING & VISIBILITY:
@@ -1470,20 +1543,15 @@
             pill.innerHTML = "";
 
             if (!drawn || drawn.length <= 1) {
-                // When 0 or 1 ball drawn, previous balls do not exist yet.
-                // Do not display ghost/uncalled numbers!
                 pill.style.visibility = "hidden";
                 return;
             }
 
             pill.style.visibility = "visible";
 
-            // Balls prior to the current ball (drawn.slice(0, -1))
             const previousBalls = drawn.slice(0, -1);
-            // Up to 3 most recent previous balls, ordered oldest to newest:
-            // e.g. if previous are [B1, B2, B3], then circle 3 is B1, circle 2 is B2, circle 1 is B3
             const count = Math.min(3, previousBalls.length);
-            const slice = previousBalls.slice(-count); // [oldest_of_the_three, ..., newest_prior]
+            const slice = previousBalls.slice(-count);
 
             slice.forEach(bStr => {
                 let cleanNum = parseInt(String(bStr).replace(/[^0-9]/g, ""));
@@ -1503,7 +1571,6 @@
         }
 
         // SHOW WINNER RESULT MODAL (EXACTLY MATCHING SCREENSHOT)
-        // ከሁለት በላይ ከሆኑ ያንድኛውን user name & 2 other have won እንድል አንድ ከሆነ ግን has won
         function showResultModal(d, finalPrize) {
             const modal = document.getElementById("result-modal");
             if (!modal) return;
@@ -1512,7 +1579,7 @@
             let winnersData = d.winners_data || [];
             if (winnersData.length === 0 && d.winning_card) {
                 winnersData = [{
-                    username: d.winner ? d.winner.replace(" has won!", "").replace(" አሸንፏል", "") : "Player",
+                    username: d.winner ? d.winner.replace(" has won!", "").replace(" have won!", "").replace(" አሸንፏል", "") : "Player",
                     ticket_num: d.winning_ticket_num || "1",
                     card: d.winning_card,
                     indices: d.winning_indices || []
@@ -1529,10 +1596,7 @@
             document.getElementById("modal-winners-label").innerText = numWinners === 1 ? "አሸናፊ" : "አሸናፊዎች";
             document.getElementById("modal-each-prize-val").innerText = eachPrize;
 
-            // 2. Headline:
-            // አንድ ከሆነ: "{user} has won!"
-            // ሁለት ከሆነ: "{user} and 1 other have won!"
-            // ከሁለት በላይ ከሆነ: "{user} and {count - 1} others have won!"
+            // 2. Headline
             const firstUser = (winnersList[0] && winnersList[0].username) ? winnersList[0].username : "Player";
             const userTag = document.getElementById("modal-head-user");
             const verbTag = document.getElementById("modal-head-verb");
@@ -1676,8 +1740,6 @@
             renderSlotBox("slot-2-box", myTickets[1], 2);
         }
 
-        // Slot lay ካርቴላ ገዝተን ካርዱ ሲያርፍ ከላይ card# የምትለውን ፅሁፍ አሳንሰህ ሙሉ ቁጥሮቹ እንድታይ አድርግ
-        // መመለሻ የምትለውን አልፈልግም
         function renderSlotBox(boxId, ticketObj, slotIndex) {
             const box = document.getElementById(boxId);
             if (!box) return;
@@ -1691,7 +1753,6 @@
                     cellsHtml += `<div class="cartela-5x5-cell ${isFree ? 'free' : ''}">${isFree ? '★' : num}</div>`;
                 });
 
-                // Small CARD# header, NO "መመለሻ" anywhere!
                 box.innerHTML = `
                     <div class="cartela-top-info">
                         <span>CARD #${ticketObj.id}</span>
@@ -1775,7 +1836,6 @@
                 if(d.success) {
                     balance = parseFloat(d.balance);
                     updateBalanceUI();
-                    // ካርቴላ ሲገዛ notification አያስፈልግም
                 } else {
                     balance += ROOM_PRICE;
                     updateBalanceUI();
@@ -1793,7 +1853,6 @@
         function refund(n) {
             balance += ROOM_PRICE;
             updateBalanceUI();
-            // ካርቴላ ሲመለስ notification አያስፈልግም
 
             fetch("/cancel_ticket", { 
                 method:"POST", headers:{"Content-Type":"application/json"}, 
@@ -1809,24 +1868,39 @@
         function renderMainBoard(drawn) {
             const board = document.getElementById("main-board");
             if(!board) return;
-            board.innerHTML = "";
-
+            
             const drawnNumbersSet = new Set(
                 (drawn || []).map(b => parseInt(String(b).replace(/[^0-9]/g, "")))
             );
 
-            for(let col=0; col<5; col++) {
-                let colDiv = document.createElement("div"); 
-                colDiv.className = "board-column";
-                let start = col * 15 + 1;
-                for(let i=start; i<=start+14; i++) {
-                    let d = document.createElement("div"); 
-                    let isDrawn = drawnNumbersSet.has(i);
-                    d.className = isDrawn ? "ball-dot active" : "ball-dot"; 
-                    d.innerText = i;
-                    colDiv.appendChild(d);
+            // Create initial board if not yet built
+            if (board.children.length === 0) {
+                for(let col=0; col<5; col++) {
+                    let colDiv = document.createElement("div"); 
+                    colDiv.className = "board-column";
+                    let start = col * 15 + 1;
+                    for(let i=start; i<=start+14; i++) {
+                        let d = document.createElement("div"); 
+                        d.id = "board-dot-" + i;
+                        d.className = drawnNumbersSet.has(i) ? "ball-dot active" : "ball-dot"; 
+                        d.innerText = i;
+                        colDiv.appendChild(d);
+                    }
+                    board.appendChild(colDiv);
                 }
-                board.appendChild(colDiv);
+            } else {
+                // Update in-place without redraw flicker
+                for(let i=1; i<=75; i++) {
+                    const dot = document.getElementById("board-dot-" + i);
+                    if (dot) {
+                        const isDrawn = drawnNumbersSet.has(i);
+                        if (isDrawn && !dot.classList.contains("active")) {
+                            dot.className = "ball-dot active";
+                        } else if (!isDrawn && dot.classList.contains("active")) {
+                            dot.className = "ball-dot";
+                        }
+                    }
+                }
             }
         }
 
@@ -1842,7 +1916,6 @@
         }
 
         // 4. አንድ ሰው ለማሸነፍ አንድ ቁጥር እየጠበቀ ከሆነ ያች ቁጥር automatic እንድትቀልም
-        // (እሱ ሳይነካ ትቀልማለች እሱ ቢንጎ ማለት ነው የሚጠበቅበት)
         function checkAndAutoMarkWinningNumber(matrix, cardId, drawn) {
             if (!drawn || drawn.length === 0) return;
             if (!playerMarkedState[cardId]) {
@@ -1878,11 +1951,9 @@
             let autoMarkedSomething = false;
             winningPatterns.forEach(pattern => {
                 const missingIndices = pattern.filter(idx => !isHit(idx));
-                // ለማሸነፍ በትክክል 1 ቁጥር ብቻ እየጠበቀ ከሆነ (1-to-go)
                 if (missingIndices.length === 1) {
                     const missingIdx = missingIndices[0];
                     const waitingNumber = parseInt(matrix[missingIdx]);
-                    // ያች ቁጥር በኳሶቹ ውስጥ ተጠርታ ከሆነ ሳያነካ በራሷ automatic ትቀልማለች
                     if (drawnNumbersSet.has(waitingNumber) && !markedSet.has(missingIdx)) {
                         markedSet.add(missingIdx);
                         autoMarkedSomething = true;
@@ -1891,13 +1962,56 @@
             });
 
             if (autoMarkedSomething) {
-                try {
-                    const stateObj = {};
-                    for (let k in playerMarkedState) {
-                        stateObj[k] = Array.from(playerMarkedState[k]);
+                persistMarkedState();
+            }
+        }
+
+        // ULTRA-FAST IN-PLACE VISUAL & BINGO BUTTON SYNC
+        function updateCardVisuals(cardId, matrix, markedSet) {
+            const wrap = document.getElementById("card-wrap-" + cardId);
+            if (!wrap) return;
+
+            const isDisqualified = disqualifiedCards.has(String(cardId));
+            const winCheck = checkCardBingoWin(matrix, markedSet);
+            const winningIndicesSet = new Set(winCheck.indices || []);
+
+            // Update cells
+            const cells = wrap.querySelectorAll(".bingo-card .cell");
+            matrix.forEach((n, i) => {
+                const cell = cells[i];
+                if (!cell) return;
+                const numVal = parseInt(n);
+                const isCenter = (i === 12 || numVal === 0);
+
+                if (isCenter) {
+                    cell.className = "cell free selected";
+                } else {
+                    const isMarked = markedSet.has(i);
+                    const isWonLine = winCheck.won && winningIndicesSet.has(i);
+                    
+                    if (isWonLine) {
+                        cell.className = "cell selected winning-line-cell";
+                    } else if (isMarked) {
+                        cell.className = "cell selected";
+                    } else {
+                        cell.className = "cell";
                     }
-                    localStorage.setItem("bingo_marked_" + CURRENT_ROOM, JSON.stringify(stateObj));
-                } catch(e) {}
+                }
+            });
+
+            // Update BINGO button state immediately
+            const bingoBtn = wrap.querySelector(".bingo-btn");
+            if (bingoBtn) {
+                bingoBtn.disabled = isDisqualified;
+                if (winCheck.won && !isDisqualified) {
+                    wrap.classList.add("ready-win");
+                    bingoBtn.classList.add("ready-to-win");
+                    bingoBtn.innerHTML = `BINGO! <span>#${cardId} 🎉 ንካ / CLAIM!</span>`;
+                } else {
+                    wrap.classList.remove("ready-win");
+                    bingoBtn.classList.remove("ready-to-win");
+                    bingoBtn.innerHTML = `BINGO! <span>#${cardId}</span>`;
+                }
             }
         }
 
@@ -1906,6 +2020,7 @@
             const isDisqualified = disqualifiedCards.has(String(cardId));
             wrap.className = "bingo-card-wrapper" + (isDisqualified ? " disqualified" : "");
             wrap.id = "card-wrap-" + cardId;
+            wrap.setAttribute("data-card-id", String(cardId));
             
             if (isDisqualified) {
                 const badge = document.createElement("div");
@@ -1951,7 +2066,6 @@
                             const totalDrawn = latestDrawnBallsGlobal.length;
                             const ballsCalledAfter = (totalDrawn - 1) - dIdx;
 
-                            // ከሱ በኋላ ከ 4 ቁጥሮች በላይ ከተጠሩ ማቅለም አይፈቀድም
                             if (ballsCalledAfter > 4 && !allowCatchUpMarking) {
                                 showNotification(`⚠️ ቁጥር ${numVal} ከተጠራ ${ballsCalledAfter} ቁጥሮች ስላለፉ ማቅለም አይፈቀድም! (ገደብ፦ 4 ቁጥሮች)`);
                                 return;
@@ -1960,19 +2074,13 @@
 
                         if (markedSet.has(i)) {
                             markedSet.delete(i);
-                            cell.classList.remove("selected");
                         } else {
                             markedSet.add(i);
-                            cell.classList.add("selected");
                         }
 
-                        try {
-                            const stateObj = {};
-                            for (let k in playerMarkedState) {
-                                stateObj[k] = Array.from(playerMarkedState[k]);
-                            }
-                            localStorage.setItem("bingo_marked_" + CURRENT_ROOM, JSON.stringify(stateObj));
-                        } catch(e) {}
+                        persistMarkedState();
+                        // INSTANT REACTIVE FEEDBACK: Update card visuals and BINGO button immediately
+                        updateCardVisuals(cardId, card, markedSet);
                     };
                 }
                 grid.appendChild(cell);
@@ -1984,13 +2092,6 @@
             bingoBtn.disabled = isDisqualified;
             bingoBtn.innerHTML = `BINGO! <span>#${cardId}</span>`;
 
-            // ማሸነፉ ከተረጋገጠ አዝራሩ በደማቅ እንዲበራ (እሱ ቢንጎ ማለት ነው የሚጠበቅበት)
-            const winCheckNow = checkCardBingoWin(card, markedSet);
-            if (winCheckNow.won && !isDisqualified) {
-                bingoBtn.style.background = "linear-gradient(135deg, #10b981 0%, #059669 100%)";
-                bingoBtn.style.boxShadow = "0 0 16px rgba(16, 185, 129, 0.7)";
-            }
-
             bingoBtn.onclick = () => {
                 if (isDisqualified) return;
                 claimSpecificCard(cardId, card, markedSet, wrap, bingoBtn);
@@ -1998,48 +2099,60 @@
             wrap.appendChild(bingoBtn);
 
             document.getElementById("card-area").appendChild(wrap);
+
+            // Initial visual evaluation
+            updateCardVisuals(cardId, card, markedSet);
         }
 
         function checkCardBingoWin(matrix, markedSet) {
             const isHit = (idx) => (idx === 12 || matrix[idx] === 0 || markedSet.has(idx));
 
+            // Horizontal Rows
             for (let r=0; r<5; r++) {
-                let rowFull = true;
-                for (let c=0; c<5; c++) {
-                    if (!isHit(r*5 + c)) { rowFull = false; break; }
+                let rowIndices = [r*5, r*5+1, r*5+2, r*5+3, r*5+4];
+                if (rowIndices.every(idx => isHit(idx))) {
+                    return { won: true, type: "Horizontal Row", indices: rowIndices };
                 }
-                if (rowFull) return { won: true, type: "Horizontal Row" };
             }
 
+            // Vertical Columns
             for (let c=0; c<5; c++) {
-                let colFull = true;
-                for (let r=0; r<5; r++) {
-                    if (!isHit(r*5 + c)) { colFull = false; break; }
+                let colIndices = [c, c+5, c+10, c+15, c+20];
+                if (colIndices.every(idx => isHit(idx))) {
+                    return { won: true, type: "Vertical Column", indices: colIndices };
                 }
-                if (colFull) return { won: true, type: "Vertical Column" };
             }
 
-            if (isHit(0) && isHit(6) && isHit(12) && isHit(18) && isHit(24)) {
-                return { won: true, type: "Diagonal (Main)" };
+            // Diagonal Main
+            const d1 = [0, 6, 12, 18, 24];
+            if (d1.every(idx => isHit(idx))) {
+                return { won: true, type: "Diagonal (Main)", indices: d1 };
             }
 
-            if (isHit(4) && isHit(8) && isHit(12) && isHit(16) && isHit(20)) {
-                return { won: true, type: "Diagonal (Reverse)" };
+            // Diagonal Reverse
+            const d2 = [4, 8, 12, 16, 20];
+            if (d2.every(idx => isHit(idx))) {
+                return { won: true, type: "Diagonal (Reverse)", indices: d2 };
             }
 
-            if (isHit(0) && isHit(4) && isHit(20) && isHit(24)) {
-                return { won: true, type: "Four Corners" };
+            // Four Corners
+            const corners = [0, 4, 20, 24];
+            if (corners.every(idx => isHit(idx))) {
+                return { won: true, type: "Four Corners", indices: corners };
             }
 
-            return { won: false };
+            return { won: false, indices: [] };
         }
 
+        // ULTRA-FAST, ZERO-LAG CLAIM FUNCTION
         function claimSpecificCard(targetCardId, matrix, markedSet, cardWrapEl, btnEl) {
+            if (isClaiming) return;
+
             const winCheck = checkCardBingoWin(matrix, markedSet);
             if (!winCheck.won) {
                 disqualifiedCards.add(String(targetCardId));
                 cardWrapEl.classList.add("disqualified");
-                btnEl.disabled = true;
+                if (btnEl) btnEl.disabled = true;
 
                 if (!cardWrapEl.querySelector(".disqualified-badge")) {
                     const b = document.createElement("div");
@@ -2052,10 +2165,25 @@
                 return;
             }
 
-            if (btnEl) btnEl.disabled = true;
+            isClaiming = true;
+            if (btnEl) {
+                btnEl.disabled = true;
+                btnEl.innerHTML = `BINGO! <span>#${targetCardId} 🚀 እየተረጋገጠ...</span>`;
+            }
+
+            // 1. INSTANT AUDIO & OPTIMISTIC CELEBRATION (0ms Delay!)
+            const audio = document.getElementById("win-horn");
+            if (audio) {
+                try {
+                    audio.currentTime = 0;
+                    audio.play().catch(() => {});
+                } catch(e) {}
+            }
+
+            // 2. IMMEDIATE ASYNC CLAIM TRANSMISSION
             fetch("/claim_bingo", { 
-                method:"POST", 
-                headers:{ "Content-Type":"application/json" }, 
+                method: "POST", 
+                headers: { "Content-Type": "application/json" }, 
                 body: JSON.stringify({ 
                     phone: phone, 
                     room: CURRENT_ROOM, 
@@ -2066,15 +2194,26 @@
             .then(r => r.json())
             .then(d => { 
                 if(!d || !d.success) { 
-                    showNotification(d.msg || "ቢንጎው አልተሳካም!");
-                    if(btnEl) btnEl.disabled = false; 
+                    isClaiming = false;
+                    showNotification((d && d.msg) ? d.msg : "ቢንጎው አልተሳካም!");
+                    if(btnEl) {
+                        btnEl.disabled = false;
+                        btnEl.innerHTML = `BINGO! <span>#${targetCardId}</span>`;
+                    }
                 } else {
                     showNotification("🎉 ድል! ቢንጎዎ ተረጋግጧል!", true);
-                    const audio = document.getElementById("win-horn");
-                    if (audio) audio.play().catch(() => {});
-                    forceRecoveryRefresh();
+                    if (d.winner_payload) {
+                        applyGameStateData(d.winner_payload);
+                    }
                 }
-            }).catch(() => { if(btnEl) btnEl.disabled = false; }); 
+            })
+            .catch(() => { 
+                isClaiming = false;
+                if(btnEl) {
+                    btnEl.disabled = false; 
+                    btnEl.innerHTML = `BINGO! <span>#${targetCardId}</span>`;
+                }
+            }); 
         }
     </script>
 </body>
