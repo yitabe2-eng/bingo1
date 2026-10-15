@@ -1108,7 +1108,7 @@
                 </div>
             </div>
 
-            <!-- 500 TICKETS GRID -->
+            <!-- 1000 TICKETS GRID (ያለ ምንም የፍለጋ ሳጥን) -->
             <div class="grid-container-photo">
                 <div class="grid-8-cols" id="ticket-area"></div>
             </div>
@@ -1236,8 +1236,9 @@
     </div>
 
     <script>
-        // 1. የሱፐር ቢንጎ ኮንፊገሬሽን
+        // 1. የሱፐር ቢንጎ ኮንፊገሬሽን (100% ገለልተኛ)
         const CURRENT_ROOM = "super100";
+        const TOTAL_TICKETS = 1000; // 1,000 ካርቴላዎች
         const ROOM_PRICE = 100; // የአንድ ካርቴላ ዋጋ 100 ETB
         const MAX_TICKETS_PER_PLAYER = 2; // ከአንድ ተጫዋች 2 ካርቴላ ገደብ
 
@@ -1332,8 +1333,7 @@
 
         /* 
            2. የስኬጁል እና የሰዓት ቀመር:
-           በሳምንት ሁለት ቀን: ቅዳሜ (Saturday) እና እሁድ (Sunday)
-           ሰዓት: የኢትዮጵያ ከሰዓት 11:00 ሰዓት (17:00 EAT / 14:00 UTC)
+           ቅዳሜ እና እሁድ 11:00 ሰዓት (17:00 EAT / 14:00 UTC)
         */
         function getNextSuperGameTarget() {
             const now = new Date();
@@ -1342,7 +1342,7 @@
                 const candidate = new Date(now.getTime() + offset * 86400000);
                 const day = candidate.getUTCDay(); // 6 = ቅዳሜ, 0 = እሁድ
                 if (day === 6 || day === 0) {
-                    candidate.setUTCHours(14, 0, 0, 0); // 14:00 UTC = 17:00 EAT (11:00 የኢትዮጵያ ሰዓት)
+                    candidate.setUTCHours(14, 0, 0, 0); // 14:00 UTC = 17:00 EAT
                     if (candidate.getTime() > now.getTime()) {
                         targets.push(candidate);
                     }
@@ -1357,9 +1357,6 @@
             updateScheduleTimer();
         }
 
-        /* 
-           3. 30 ሰከንድ ሲቀረው 30 second countdown ማስጀመር
-        */
         function updateScheduleTimer() {
             const target = getNextSuperGameTarget();
             if (!target) return;
@@ -1390,7 +1387,6 @@
                 timerEl.innerText = `${days}ቀን ${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
             }
 
-            // 30 ሰከንድ ሲቀረው የማስጠንቀቂያ ቆጣሪውን ማሳየት
             if (diffSec <= 30 && diffSec > 0) {
                 trigger30sCountdown(diffSec);
             } else if (diffSec > 30) {
@@ -1415,6 +1411,9 @@
             }
         }
 
+        /* 
+           3. የዌብሰኬት ግንኙነት (ሙሉ በሙሉ ገለልተኛ)
+        */
         function initWebSocket() {
             if (typeof io !== "undefined") {
                 try {
@@ -1425,10 +1424,13 @@
                     });
 
                     socket.on("connect", function() {
+                        socket.emit("join_room", CURRENT_ROOM);
                         forceRecoveryRefresh();
                     });
 
+                    // ለዚህ ክፍል ብቻ የተላከውን ዳታ መቀበል (Room Isolation)
                     socket.on("game_update_" + CURRENT_ROOM, function(d) {
+                        if (!d || (d.room && d.room !== CURRENT_ROOM)) return;
                         applyGameStateData(d);
                     });
 
@@ -1496,6 +1498,8 @@
             .then(r => r.json())
             .then(d => { 
                 if(d.success) {
+                    // የዚህ ክፍል ብቻ መሆኑን ማረጋገጥ (Security Guard)
+                    if (d.room && d.room !== CURRENT_ROOM) return;
                     balance = parseFloat(d.balance) || 0;
                     updateBalanceUI();
                     applyGameStateData(d);
@@ -1503,8 +1507,14 @@
             }).catch(() => {});
         }
 
+        /* 
+           4. የጌም ስቴት ማስተናገጃ (ሌሎች ሩሞች ሲጀምሩ Waiting እንዳይል የተስተካከለ)
+        */
         function applyGameStateData(d) {
             if (!d) return;
+            // የዚህ ክፍል ብቻ መሆኑን ማረጋገጥ
+            if (d.room && d.room !== CURRENT_ROOM) return;
+
             let finalPrize = Math.floor((parseFloat(d.pot) || 0) * 0.85);
             if(document.getElementById("game-prize")) {
                 document.getElementById("game-prize").innerText = finalPrize + " ETB";
@@ -1531,6 +1541,7 @@
                 }
             }
 
+            // ሱፐር ቢንጎ በራሱ ሎቢ ሲሆን
             if(d.status === "lobby") {
                 document.getElementById("lobby-ui").style.display="flex"; 
                 document.getElementById("game-ui").style.display="none"; 
@@ -1543,6 +1554,7 @@
                 renderTickets(d.sold_tickets || {});
                 updateLobbySlots(d.sold_tickets || {});
             } 
+            // ሱፐር ቢንጎ በራሱ መጫወት ሲጀምር ብቻ
             else if(d.status === "playing") {
                 document.getElementById("lobby-ui").style.display="none"; 
                 document.getElementById("game-ui").style.display="flex"; 
@@ -1583,7 +1595,6 @@
                     waitingScreen.style.display = "none";
                     cardArea.innerHTML = "";
                     myCards.forEach((cObj, i) => { 
-                        // FULL HOUSE AUTO MARK ON 1-TO-GO
                         checkAndAutoMarkWinningNumber(cObj.matrix, cObj.id, drawnBalls);
                         renderCard(cObj.matrix, i, cObj.id); 
                     });
@@ -1780,9 +1791,6 @@
             renderSlotBox("slot-2-box", myTickets[1], 2);
         }
 
-        /* 
-           4. ካርቴላ ከተገዛ አይመለስም (NO REFUND POLICY)
-        */
         function renderSlotBox(boxId, ticketObj, slotIndex) {
             const box = document.getElementById(boxId);
             if (!box) return;
@@ -1820,11 +1828,14 @@
             }
         }
 
+        /* 
+           5. 1,000 ካርቴላዎች መፍጠሪያ (1 to 1000)
+        */
         function initTicketsOnce() {
             const area = document.getElementById("ticket-area");
             if(area && area.children.length === 0) { 
                 const fragment = document.createDocumentFragment();
-                for(let i=1; i<=500; i++) { 
+                for(let i=1; i<=TOTAL_TICKETS; i++) { 
                     let div=document.createElement("div"); 
                     div.className="t-box"; 
                     div.innerText=i; 
@@ -1837,13 +1848,12 @@
         }
 
         function renderTickets(sold) {
-            for(let i=1; i<=500; i++) {
+            for(let i=1; i<=TOTAL_TICKETS; i++) {
                 let box = document.getElementById("t-"+i); 
                 if(!box) continue;
                 if(sold && sold[i]) { 
                     const isMine = phoneMatches(sold[i], phone);
                     box.className = isMine ? "t-box mine" : "t-box sold"; 
-                    // የተገዛ ካርቴላ አይመለስም
                     box.onclick = isMine ? () => showNotification("⚠️ ካርቴላ ከተገዛ በኋላ አይመለስም!") : null;
                 } else { 
                     box.className="t-box"; 
@@ -1852,9 +1862,6 @@
             }
         }
 
-        /* 
-           5. ካርቴላ መግዣ (ዋጋ፡ 100 ETB, ገደብ፡ 2 ካርቴላ, አይመለስም)
-        */
         function buy(n) {
             if (isProcessingBuy) return;
 
@@ -1943,9 +1950,6 @@
             return latestDrawnBallsGlobal.findIndex(b => parseInt(String(b).replace(/[^0-9]/g, "")) === n);
         }
 
-        /*
-           6. FULL HOUSE (25 ሳጥኖች) 1-TO-GO በራስ-ሰር ማቅለም
-        */
         function checkAndAutoMarkWinningNumber(matrix, cardId, drawn) {
             if (!drawn || drawn.length === 0) return;
             if (!playerMarkedState[cardId]) {
@@ -2062,7 +2066,6 @@
             bingoBtn.disabled = isDisqualified;
             bingoBtn.innerHTML = `SUPER BINGO! <span>#${cardId}</span>`;
 
-            // ማሸነፉ ከተረጋገጠ (FULL HOUSE) አዝራሩ አረንጓዴ ይበራል
             const winCheckNow = checkCardBingoWin(card, markedSet);
             if (winCheckNow.won && !isDisqualified) {
                 bingoBtn.style.background = "linear-gradient(135deg, #10b981 0%, #059669 100%)";
@@ -2079,12 +2082,11 @@
         }
 
         /*
-           7. የማሸነፊያ መስፈርት: ሙሉ ካርቴላ (FULL HOUSE - 25ቱም ሳጥኖች)
+           6. FULL HOUSE (25 ሳጥኖች) ማሸነፊያ
         */
         function checkCardBingoWin(matrix, markedSet) {
             const isHit = (idx) => (idx === 12 || matrix[idx] === 0 || markedSet.has(idx));
 
-            // ሙሉ 25ቱን ሳጥኖች መፈተሽ
             for (let i = 0; i < 25; i++) {
                 if (!isHit(i)) {
                     return { won: false };
