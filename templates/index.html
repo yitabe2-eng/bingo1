@@ -160,9 +160,8 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: background-color 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+            user-select: none;
         }
-        /* ምንም መንቀጥቀጥ ወይም scale እንዳይኖረው ተደርጓል */
         .t-box:active { }
         .t-box.mine {
             background: #f59e0b !important;
@@ -207,9 +206,9 @@
             position: relative;
             box-sizing: border-box;
             overflow: hidden;
-            transition: transform 0.1s ease;
+            user-select: none;
         }
-        .slot-card:active { transform: scale(0.97); }
+        .slot-card:active { }
         .slot-card.empty {
             border: 2px dashed #94a3b8;
             background: #f8fafc;
@@ -603,7 +602,6 @@
             flex: 1;
             transition: padding-top 0.2s ease;
         }
-        /* ጥያቄ 2 መሠረት፦ ከ100px ወደ 70px ተቀንሷል */
         #card-area.single-card {
             padding-top: 70px;
         }
@@ -781,7 +779,7 @@
         .bingo-btn:disabled { background: #94a3b8 !important; color: #e2e8f0 !important; cursor: not-allowed; animation: none !important; }
         .bingo-btn span { font-size: 0.65rem; font-style: normal; opacity: 0.9; font-weight: bold; }
 
-        /* WINNER RESULT MODAL (በተሰጠው ምስል መሰረት የተስተካከለ) */
+        /* WINNER RESULT MODAL */
         #result-modal {
             display: none;
             position: fixed;
@@ -883,7 +881,6 @@
             margin-top: 2px;
         }
 
-        /* ALL WINNERS SELECTOR BAR */
         #modal-winners-pills-row {
             display: none;
             width: 100%;
@@ -1145,10 +1142,8 @@
                     </div>
                 </div>
 
-                <!-- ሶስቱን ክቦች ከstats baru ወደታች -->
                 <div class="recent-balls-pill" id="recent-balls-container" style="visibility:hidden;"></div>
                 
-                <!-- ትልቁን ክብ ግማሽ ፐርቱን ከstats baru ግማሹን ከታች -->
                 <div id="ball-circle" class="countdown-state">3</div>
             </div>
 
@@ -1188,7 +1183,7 @@
         </div>
     </div>
 
-    <!-- WINNER RESULT MODAL (በተሰጠው ምስል መሰረት የተስተካከለ) -->
+    <!-- WINNER RESULT MODAL -->
     <div id="result-modal">
         <div class="result-card-container">
             <div class="modal-top-counts-row">
@@ -1249,7 +1244,8 @@
         let currentWinnerIndex = 0;
         let allowCatchUpMarking = false;
         let isClaiming = false;
-        let gameLockedOnBingo = false; // ቢንጎ ከተባለ በኋላ ተጨማሪ ቁጥር እንዳይጠራና እንዳይጨናነቅ መቆለፊያ
+        let gameLockedOnBingo = false; 
+        let myActiveTickets = new Set(); // የገዟቸው ካርቴላዎች እንዳይጠፉ/እንዳይርገበገቡ (no flickering/blinking)
 
         window.onload = function() {
             if (window.Telegram && window.Telegram.WebApp) {
@@ -1350,7 +1346,6 @@
                         applyGameStateData(d);
                     });
 
-                    // ጥያቄ 1 መሠረት፦ ካርቴላ ስገዛ እና ስመልስ "ባላንስዎ ታድሷል" የሚለው ኖቲፊኬሽን ተወግዷል
                     socket.on("balance_update", function(data) {
                         if (phoneMatches(data.phone, phone)) {
                             balance = parseFloat(data.balance);
@@ -1429,7 +1424,7 @@
             }
 
             if(d.status === "lobby") {
-                gameLockedOnBingo = false; // አዲስ ዙር ሲሆን መቆለፊያው ይነሳል
+                gameLockedOnBingo = false; 
                 document.getElementById("lobby-ui").style.display="flex"; 
                 document.getElementById("game-ui").style.display="none"; 
                 document.getElementById("result-modal").style.display = "none";
@@ -1437,6 +1432,12 @@
                 playerMarkedState = {};
                 allowCatchUpMarking = false;
                 isClaiming = false;
+                
+                // አዲስ ዙር ሲጀምር ብቻ ነው ካርዶች የሚጸዱት
+                if (!d.sold_tickets || Object.keys(d.sold_tickets).length === 0) {
+                    myActiveTickets.clear();
+                }
+
                 try { localStorage.removeItem("bingo_marked_" + CURRENT_ROOM); } catch(e) {}
                 initTicketsOnce(); 
                 renderTickets(d.sold_tickets || {});
@@ -1451,7 +1452,6 @@
                 return;
             } 
 
-            // ጥያቄ 3 መሠረት፦ ቢንጎ ከተባለ በኋላ ተጨማሪ ቁጥሮች እንዳይጠሩና እንዳይጨናነቁ መቆለፍ
             if (gameLockedOnBingo && d.status === "playing") {
                 return;
             }
@@ -1529,7 +1529,6 @@
             }
             else if(d.status === "result") {
                 gameLockedOnBingo = true;
-                // ጥያቄ 3 መሠረት፦ 0.5 ሰከንድ ውስጥ አሸናፊዎችን በምስሉ መሰረት ማሳየት
                 setTimeout(() => {
                     showResultModal(d, finalPrize);
                 }, 500);
@@ -1540,7 +1539,6 @@
             const cardArea = document.getElementById("card-area");
             if (!cardArea) return;
 
-            // ጥያቄ 2 መሠረት፦ አንድ ካርቴላ ብቻ ለሚገዙ ካርዱ ከኳሶቹ ወደታች 70px ራቅ ይላል፤ ሁለት ከሆነ በነበረው አቀማመጥ ይቀጥላል
             if (myCards.length === 1) {
                 cardArea.classList.add("single-card");
             } else {
@@ -1602,7 +1600,6 @@
             });
         }
 
-        // በተሰጠው ምስል (Screenshot) መሰረት የተስተካከለ አሸናፊ ማሳያ
         function showResultModal(d, finalPrize) {
             const modal = document.getElementById("result-modal");
             if (!modal) return;
@@ -1639,7 +1636,6 @@
             const userTag = document.getElementById("modal-head-user");
             const verbTag = document.getElementById("modal-head-verb");
 
-            // በምስሉ መሰረት፦ "Tew and 3 others have won!" ወይም "Tew has won!"
             if (numWinners === 1) {
                 userTag.innerText = firstUser;
                 verbTag.innerText = " has won!";
@@ -1666,7 +1662,6 @@
             document.getElementById("modal-card-num").innerText = `CARD #${w.ticket_num || "--"}`;
             document.getElementById("modal-card-owner").innerText = w.username || "User";
 
-            // Update pills bar for fast navigation between multiple winners
             const pillsRow = document.getElementById("modal-winners-pills-row");
             if (pillsRow) {
                 if (winnersList.length > 1) {
@@ -1776,22 +1771,41 @@
             return cardMatricesMap[tid];
         }
 
+        // እልም ብሎ ቦግ እንዳይል የተስተካከለ ስሎት ማሳያ (Solid without flickering)
         function updateLobbySlots(soldTickets) {
-            let myTickets = [];
+            let myTicketsMap = new Map();
             if (soldTickets) {
                 for (let tId in soldTickets) {
                     if (phoneMatches(soldTickets[tId], phone)) {
-                        myTickets.push({ id: tId, matrix: getCardMatrix(tId) });
+                        let idNum = parseInt(tId);
+                        myActiveTickets.add(idNum);
                     }
                 }
             }
+            
+            myActiveTickets.forEach(idNum => {
+                myTicketsMap.set(idNum, { id: String(idNum), matrix: getCardMatrix(idNum) });
+            });
+
+            let myTickets = Array.from(myTicketsMap.values());
             renderSlotBox("slot-1-box", myTickets[0], 1);
             renderSlotBox("slot-2-box", myTickets[1], 2);
         }
 
+        // አንድ ካርድ በስሎቱ ውስጥ ካለ DOM እንዳይደገም በማድረግ እልም ማለቱን ይከላከላል
         function renderSlotBox(boxId, ticketObj, slotIndex) {
             const box = document.getElementById(boxId);
             if (!box) return;
+
+            const currentId = box.getAttribute("data-card-id") || "";
+            const targetId = ticketObj ? String(ticketObj.id) : "";
+
+            if (currentId === targetId && targetId !== "") {
+                return; // ካርዱ አስቀድሞ ስላለ ዳግም አያርገበግበውም
+            }
+
+            box.setAttribute("data-card-id", targetId);
+
             if (ticketObj) {
                 box.className = "slot-card active-cartela";
                 box.onclick = () => { refund(parseInt(ticketObj.id)); };
@@ -1844,20 +1858,30 @@
             for(let i=1; i<=500; i++) {
                 let box = document.getElementById("t-"+i); 
                 if(!box) continue;
-                if(sold && sold[i]) { 
-                    const isMine = phoneMatches(sold[i], phone);
-                    box.className = isMine ? "t-box mine" : "t-box sold"; 
-                    box.onclick = isMine ? () => refund(i) : null;
+                const isMine = myActiveTickets.has(i) || (sold && sold[i] && phoneMatches(sold[i], phone));
+                
+                if (isMine) { 
+                    if (box.className !== "t-box mine") {
+                        box.className = "t-box mine"; 
+                    }
+                    box.onclick = () => refund(i);
+                } else if (sold && sold[i]) { 
+                    if (box.className !== "t-box sold") {
+                        box.className = "t-box sold"; 
+                    }
+                    box.onclick = null;
                 } else { 
-                    box.className="t-box"; 
+                    if (box.className !== "t-box") {
+                        box.className = "t-box"; 
+                    }
                     box.onclick = () => buy(i);
                 }
             }
         }
 
-        // ⚡ MICROSECOND OPTIMISTIC BUYING (ጥያቄ 1 መሠረት smooth ንክት ሳደርጉ ቀልም እንዲልና ኖቲፊኬሽን እንዳይመጣ) ⚡
+        // ⚡ INSTANT SMOOTH BUYING (መግዛት ብቻ፤ ምንም እልም/ቦግ ወይም ቫይብሬሽን የሌለው) ⚡
         function buy(n) {
-            const soldCount = document.querySelectorAll(".t-box.mine").length;
+            const soldCount = myActiveTickets.size;
             if (soldCount >= 2) {
                 showNotification("❌ ከአንድ ተጨዋች 2 ካርቴላ በላይ መግዛት አይቻልም!");
                 return;
@@ -1868,7 +1892,9 @@
                 return;
             }
 
-            // 1. INSTANT MICROSECOND DOM FEEDBACK (ቀጥታ smooth ማቅለም)
+            // 1. ካርዱን ወዲያውኑ በእጃችን እናስቀምጣለን፤ WebSocket update እንዳያጠፋው ወይም እንዳያርገበግበው ይደረጋል
+            myActiveTickets.add(n);
+
             const box = document.getElementById("t-" + n);
             if (box) {
                 box.className = "t-box mine";
@@ -1884,10 +1910,10 @@
             let targetSlotId = null;
             let slotIndex = 1;
 
-            if (slot1 && slot1.classList.contains("empty")) {
+            if (slot1 && (slot1.classList.contains("empty") || !slot1.getAttribute("data-card-id"))) {
                 targetSlotId = "slot-1-box";
                 slotIndex = 1;
-            } else if (slot2 && slot2.classList.contains("empty")) {
+            } else if (slot2 && (slot2.classList.contains("empty") || !slot2.getAttribute("data-card-id"))) {
                 targetSlotId = "slot-2-box";
                 slotIndex = 2;
             }
@@ -1912,9 +1938,9 @@
                 if(d && d.success) {
                     balance = parseFloat(d.balance);
                     updateBalanceUI();
-                    // ባላንስህ ታድሷል የሚለው ኖቲፊኬሽን አልተጠራም
                 } else {
-                    // Rollback if taken concurrently
+                    // ከተወሰደ ብቻ rollback ይደረጋል
+                    myActiveTickets.delete(n);
                     balance += ROOM_PRICE;
                     updateBalanceUI();
                     if (box) {
@@ -1931,6 +1957,7 @@
                 }
             })
             .catch(() => { 
+                myActiveTickets.delete(n);
                 balance += ROOM_PRICE;
                 updateBalanceUI();
                 if (box) {
@@ -1946,8 +1973,9 @@
             });
         }
 
-        // ⚡ MICROSECOND OPTIMISTIC REFUND (ያለምንም ባላንስ ታድሷል ኖቲፊኬሽን) ⚡
+        // ⚡ INSTANT SMOOTH REFUND ⚡
         function refund(n) {
+            myActiveTickets.delete(n);
             balance += ROOM_PRICE;
             updateBalanceUI();
 
@@ -1959,9 +1987,9 @@
 
             const slot1 = document.getElementById("slot-1-box");
             const slot2 = document.getElementById("slot-2-box");
-            if (slot1 && slot1.innerText.includes("CARD #" + n)) {
+            if (slot1 && slot1.getAttribute("data-card-id") === String(n)) {
                 renderSlotBox("slot-1-box", null, 1);
-            } else if (slot2 && slot2.innerText.includes("CARD #" + n)) {
+            } else if (slot2 && slot2.getAttribute("data-card-id") === String(n)) {
                 renderSlotBox("slot-2-box", null, 2);
             }
 
@@ -1979,7 +2007,6 @@
                 if (d && d.balance !== undefined) {
                     balance = parseFloat(d.balance);
                     updateBalanceUI();
-                    // ባላንስ ታድሷል ኖቲፊኬሽን አይጠራም
                 }
             })
             .catch(() => {});
@@ -2227,7 +2254,6 @@
             return { won: false, indices: [] };
         }
 
-        // ⚡ INSTANT ZERO-LAG BINGO CLAIM (ጥያቄ 3 መሠረት፦ ቢንጎ ሲባል ከዛች ቁጥር ቀጥሎ ሌላ ቁጥር እንዳይጠራና በ0.5 ሰከንድ አሸናፊዎችን ማሳየት) ⚡
         function claimSpecificCard(targetCardId, matrix, markedSet, cardWrapEl, btnEl) {
             if (isClaiming) return;
 
@@ -2248,7 +2274,6 @@
                 return;
             }
 
-            // ቢንጎ ተረጋግጧል፤ አዲስ ቁጥር መጠራት እንዳይቀጥል ወዲያውኑ መቆለፍ
             gameLockedOnBingo = true;
             isClaiming = true;
             if (btnEl) {
@@ -2256,7 +2281,6 @@
                 btnEl.innerHTML = `BINGO! <span>#${targetCardId}</span>`;
             }
 
-            // 0ms ድምጽ
             const audio = document.getElementById("win-horn");
             if (audio) {
                 try {
@@ -2265,7 +2289,6 @@
                 } catch(e) {}
             }
 
-            // High-speed async claim
             fetch("/claim_bingo", { 
                 method: "POST", 
                 headers: { "Content-Type": "application/json" }, 
@@ -2288,7 +2311,6 @@
                     }
                 } else {
                     showNotification("🎉 ድል! ቢንጎዎ ተረጋግጧል!", true);
-                    // 0.5 ሰከንድ ውስጥ አሸናፊዎችን በምስሉ መሰረት ማሳየት
                     setTimeout(() => {
                         if (d.winner_payload) {
                             applyGameStateData(d.winner_payload);
