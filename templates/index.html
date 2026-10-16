@@ -2,7 +2,7 @@
 <html lang="am">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
     <title>BESH BINGO - ROOM 10 💰</title>
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
@@ -24,7 +24,11 @@
             --tile-sold: #cbd5e1;
             --tile-sold-text: #94a3b8;
         }
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        * { 
+            box-sizing: border-box; 
+            -webkit-tap-highlight-color: transparent; 
+            touch-action: manipulation;
+        }
         body { 
             background: var(--bg); 
             color: #ffffff; 
@@ -36,6 +40,7 @@
             width: 100vw; 
             height: 100vh; 
             user-select: none;
+            -webkit-user-select: none;
         }
 
         #main-app-content {
@@ -100,6 +105,7 @@
             align-items: center;
             justify-content: center;
             box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+            font-variant-numeric: tabular-nums;
         }
         .badge-label {
             font-size: 0.55rem;
@@ -113,6 +119,8 @@
             font-size: 0.85rem;
             font-weight: 900;
             line-height: 1.1;
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
         }
 
         .badge-room { background: #f59e0b; color: #000; }
@@ -124,9 +132,19 @@
         .badge-time { background: #1e293b; color: #ffffff; }
         .badge-time .badge-label { color: #f87171; }
 
-        .badge-balance { background: #10b981; color: #ffffff; cursor: default; }
+        /* ባላንስ እንዳይዋዥቅ እና እንዳይንቀጠቀጥ የተስተካከለ */
+        .badge-balance { 
+            background: #10b981; 
+            color: #ffffff; 
+            cursor: default; 
+            font-variant-numeric: tabular-nums;
+        }
         .badge-balance .badge-label { color: #d1fae5; }
-        .badge-balance .badge-val { font-size: 0.72rem; }
+        .badge-balance .badge-val { 
+            font-size: 0.72rem; 
+            font-variant-numeric: tabular-nums; 
+            white-space: nowrap; 
+        }
 
         .grid-container-photo {
             flex: 1;
@@ -146,38 +164,48 @@
             box-sizing: border-box;
             border: 1px solid #cbd5e1;
         }
+        
+        /* ቁጥሮቹ ሲነኩ ምንም አይነት እንቅስቃሴ (0px shift / 0 scale) እንዳይኖራቸው የተደረገ */
         .t-box {
             background: #ffffff;
             color: #1e293b;
             font-size: 0.85rem;
             font-weight: 800;
-            padding: 9px 0;
+            padding: 8px 0;
             border-radius: 12px;
             cursor: pointer;
             box-sizing: border-box;
             box-shadow: 0 1px 2px rgba(0,0,0,0.06);
-            border: 1px solid #e2e8f0;
+            border: 2px solid #e2e8f0;
             display: flex;
             align-items: center;
             justify-content: center;
             user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+            transform: none !important;
+            transition: none !important;
         }
-        .t-box:active { }
+        .t-box:active { 
+            transform: none !important; 
+        }
         .t-box.mine {
             background: #f59e0b !important;
             color: #000000 !important;
             border: 2px solid #d97706 !important;
             box-shadow: 0 2px 6px rgba(245, 158, 11, 0.4) !important;
+            transform: none !important;
         }
         .t-box.sold {
             background: #cbd5e1 !important;
             color: #94a3b8 !important;
-            border-color: transparent !important;
+            border: 2px solid #cbd5e1 !important;
             cursor: not-allowed;
             pointer-events: none;
+            transform: none !important;
         }
 
-        /* BOTTOM SLOTS TRAY - COMPACT CARD# TEXT & NO "መመለሻ" */
+        /* BOTTOM SLOTS TRAY */
         .bottom-slots-tray {
             position: relative;
             background: #ffffff;
@@ -207,8 +235,13 @@
             box-sizing: border-box;
             overflow: hidden;
             user-select: none;
+            -webkit-user-select: none;
+            transform: none !important;
+            transition: none !important;
         }
-        .slot-card:active { }
+        .slot-card:active { 
+            transform: none !important; 
+        }
         .slot-card.empty {
             border: 2px dashed #94a3b8;
             background: #f8fafc;
@@ -276,6 +309,8 @@
             border: 1px solid #cbd5e1;
             box-sizing: border-box;
             min-height: 14px;
+            transform: none !important;
+            transition: none !important;
         }
         .cartela-5x5-cell.free { background: #2563eb; color: #ffffff; border-color: #1d4ed8; font-weight: 900; }
         .cartela-5x5-cell.hit { background: #10b981; color: #ffffff; border-color: #059669; }
@@ -720,6 +755,7 @@
             width: 100%; 
         }
         
+        /* የካርቴላ ቁጥር ሲነካ ምንም አይነት እንቅስቃሴ እንዳይኖረው የተደረገ */
         .cell { 
             background: #ffffff; 
             color: #0f172a; 
@@ -732,22 +768,28 @@
             cursor: pointer; 
             border-radius: 4px;
             border: 1px solid #cbd5e1;
-            transition: transform 0.06s ease, background-color 0.1s ease, border-color 0.1s ease;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+            transform: none !important;
+            transition: none !important;
         }
         .cell:active {
-            transform: scale(0.92);
+            transform: none !important;
         }
         .cell.selected { 
             background: var(--gold-light) !important; 
             color: #000000 !important; 
             border-color: #d97706 !important; 
             box-shadow: inset 0 0 4px rgba(217, 119, 6, 0.4);
+            transform: none !important;
         }
         .cell.free { 
             background: #2563eb !important; 
             color: white !important; 
             font-size: 0.85rem; 
             cursor: default;
+            transform: none !important;
         }
         
         .bingo-btn { 
@@ -769,12 +811,13 @@
             align-items: center;
             justify-content: center;
             gap: 6px;
-            transition: all 0.15s ease;
+            transition: none !important;
+            transform: none !important;
             position: relative;
             overflow: hidden;
         }
         .bingo-btn:active:not(:disabled) {
-            transform: scale(0.97);
+            transform: none !important;
         }
         .bingo-btn:disabled { background: #94a3b8 !important; color: #e2e8f0 !important; cursor: not-allowed; animation: none !important; }
         .bingo-btn span { font-size: 0.65rem; font-style: normal; opacity: 0.9; font-weight: bold; }
@@ -1104,7 +1147,7 @@
                 <div class="grid-8-cols" id="ticket-area"></div>
             </div>
 
-            <!-- BOTTOM TRAY - COMPACT CARD# TEXT, NO "መመለሻ" -->
+            <!-- BOTTOM TRAY -->
             <div class="bottom-slots-tray">
                 <div class="slot-card empty" id="slot-1-box" onclick="showNotification('እባክዎ ከላይ ካሉት ቁጥሮች ካርቴላ ይምረጡ')">
                     <div class="slot-icon">+</div>
@@ -1125,7 +1168,6 @@
         </div>
 
         <div id="game-ui" style="display:none;">
-            <!-- TOP BAR: DERASH, BALLS, PLAYERS + RECENT BALLS PILL RIGHT NEXT TO BIG CIRCLE -->
             <div class="game-top-bar">
                 <div class="global-stats-bar">
                     <div class="stat-item">
@@ -1207,7 +1249,6 @@
                 <div class="pot-amt" id="modal-pot-val">0 ETB</div>
             </div>
 
-            <!-- ALL WINNERS SELECTOR BAR -->
             <div id="modal-winners-pills-row" style="display:none; width: 100%; overflow-x: auto; gap: 6px; padding: 2px 2px 8px 2px; margin-bottom: 6px; justify-content: flex-start; scrollbar-width: none;"></div>
 
             <div class="winner-card-box">
@@ -1245,7 +1286,8 @@
         let allowCatchUpMarking = false;
         let isClaiming = false;
         let gameLockedOnBingo = false; 
-        let myActiveTickets = new Set(); // የገዟቸው ካርቴላዎች እንዳይጠፉ/እንዳይርገበገቡ (no flickering/blinking)
+        let myActiveTickets = new Set(); 
+        let inFlightBalanceOps = 0; // ባላንስ እንዳይዋዥቅ የሚጠብቅ ቆጣሪ
 
         window.onload = function() {
             if (window.Telegram && window.Telegram.WebApp) {
@@ -1346,10 +1388,13 @@
                         applyGameStateData(d);
                     });
 
+                    // ባላንስ ሲጨመር/ሲቀነስ እንዳይዋዥቅ inFlightBalanceOps ጥበቃ ያደርጋል
                     socket.on("balance_update", function(data) {
                         if (phoneMatches(data.phone, phone)) {
-                            balance = parseFloat(data.balance);
-                            updateBalanceUI();
+                            if (inFlightBalanceOps === 0) {
+                                balance = parseFloat(data.balance);
+                                updateBalanceUI();
+                            }
                         }
                     });
                 } catch(e) {}
@@ -1409,8 +1454,11 @@
             .then(r => r.json())
             .then(d => { 
                 if(d.success) {
-                    balance = parseFloat(d.balance) || 0;
-                    updateBalanceUI();
+                    // የሂደት ላይ ያለ ባላንስ ካለ እንዳይዋዥቅ አንተካውም
+                    if (inFlightBalanceOps === 0 && d.balance !== undefined) {
+                        balance = parseFloat(d.balance) || 0;
+                        updateBalanceUI();
+                    }
                     applyGameStateData(d);
                 }
             }).catch(() => {});
@@ -1433,7 +1481,6 @@
                 allowCatchUpMarking = false;
                 isClaiming = false;
                 
-                // አዲስ ዙር ሲጀምር ብቻ ነው ካርዶች የሚጸዱት
                 if (!d.sold_tickets || Object.keys(d.sold_tickets).length === 0) {
                     myActiveTickets.clear();
                 }
@@ -1771,7 +1818,6 @@
             return cardMatricesMap[tid];
         }
 
-        // እልም ብሎ ቦግ እንዳይል የተስተካከለ ስሎት ማሳያ (Solid without flickering)
         function updateLobbySlots(soldTickets) {
             let myTicketsMap = new Map();
             if (soldTickets) {
@@ -1792,7 +1838,6 @@
             renderSlotBox("slot-2-box", myTickets[1], 2);
         }
 
-        // አንድ ካርድ በስሎቱ ውስጥ ካለ DOM እንዳይደገም በማድረግ እልም ማለቱን ይከላከላል
         function renderSlotBox(boxId, ticketObj, slotIndex) {
             const box = document.getElementById(boxId);
             if (!box) return;
@@ -1801,7 +1846,7 @@
             const targetId = ticketObj ? String(ticketObj.id) : "";
 
             if (currentId === targetId && targetId !== "") {
-                return; // ካርዱ አስቀድሞ ስላለ ዳግም አያርገበግበውም
+                return;
             }
 
             box.setAttribute("data-card-id", targetId);
@@ -1879,7 +1924,7 @@
             }
         }
 
-        // ⚡ INSTANT SMOOTH BUYING (መግዛት ብቻ፤ ምንም እልም/ቦግ ወይም ቫይብሬሽን የሌለው) ⚡
+        // ⚡ INSTANT ZERO-MOVEMENT BUYING WITH LOCKED BALANCE STABILITY ⚡
         function buy(n) {
             const soldCount = myActiveTickets.size;
             if (soldCount >= 2) {
@@ -1892,7 +1937,6 @@
                 return;
             }
 
-            // 1. ካርዱን ወዲያውኑ በእጃችን እናስቀምጣለን፤ WebSocket update እንዳያጠፋው ወይም እንዳያርገበግበው ይደረጋል
             myActiveTickets.add(n);
 
             const box = document.getElementById("t-" + n);
@@ -1901,8 +1945,10 @@
                 box.onclick = () => refund(n);
             }
 
+            // 1. ባላንስን ወዲያውኑ ቀንሶ ማቆየት፤ መዋዠቅ እንዳይኖር inFlightBalanceOps መቆለፍ
             balance -= ROOM_PRICE;
             updateBalanceUI();
+            inFlightBalanceOps++;
 
             const matrix = getCardMatrix(n);
             const slot1 = document.getElementById("slot-1-box");
@@ -1927,7 +1973,6 @@
                 soldEl.innerText = parseInt(soldEl.innerText || "0") + 1;
             }
 
-            // 2. ULTRA-FAST ASYNC BACKGROUND SYNC
             fetch("/buy_specific_ticket", {
                 method: "POST", 
                 headers: { "Content-Type": "application/json" }, 
@@ -1935,11 +1980,13 @@
             })
             .then(res => res.json())
             .then(d => { 
+                inFlightBalanceOps = Math.max(0, inFlightBalanceOps - 1);
                 if(d && d.success) {
-                    balance = parseFloat(d.balance);
-                    updateBalanceUI();
+                    if (inFlightBalanceOps === 0) {
+                        balance = parseFloat(d.balance);
+                        updateBalanceUI();
+                    }
                 } else {
-                    // ከተወሰደ ብቻ rollback ይደረጋል
                     myActiveTickets.delete(n);
                     balance += ROOM_PRICE;
                     updateBalanceUI();
@@ -1957,6 +2004,7 @@
                 }
             })
             .catch(() => { 
+                inFlightBalanceOps = Math.max(0, inFlightBalanceOps - 1);
                 myActiveTickets.delete(n);
                 balance += ROOM_PRICE;
                 updateBalanceUI();
@@ -1973,11 +2021,12 @@
             });
         }
 
-        // ⚡ INSTANT SMOOTH REFUND ⚡
+        // ⚡ INSTANT ZERO-MOVEMENT REFUND WITH LOCKED BALANCE STABILITY ⚡
         function refund(n) {
             myActiveTickets.delete(n);
             balance += ROOM_PRICE;
             updateBalanceUI();
+            inFlightBalanceOps++;
 
             const box = document.getElementById("t-" + n);
             if (box) {
@@ -2004,12 +2053,15 @@
             })
             .then(res => res.json())
             .then(d => {
-                if (d && d.balance !== undefined) {
+                inFlightBalanceOps = Math.max(0, inFlightBalanceOps - 1);
+                if (d && d.balance !== undefined && inFlightBalanceOps === 0) {
                     balance = parseFloat(d.balance);
                     updateBalanceUI();
                 }
             })
-            .catch(() => {});
+            .catch(() => {
+                inFlightBalanceOps = Math.max(0, inFlightBalanceOps - 1);
+            });
         }
 
         function renderMainBoard(drawn) {
