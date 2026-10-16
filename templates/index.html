@@ -393,6 +393,15 @@
         #ball-circle.pulse-pop {
             transform: scale(1.08);
         }
+        .ball-hyphen {
+            display: inline-block;
+            font-weight: 300;
+            opacity: 0.85;
+            margin: 0 1px;
+            transform: scaleX(0.55);
+            font-size: 0.85em;
+            vertical-align: middle;
+        }
 
         .recent-balls-pill {
             position: absolute;
@@ -591,6 +600,10 @@
             gap: 6px;
             overflow-y: auto;
             flex: 1;
+            transition: padding-top 0.2s ease;
+        }
+        #card-area.single-card {
+            padding-top: 100px;
         }
 
         .waiting-screen-container {
@@ -654,10 +667,6 @@
             flex-shrink: 0;
             position: relative;
             transition: opacity 0.3s, border-color 0.2s, box-shadow 0.2s;
-        }
-        .bingo-card-wrapper.ready-win {
-            border: 2px solid #10b981 !important;
-            box-shadow: 0 0 16px rgba(16, 185, 129, 0.4) !important;
         }
         .bingo-card-wrapper.disqualified {
             opacity: 0.55;
@@ -734,16 +743,6 @@
             border-color: #d97706 !important; 
             box-shadow: inset 0 0 4px rgba(217, 119, 6, 0.4);
         }
-        .cell.winning-line-cell {
-            background: #22c55e !important;
-            color: #ffffff !important;
-            border-color: #16a34a !important;
-            animation: pulseWinCell 1.2s infinite alternate;
-        }
-        @keyframes pulseWinCell {
-            0% { transform: scale(1); box-shadow: 0 0 4px rgba(34, 197, 94, 0.5); }
-            100% { transform: scale(1.05); box-shadow: 0 0 10px rgba(34, 197, 94, 0.9); }
-        }
         .cell.free { 
             background: #2563eb !important; 
             color: white !important; 
@@ -776,15 +775,6 @@
         }
         .bingo-btn:active:not(:disabled) {
             transform: scale(0.97);
-        }
-        .bingo-btn.ready-to-win {
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
-            box-shadow: 0 0 20px rgba(16, 185, 129, 0.8), 0 4px 10px rgba(5, 150, 105, 0.4) !important;
-            animation: excitedBingoPulse 0.9s infinite alternate;
-        }
-        @keyframes excitedBingoPulse {
-            0% { transform: scale(1); filter: brightness(1); }
-            100% { transform: scale(1.02); filter: brightness(1.15); box-shadow: 0 0 24px rgba(16, 185, 129, 1); }
         }
         .bingo-btn:disabled { background: #94a3b8 !important; color: #e2e8f0 !important; cursor: not-allowed; animation: none !important; }
         .bingo-btn span { font-size: 0.65rem; font-style: normal; opacity: 0.9; font-weight: bold; }
@@ -884,6 +874,18 @@
             font-weight: 900;
             color: #10b981;
             margin-top: 2px;
+        }
+
+        /* ALL WINNERS SELECTOR BAR (For identifying each winner cleanly when > 1 winners) */
+        #modal-winners-pills-row {
+            display: none;
+            width: 100%;
+            overflow-x: auto;
+            gap: 6px;
+            padding: 2px 2px 8px 2px;
+            margin-bottom: 6px;
+            justify-content: flex-start;
+            scrollbar-width: none;
         }
 
         .winner-card-box {
@@ -1024,6 +1026,29 @@
             color: #0f172a;
             letter-spacing: 1px;
             text-transform: uppercase;
+        }
+
+        .winner-select-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 5px 11px;
+            border-radius: 9999px;
+            background: #f1f5f9;
+            color: #1e293b;
+            font-size: 0.72rem;
+            font-weight: 800;
+            border: 1px solid #cbd5e1;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .winner-select-pill.active {
+            background: #2563eb;
+            color: #ffffff;
+            border-color: #1d4ed8;
+            box-shadow: 0 2px 6px rgba(37,99,235,0.3);
         }
     </style>
 </head>
@@ -1179,6 +1204,9 @@
                 <div class="pot-lbl">TOTAL PRIZE POOL</div>
                 <div class="pot-amt" id="modal-pot-val">0 ETB</div>
             </div>
+
+            <!-- ALL WINNERS SELECTOR BAR (For identifying each winner cleanly when > 1 winners) -->
+            <div id="modal-winners-pills-row" style="display:none; width: 100%; overflow-x: auto; gap: 6px; padding: 2px 2px 8px 2px; margin-bottom: 6px; justify-content: flex-start; scrollbar-width: none;"></div>
 
             <div class="winner-card-box">
                 <button class="carousel-nav-btn prev" id="modal-prev-btn" style="display:none;" onclick="changeWinnerSlide(-1)">❮</button>
@@ -1441,14 +1469,21 @@
                     const timerVal = (d.ball_timer !== undefined && d.ball_timer > 0) ? d.ball_timer : 3;
                     ballEl.innerText = timerVal;
                 } else if (d.current_ball && d.current_ball !== "--") {
-                    if (ballEl.innerText !== d.current_ball) {
+                    if (ballEl.getAttribute("data-ball") !== d.current_ball) {
                         ballEl.classList.remove("countdown-state");
                         ballEl.classList.add("pulse-pop");
                         setTimeout(() => ballEl.classList.remove("pulse-pop"), 180);
                     }
-                    ballEl.innerText = d.current_ball;
+                    ballEl.setAttribute("data-ball", d.current_ball);
+                    const ballMatch = String(d.current_ball).match(/^([A-Za-z]+)-?([0-9]+)$/);
+                    if (ballMatch) {
+                        ballEl.innerHTML = `<span>${ballMatch[1].toUpperCase()}</span><span class="ball-hyphen">-</span><span>${ballMatch[2]}</span>`;
+                    } else {
+                        ballEl.innerText = d.current_ball;
+                    }
                 } else {
                     ballEl.className = "countdown-state";
+                    ballEl.removeAttribute("data-ball");
                     ballEl.innerText = "";
                 }
 
@@ -1486,6 +1521,13 @@
         function renderOrUpdatePlayerCards(myCards, drawnBalls) {
             const cardArea = document.getElementById("card-area");
             if (!cardArea) return;
+
+            // አንድ ካርቴላ ብቻ ለሚገዙ ካርዱ ከኳሶቹ ወደታች 100px ራቅ ይላል፤ ሁለት ከሆነ በነበረው አቀማመጥ ይቀጥላል
+            if (myCards.length === 1) {
+                cardArea.classList.add("single-card");
+            } else {
+                cardArea.classList.remove("single-card");
+            }
 
             const existingWraps = Array.from(cardArea.querySelectorAll(".bingo-card-wrapper"));
             const currentIds = new Set(myCards.map(c => String(c.id)));
@@ -1564,7 +1606,15 @@
 
             document.getElementById("modal-winners-count").innerText = numWinners;
             document.getElementById("modal-winners-label").innerText = numWinners === 1 ? "አሸናፊ" : "አሸናፊዎች";
-            document.getElementById("modal-each-prize-val").innerText = eachPrize;
+            const eachPrizeEl = document.getElementById("modal-each-prize-val");
+            if (eachPrizeEl) {
+                eachPrizeEl.innerText = eachPrize;
+                const parent = eachPrizeEl.parentElement;
+                if (parent) {
+                    const small = parent.querySelector("small");
+                    if (small) small.innerText = numWinners > 1 ? "ETB እያንዳንዳቸው" : "ETB";
+                }
+            }
 
             const firstUser = (winnersList[0] && winnersList[0].username) ? winnersList[0].username : "Player";
             const userTag = document.getElementById("modal-head-user");
@@ -1574,11 +1624,12 @@
                 userTag.innerText = firstUser;
                 verbTag.innerText = " has won!";
             } else if (numWinners === 2) {
-                userTag.innerText = `${firstUser} and 1 other`;
-                verbTag.innerText = " have won!";
+                const secondUser = (winnersList[1] && winnersList[1].username) ? winnersList[1].username : "Player 2";
+                userTag.innerText = `${firstUser} እና ${secondUser}`;
+                verbTag.innerText = " አሸንፈዋል!";
             } else {
-                userTag.innerText = `${firstUser} and ${numWinners - 1} others`;
-                verbTag.innerText = " have won!";
+                userTag.innerText = `${numWinners} አሸናፊዎች`;
+                verbTag.innerText = " ድሉን ተጋርተዋል!";
             }
 
             document.getElementById("modal-pot-val").innerText = `${finalPrize} ETB`;
@@ -1595,8 +1646,28 @@
             currentWinnerIndex = idx;
             const w = winnersList[idx];
 
-            document.getElementById("modal-card-num").innerText = `CARD #${w.ticket_num || "--"}`;
+            document.getElementById("modal-card-num").innerText = winnersList.length > 1 
+                ? `CARD #${w.ticket_num || "--"} (${idx + 1}/${winnersList.length})`
+                : `CARD #${w.ticket_num || "--"}`;
             document.getElementById("modal-card-owner").innerText = w.username || "User";
+
+            // Update pills bar for fast navigation between multiple winners
+            const pillsRow = document.getElementById("modal-winners-pills-row");
+            if (pillsRow) {
+                if (winnersList.length > 1) {
+                    pillsRow.style.display = "flex";
+                    pillsRow.innerHTML = "";
+                    winnersList.forEach((winItem, wIdx) => {
+                        const pill = document.createElement("div");
+                        pill.className = (wIdx === idx) ? "winner-select-pill active" : "winner-select-pill";
+                        pill.innerHTML = `<span>🏆 #${wIdx + 1}</span> <span>${winItem.username || 'User'}</span> <span style="opacity:0.85; font-size:0.62rem;">(#${winItem.ticket_num})</span>`;
+                        pill.onclick = () => renderWinnerSlide(wIdx);
+                        pillsRow.appendChild(pill);
+                    });
+                } else {
+                    pillsRow.style.display = "none";
+                }
+            }
 
             const grid = document.getElementById("modal-card-grid");
             grid.innerHTML = "";
@@ -1996,8 +2067,6 @@
             if (!wrap) return;
 
             const isDisqualified = disqualifiedCards.has(String(cardId));
-            const winCheck = checkCardBingoWin(matrix, markedSet);
-            const winningIndicesSet = new Set(winCheck.indices || []);
 
             const cells = wrap.querySelectorAll(".bingo-card .cell");
             matrix.forEach((n, i) => {
@@ -2010,30 +2079,16 @@
                     cell.className = "cell free selected";
                 } else {
                     const isMarked = markedSet.has(i);
-                    const isWonLine = winCheck.won && winningIndicesSet.has(i);
-                    
-                    if (isWonLine) {
-                        cell.className = "cell selected winning-line-cell";
-                    } else if (isMarked) {
-                        cell.className = "cell selected";
-                    } else {
-                        cell.className = "cell";
-                    }
+                    // Normal marking only: exactly like other numbers, no green or line reaction
+                    cell.className = isMarked ? "cell selected" : "cell";
                 }
             });
 
             const bingoBtn = wrap.querySelector(".bingo-btn");
             if (bingoBtn) {
                 bingoBtn.disabled = isDisqualified;
-                if (winCheck.won && !isDisqualified) {
-                    wrap.classList.add("ready-win");
-                    bingoBtn.classList.add("ready-to-win");
-                    bingoBtn.innerHTML = `BINGO! <span>#${cardId} 🎉</span>`;
-                } else {
-                    wrap.classList.remove("ready-win");
-                    bingoBtn.classList.remove("ready-to-win");
-                    bingoBtn.innerHTML = `BINGO! <span>#${cardId}</span>`;
-                }
+                // No reaction or green coloring on the BINGO button
+                bingoBtn.innerHTML = `BINGO! <span>#${cardId}</span>`;
             }
         }
 
