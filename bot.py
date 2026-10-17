@@ -9,10 +9,10 @@ import requests
 import re
 import gevent
 from flask import Flask, render_template, jsonify, request
-from pymongo import MongoClient
 from flask_cors import CORS
 from flask_socketio import SocketIO, emit
-from bson.objectid import ObjectId
+import psycopg2
+from psycopg2 import pool, extras
 
 app = Flask(__name__, template_folder='templates')
 CORS(app)
@@ -21,7 +21,6 @@ socketio = SocketIO(app, cors_allowed_origins="*", async_mode="gevent", ping_tim
 
 ADMIN_ID = os.getenv("ADMIN_ID") 
 BOT_TOKEN = os.getenv("BOT_TOKEN") 
-MONGO_URL = os.getenv("MONGO_URL")
 WEB_APP_URL = os.getenv("WEB_APP_URL", "https://bingo1-pjyb.onrender.com") 
 
 # የክፍያ አካውንቶች መረጃ (Deposit Accounts)
@@ -31,181 +30,441 @@ CBEBIRR_ACCOUNT = "0960736061"
 CBEBIRR_NAME = "ZEHARA"
 SUPPORT_USERNAME = "@BeshBingoSupport"
 
-# MongoDB ግንኙነት ማዋቀር (Resilient MongoDB Client Initialization)
-MONGO_URL = os.getenv("MONGO_URL") or os.getenv("MONGO_URI") or "mongodb+srv://yabebal98:Yabebal98@cluster0.p7ovn.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+# PostgreSQL ግንኙነት ማዋቀር (Resilient PostgreSQL Connection Setup)
+RAW_PG_URL = os.getenv("DATABASE_URL") or os.getenv("POSTGRES_URL") or os.getenv("POSTGRESQL_URL") or "postgresql://postgres:postgres@localhost:5432/bingo_db"
+if RAW_PG_URL.startswith("postgres://"):
+    RAW_PG_URL = RAW_PG_URL.replace("postgres://", "postgresql://", 1)
 
-class SafeCollectionFallback:
-    """MongoDB በማይገኝበት ጊዜ አፕሊኬሽኑ እንዳይዘጋ የሚከላከል ሙሉ የሜሞሪ ዳታቤዝ ማስተናገጃ"""
-    _global_storage = {}
+pg_pool = None
 
-    def __init__(self, name):
-        self.name = name
-        if name not in SafeCollectionFallback._global_storage:
-            SafeCollectionFallback._global_storage[name] = []
-        self.docs = SafeCollectionFallback._global_storage[name]
+def init_postgres_db():
+    global pg_pool
+    try:
+        pg_pool = pool.ThreadedConnectionPool(minconn=1, maxconn=20, dsn=RAW_PG_URL)
+        conn = pg_pool.getconn()
+        conn.autocommit = True
+        with conn.cursor() as cur:
+            # 1. Wallets Table
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS wallets (
+                    id SERIAL PRIMARY KEY,
+                    phone VARCHAR(32) UNIQUE,
+                    telegram_id VARCHAR(64),
+                    chat_id VARCHAR(64),
+                    first_name VARCHAR(128),
+                    username VARCHAR(128),
+                    balance DOUBLE PRECISION DEFAULT 1000.0,
+                    bonus DOUBLE PRECISION DEFAULT 20.0,
+                    status VARCHAR(32) DEFAULT 'ACTIVE',
+                    referred_by VARCHAR(64),
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                );
+                CREATE INDEX IF NOT EXISTS idx_wallets_chat_id ON wallets(chat_id);
+                CREATE INDEX IF NOT EXISTS idx_wallets_telegram_id ON wallets(telegram_id);
+                CREATE INDEX IF NOT EXISTS idx_wallets_phone ON wallets(phone);
+            """)
 
-    def _matches(self, doc, query):
-        if not query:
-            return True
-        for k, v in query.items():
-            if k == "$or":
-                if not any(self._matches(doc, q) for q in v):
-                    return False
-            elif k == "$and":
-                if not all(self._matches(doc, q) for q in v):
-                    return False
-            elif isinstance(v, dict):
-                val = doc.get(k)
-                for op, op_val in v.items():
-                    if op == "$gte":
-                        if val is None or float(val) < float(op_val):
-                            return False
-                    elif op == "$lte":
-                        if val is None or float(val) > float(op_val):
-                            return False
-                    elif op == "$in":
-                        if val not in op_val:
-                            return False
-                    elif op == "$ne":
-                        if val == op_val:
-                            return False
-            else:
-                if str(doc.get(k, "")) != str(v):
-                    return False
-        return True
+            # 2. Blocked Phones Table
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS blocked_phones (
+                    phone VARCHAR(32) PRIMARY KEY,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                );
+            """)
+
+            # 3. Transactions Table
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS transactions (
+                    id SERIAL PRIMARY KEY,
+                    phone VARCHAR(32),
+                    receiver_phone VARCHAR(32),
+                    chat_id VARCHAR(64),
+                    first_name VARCHAR(128),
+                    type VARCHAR(64),
+                    method VARCHAR(64),
+                    amount DOUBLE PRECISION DEFAULT 0.0,
+                    account_number VARCHAR(128),
+                    account_name VARCHAR(128),
+                    txn_id VARCHAR(128),
+                    sms_body TEXT,
+                    room VARCHAR(32),
+                    status VARCHAR(32) DEFAULT 'pending',
+                    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    processed_at TIMESTAMP
+                );
+                CREATE INDEX IF NOT EXISTS idx_transactions_timestamp ON transactions(timestamp);
+                CREATE INDEX IF NOT EXISTS idx_transactions_status ON transactions(status);
+                CREATE INDEX IF NOT EXISTS idx_transactions_phone ON transactions(phone);
+                CREATE INDEX IF NOT EXISTS idx_transactions_txn_id ON transactions(txn_id);
+            """)
+
+            # 4. Admin State Table
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS admin_state (
+                    chat_id VARCHAR(64) PRIMARY KEY,
+                    action VARCHAR(128),
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                );
+            """)
+
+            # 5. User State Table
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS user_state (
+                    chat_id VARCHAR(64) PRIMARY KEY,
+                    action VARCHAR(128),
+                    method VARCHAR(64),
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                );
+            """)
+        pg_pool.putconn(conn)
+        print("✅ PostgreSQL Database connected and tables verified successfully!")
+    except Exception as e:
+        print(f"⚠️ [PostgreSQL Warning] የዳታቤዝ ግንኙነት አልተሳካም (Fallback Mode): {e}")
+        pg_pool = None
+
+init_postgres_db()
+
+# PostgreSQL ዳታቤዝ ረዳት ክላስ (PostgreSQL Table Adapters)
+class PostgresTable:
+    def __init__(self, table_name):
+        self.table_name = table_name
+
+    def _get_conn(self):
+        if pg_pool:
+            conn = pg_pool.getconn()
+            conn.autocommit = True
+            return conn
+        return None
+
+    def _put_conn(self, conn):
+        if pg_pool and conn:
+            pg_pool.putconn(conn)
 
     def find_one(self, query=None, *args, **kwargs):
-        if not query:
-            return self.docs[0] if self.docs else None
-        for doc in self.docs:
-            if self._matches(doc, query):
-                return dict(doc)
-        return None
+        conn = self._get_conn()
+        if not conn:
+            return None
+        try:
+            with conn.cursor(cursor_factory=extras.RealDictCursor) as cur:
+                where_clause, params = self._build_where(query)
+                sql = f"SELECT * FROM {self.table_name} {where_clause} LIMIT 1;"
+                cur.execute(sql, params)
+                res = cur.fetchone()
+                if res and "id" in res:
+                    res["_id"] = str(res["id"])
+                return dict(res) if res else None
+        finally:
+            self._put_conn(conn)
 
-    def find(self, query=None, *args, **kwargs):
-        res = []
-        for doc in self.docs:
-            if self._matches(doc, query):
-                res.append(dict(doc))
-        return res
+    def find(self, query=None, sort=None, limit=None, *args, **kwargs):
+        conn = self._get_conn()
+        if not conn:
+            return []
+        try:
+            with conn.cursor(cursor_factory=extras.RealDictCursor) as cur:
+                where_clause, params = self._build_where(query)
+                sql = f"SELECT * FROM {self.table_name} {where_clause}"
+                if sort:
+                    col, direction = sort[0], sort[1]
+                    dir_str = "DESC" if direction == -1 else "ASC"
+                    sql += f" ORDER BY {col} {dir_str}"
+                if limit:
+                    sql += f" LIMIT {int(limit)}"
+                cur.execute(sql, params)
+                rows = cur.fetchall()
+                results = []
+                for r in rows:
+                    row_dict = dict(r)
+                    if "id" in row_dict:
+                        row_dict["_id"] = str(row_dict["id"])
+                    results.append(row_dict)
+                return results
+        finally:
+            self._put_conn(conn)
 
     def insert_one(self, doc, *args, **kwargs):
-        new_doc = dict(doc)
-        if "_id" not in new_doc:
-            new_doc["_id"] = ObjectId()
-        self.docs.append(new_doc)
-        return type("Result", (), {"inserted_id": new_doc["_id"]})()
+        conn = self._get_conn()
+        if not conn:
+            return type("Result", (), {"inserted_id": random.randint(1000, 9999)})()
+        try:
+            with conn.cursor() as cur:
+                cols = []
+                vals = []
+                placeholders = []
+                for k, v in doc.items():
+                    if k in ["_id", "id"]:
+                        continue
+                    cols.append(k)
+                    vals.append(v)
+                    placeholders.append("%s")
+                cols_str = ", ".join(cols)
+                ph_str = ", ".join(placeholders)
+                sql = f"INSERT INTO {self.table_name} ({cols_str}) VALUES ({ph_str}) RETURNING id;"
+                cur.execute(sql, vals)
+                new_id = cur.fetchone()[0]
+                doc["_id"] = str(new_id)
+                doc["id"] = new_id
+                return type("Result", (), {"inserted_id": new_id})()
+        finally:
+            self._put_conn(conn)
 
     def update_one(self, filter_query, update_query, upsert=False, *args, **kwargs):
-        for doc in self.docs:
-            if self._matches(doc, filter_query):
-                self._apply_update(doc, update_query)
-                return type("Result", (), {"modified_count": 1, "matched_count": 1})()
-        if upsert:
-            new_doc = dict(filter_query)
-            if "$set" in update_query:
-                new_doc.update(update_query["$set"])
-            if "$setOnInsert" in update_query:
-                new_doc.update(update_query["$setOnInsert"])
-            self.insert_one(new_doc)
-            return type("Result", (), {"modified_count": 1, "matched_count": 0})()
-        return type("Result", (), {"modified_count": 0, "matched_count": 0})()
+        conn = self._get_conn()
+        if not conn:
+            return type("Result", (), {"modified_count": 0})()
+        try:
+            with conn.cursor() as cur:
+                where_clause, where_params = self._build_where(filter_query)
+                set_clauses = []
+                set_params = []
 
-    def update_many(self, filter_query, update_query, *args, **kwargs):
-        cnt = 0
-        for doc in self.docs:
-            if self._matches(doc, filter_query):
-                self._apply_update(doc, update_query)
-                cnt += 1
-        return type("Result", (), {"modified_count": cnt})()
+                if "$set" in update_query:
+                    for k, v in update_query["$set"].items():
+                        if k in ["_id", "id"]:
+                            continue
+                        set_clauses.append(f"{k} = %s")
+                        set_params.append(v)
 
-    def find_one_and_update(self, filter_query, update_query, return_document=True, *args, **kwargs):
-        for doc in self.docs:
-            if self._matches(doc, filter_query):
-                self._apply_update(doc, update_query)
-                return dict(doc)
-        # If user wallet was queried but not found, auto-initialize wallet with starting demo balance
-        if self.name == "wallets":
-            phone_val = filter_query.get("phone", "")
-            if not phone_val and "$or" in filter_query:
-                for q in filter_query["$or"]:
-                    if "phone" in q and q["phone"]:
-                        phone_val = q["phone"]
-                        break
-            new_doc = {
-                "_id": ObjectId(),
-                "phone": phone_val or "251912345678",
-                "chat_id": filter_query.get("chat_id", ""),
-                "first_name": "User",
-                "username": "Player",
-                "balance": 1000.0,
-                "bonus": 20.0,
-                "created_at": datetime.utcnow()
-            }
-            self._apply_update(new_doc, update_query)
-            self.docs.append(new_doc)
-            return dict(new_doc)
-        return None
+                if "$inc" in update_query:
+                    for k, inc_val in update_query["$inc"].items():
+                        set_clauses.append(f"{k} = {k} + %s")
+                        set_params.append(float(inc_val))
 
-    def _apply_update(self, doc, update_query):
-        if "$set" in update_query:
-            doc.update(update_query["$set"])
-        if "$inc" in update_query:
-            for k, inc_val in update_query["$inc"].items():
-                cur = float(doc.get(k, 0.0))
-                doc[k] = cur + float(inc_val)
+                if set_clauses:
+                    sql = f"UPDATE {self.table_name} SET {', '.join(set_clauses)} {where_clause};"
+                    cur.execute(sql, set_params + where_params)
+                    if cur.rowcount > 0:
+                        return type("Result", (), {"modified_count": cur.rowcount, "matched_count": cur.rowcount})()
+
+                if upsert:
+                    merged = {}
+                    if filter_query:
+                        for k, v in filter_query.items():
+                            if not k.startswith("$") and isinstance(v, (str, int, float)):
+                                merged[k] = v
+                    if "$set" in update_query:
+                        merged.update(update_query["$set"])
+                    if "$setOnInsert" in update_query:
+                        merged.update(update_query["$setOnInsert"])
+
+                    cols = [k for k in merged.keys() if k not in ["_id", "id"]]
+                    vals = [merged[k] for k in cols]
+                    phs = ["%s"] * len(cols)
+                    if self.table_name in ["wallets", "blocked_phones", "admin_state", "user_state"]:
+                        pk_col = "phone" if self.table_name in ["wallets", "blocked_phones"] else "chat_id"
+                        conflict_updates = [f"{c} = EXCLUDED.{c}" for c in cols if c != pk_col]
+                        c_str = f"DO UPDATE SET {', '.join(conflict_updates)}" if conflict_updates else "DO NOTHING"
+                        ins_sql = f"INSERT INTO {self.table_name} ({', '.join(cols)}) VALUES ({', '.join(phs)}) ON CONFLICT ({pk_col}) {c_str};"
+                    else:
+                        ins_sql = f"INSERT INTO {self.table_name} ({', '.join(cols)}) VALUES ({', '.join(phs)});"
+                    cur.execute(ins_sql, vals)
+                    return type("Result", (), {"modified_count": 1, "matched_count": 0})()
+
+                return type("Result", (), {"modified_count": 0, "matched_count": 0})()
+        finally:
+            self._put_conn(conn)
+
+    def find_one_and_update(self, filter_query, update_query, return_document=True, upsert=False, *args, **kwargs):
+        conn = self._get_conn()
+        if not conn:
+            return None
+        try:
+            with conn.cursor(cursor_factory=extras.RealDictCursor) as cur:
+                where_clause, where_params = self._build_where(filter_query)
+                set_clauses = []
+                set_params = []
+
+                if "$set" in update_query:
+                    for k, v in update_query["$set"].items():
+                        if k in ["_id", "id"]:
+                            continue
+                        set_clauses.append(f"{k} = %s")
+                        set_params.append(v)
+
+                if "$inc" in update_query:
+                    for k, inc_val in update_query["$inc"].items():
+                        set_clauses.append(f"{k} = {k} + %s")
+                        set_params.append(float(inc_val))
+
+                if set_clauses:
+                    sql = f"UPDATE {self.table_name} SET {', '.join(set_clauses)} {where_clause} RETURNING *;"
+                    cur.execute(sql, set_params + where_params)
+                    row = cur.fetchone()
+                    if row:
+                        res = dict(row)
+                        if "id" in res:
+                            res["_id"] = str(res["id"])
+                        return res
+
+                if upsert:
+                    merged = {}
+                    if filter_query:
+                        for k, v in filter_query.items():
+                            if not k.startswith("$") and isinstance(v, (str, int, float)):
+                                merged[k] = v
+                    if "$set" in update_query:
+                        merged.update(update_query["$set"])
+                    if "$setOnInsert" in update_query:
+                        merged.update(update_query["$setOnInsert"])
+
+                    cols = [k for k in merged.keys() if k not in ["_id", "id"]]
+                    vals = [merged[k] for k in cols]
+                    phs = ["%s"] * len(cols)
+                    pk_col = "phone" if self.table_name in ["wallets", "blocked_phones"] else "chat_id"
+                    conflict_updates = [f"{c} = EXCLUDED.{c}" for c in cols if c != pk_col]
+                    c_str = f"DO UPDATE SET {', '.join(conflict_updates)}" if conflict_updates else "DO NOTHING"
+                    ins_sql = f"INSERT INTO {self.table_name} ({', '.join(cols)}) VALUES ({', '.join(phs)}) ON CONFLICT ({pk_col}) {c_str} RETURNING *;"
+                    cur.execute(ins_sql, vals)
+                    row = cur.fetchone()
+                    if row:
+                        res = dict(row)
+                        if "id" in res:
+                            res["_id"] = str(res["id"])
+                        return res
+                return None
+        finally:
+            self._put_conn(conn)
 
     def count_documents(self, query=None, *args, **kwargs):
-        if not query:
-            return len(self.docs)
-        return len(self.find(query))
+        conn = self._get_conn()
+        if not conn:
+            return 0
+        try:
+            with conn.cursor() as cur:
+                where_clause, params = self._build_where(query)
+                sql = f"SELECT COUNT(*) FROM {self.table_name} {where_clause};"
+                cur.execute(sql, params)
+                return cur.fetchone()[0]
+        finally:
+            self._put_conn(conn)
 
     def delete_one(self, filter_query, *args, **kwargs):
-        for i, doc in enumerate(self.docs):
-            if self._matches(doc, filter_query):
-                self.docs.pop(i)
-                break
+        conn = self._get_conn()
+        if not conn:
+            return type("Result", (), {"deleted_count": 0})()
+        try:
+            with conn.cursor() as cur:
+                where_clause, params = self._build_where(filter_query)
+                sql = f"DELETE FROM {self.table_name} WHERE id IN (SELECT id FROM {self.table_name} {where_clause} LIMIT 1);"
+                cur.execute(sql, params)
+                return type("Result", (), {"deleted_count": cur.rowcount})()
+        finally:
+            self._put_conn(conn)
 
     def delete_many(self, filter_query, *args, **kwargs):
-        self.docs = [d for d in self.docs if not self._matches(d, filter_query)]
-        SafeCollectionFallback._global_storage[self.name] = self.docs
+        conn = self._get_conn()
+        if not conn:
+            return type("Result", (), {"deleted_count": 0})()
+        try:
+            with conn.cursor() as cur:
+                where_clause, params = self._build_where(filter_query)
+                sql = f"DELETE FROM {self.table_name} {where_clause};"
+                cur.execute(sql, params)
+                return type("Result", (), {"deleted_count": cur.rowcount})()
+        finally:
+            self._put_conn(conn)
 
-    def aggregate(self, *args, **kwargs):
-        return []
+    def aggregate(self, pipeline, *args, **kwargs):
+        conn = self._get_conn()
+        if not conn:
+            return []
+        try:
+            with conn.cursor(cursor_factory=extras.RealDictCursor) as cur:
+                # Optimized financial stats aggregate for PostgreSQL
+                where_parts = []
+                params = []
+                for stage in pipeline:
+                    if "$match" in stage:
+                        m = stage["$match"]
+                        if "type" in m:
+                            where_parts.append("type = %s")
+                            params.append(m["type"])
+                        if "status" in m:
+                            where_parts.append("status = %s")
+                            params.append(m["status"])
+                        if "timestamp" in m and "$gte" in m["timestamp"]:
+                            where_parts.append("timestamp >= %s")
+                            params.append(m["timestamp"]["$gte"])
+
+                where_sql = f"WHERE {' AND '.join(where_parts)}" if where_parts else ""
+                sql = f"SELECT COALESCE(SUM(amount), 0.0) AS total FROM {self.table_name} {where_sql};"
+                cur.execute(sql, params)
+                res = cur.fetchone()
+                return [{"_id": None, "total": float(res["total"])}] if res else []
+        finally:
+            self._put_conn(conn)
 
     def create_index(self, *args, **kwargs):
         pass
 
-class SafeDBFallback:
-    def __getitem__(self, name):
-        return SafeCollectionFallback(name)
+    def _build_where(self, query):
+        if not query:
+            return "", []
+        conditions = []
+        params = []
 
-try:
-    client = MongoClient(MONGO_URL, serverSelectionTimeoutMS=3000, connectTimeoutMS=3000)
-    db = client['bingo_db']
-    wallets = db['wallets']
-    blocked_phones = db['blocked_phones'] 
-    transactions = db['transactions']
-    admin_state = db['admin_state']
-    user_state = db['user_state']
+        for k, v in query.items():
+            if k == "$or":
+                sub_conds = []
+                for item in v:
+                    sc, sp = self._build_where(item)
+                    if sc.startswith("WHERE "):
+                        sc = sc[6:]
+                    sub_conds.append(f"({sc})")
+                    params.extend(sp)
+                if sub_conds:
+                    conditions.append(f"({' OR '.join(sub_conds)})")
+            elif k == "$and":
+                sub_conds = []
+                for item in v:
+                    sc, sp = self._build_where(item)
+                    if sc.startswith("WHERE "):
+                        sc = sc[6:]
+                    sub_conds.append(f"({sc})")
+                    params.extend(sp)
+                if sub_conds:
+                    conditions.append(f"({' AND '.join(sub_conds)})")
+            elif k in ["_id", "id"]:
+                try:
+                    val_id = int(str(v))
+                    conditions.append("id = %s")
+                    params.append(val_id)
+                except:
+                    conditions.append("CAST(id AS TEXT) = %s")
+                    params.append(str(v))
+            elif isinstance(v, dict):
+                for op, op_val in v.items():
+                    if op == "$gte":
+                        conditions.append(f"{k} >= %s")
+                        params.append(op_val)
+                    elif op == "$lte":
+                        conditions.append(f"{k} <= %s")
+                        params.append(op_val)
+                    elif op == "$in":
+                        placeholders = ", ".join(["%s"] * len(op_val))
+                        conditions.append(f"{k} IN ({placeholders})")
+                        params.extend(op_val)
+                    elif op == "$ne":
+                        conditions.append(f"{k} <> %s")
+                        params.append(op_val)
+                    elif op == "$exists":
+                        if op_val:
+                            conditions.append(f"{k} IS NOT NULL")
+                        else:
+                            conditions.append(f"{k} IS NULL")
+            else:
+                conditions.append(f"{k} = %s")
+                params.append(v)
 
-    wallets.create_index("phone", unique=True)
-    wallets.create_index("telegram_id", unique=True, sparse=True)
-    wallets.create_index("chat_id", sparse=True)
-    blocked_phones.create_index("phone", unique=True)
-    transactions.create_index("timestamp")
-    transactions.create_index("status")
-    transactions.create_index("txn_id", sparse=True)
-    user_state.create_index("chat_id", unique=True)
-    print("✅ MongoDB connected successfully!")
-except Exception as e:
-    print(f"⚠️ [MongoDB Warning] የዳታቤዝ ግንኙነት አልተሳካም: {e}")
-    db = SafeDBFallback()
-    wallets = db['wallets']
-    blocked_phones = db['blocked_phones']
-    transactions = db['transactions']
-    admin_state = db['admin_state']
-    user_state = db['user_state']
+        return f"WHERE {' AND '.join(conditions)}" if conditions else "", params
+
+# የቴብል አገናኞች (PostgreSQL Table Instances)
+wallets = PostgresTable('wallets')
+blocked_phones = PostgresTable('blocked_phones')
+transactions = PostgresTable('transactions')
+admin_state = PostgresTable('admin_state')
+user_state = PostgresTable('user_state')
 
 # የስልክ ቁጥር ትክክለኛነት ማረጋገጫ (Valid Ethiopian Phone check)
 def is_valid_ethiopian_phone(phone_str):
@@ -248,14 +507,6 @@ def get_user_wallet_and_phone(chat_id_val, phone_val=None):
             {"chat_id": chat_str},
             {"telegram_id": chat_str}
         ])
-        try:
-            chat_int = int(chat_str)
-            query_or.extend([
-                {"chat_id": chat_int},
-                {"telegram_id": chat_int}
-            ])
-        except:
-            pass
 
     if formatted_ph:
         raw_09 = "0" + formatted_ph[-9:] if len(formatted_ph) >= 9 else formatted_ph
@@ -270,11 +521,11 @@ def get_user_wallet_and_phone(chat_id_val, phone_val=None):
     if user:
         ph = user.get("phone", "")
         if not ph and formatted_ph:
-            wallets.update_one({"_id": user["_id"]}, {"$set": {"phone": formatted_ph}})
+            wallets.update_one({"id": user["id"]}, {"$set": {"phone": formatted_ph}})
             user["phone"] = formatted_ph
             ph = formatted_ph
         if chat_str and not user.get("chat_id"):
-            wallets.update_one({"_id": user["_id"]}, {"$set": {"chat_id": chat_str, "telegram_id": chat_str}})
+            wallets.update_one({"id": user["id"]}, {"$set": {"chat_id": chat_str, "telegram_id": chat_str}})
             user["chat_id"] = chat_str
             user["telegram_id"] = chat_str
         final_ph = format_phone_number(ph) if is_valid_ethiopian_phone(ph) else (formatted_ph or ph)
@@ -293,7 +544,8 @@ def get_user_wallet_and_phone(chat_id_val, phone_val=None):
             "created_at": datetime.utcnow()
         }
         ins_res = wallets.insert_one(new_wallet)
-        new_wallet["_id"] = ins_res.inserted_id
+        new_wallet["id"] = ins_res.inserted_id
+        new_wallet["_id"] = str(ins_res.inserted_id)
         return new_wallet, formatted_ph
 
     return None, formatted_ph or None
@@ -328,7 +580,6 @@ def extract_transaction_id(sms_text):
         return None
     clean = sms_text.strip()
     
-    # 1. መደበኛ የቴሌብር እና ሲቢኢ ብር የትራንዛክሽን ቁጥር ፓተርኖች
     patterns = [
         r'(?:transaction\s*(?:no|number|id|code)|txn\s*(?:no|id)?|trans\s*(?:no|id)?|reference\s*(?:no|id)?|ref\s*(?:no|id)?)\s*[:.\-]?\s*([A-Za-z0-9]{6,26})',
         r'የግብይት\s*(?:ቁጥር|መለያ)?\s*[:.\-]?\s*([A-Za-z0-9]{6,26})',
@@ -342,14 +593,12 @@ def extract_transaction_id(sms_text):
         if m:
             return m.group(1).upper()
             
-    # 2. የአልፋኒውመሪክ ኮድ ፍለጋ (ከ 8 እስከ 20 ፊደላትና ቁጥሮች ጥምር)
     tokens = re.findall(r'\b[A-Z0-9]{8,22}\b', clean.upper())
     ignored = {"TELEBIRR", "CBEBIRR", "ETHIOTELECOM", "CONFIRMATION", "TRANSACTION", "SUCCESSFUL", "TRANSFER", "INDIVIDUAL"}
     for t in tokens:
         if t not in ignored and any(c.isdigit() for c in t) and any(c.isalpha() for c in t):
             return t
 
-    # 3. ቁጥር ብቻ ከሆነ (ለምሳሌ የቴሌብር 10 አሃዝ ቁጥር የግብይት ቁጥር)
     num_matches = re.findall(r'\b(?:202\d{9,16}|100\d{8,14})\b', clean)
     if num_matches:
         return num_matches[0]
@@ -443,7 +692,6 @@ def get_player_play_keyboard(phone, referred_by=None):
         ]
     }
 
-# የሩም መለያ ስም ማጣሪያ (Room Normalizer)
 def normalize_room(room_str):
     if not room_str:
         return "10"
@@ -613,7 +861,6 @@ def set_bot_commands():
         except Exception as e:
             print(f"Error setting admin commands: {e}")
 
-# ሩም-ተኮር ብሮድካስት (Strict Room-isolated Broadcast with 0ms overhead)
 def broadcast_game_state(room_type):
     room_key = normalize_room(room_type)
     state = game_states[room_key]
@@ -658,23 +905,23 @@ def get_financial_stats():
     today_start = datetime(now.year, now.month, now.day)
     week_start = now - timedelta(days=7)
 
-    today_game_comm = list(transactions.aggregate([
+    today_game_comm = transactions.aggregate([
         {"$match": {"type": "game_commission", "timestamp": {"$gte": today_start}}},
         {"$group": {"_id": None, "total": {"$sum": "$amount"}}}
-    ]))
-    week_game_comm = list(transactions.aggregate([
+    ])
+    week_game_comm = transactions.aggregate([
         {"$match": {"type": "game_commission", "timestamp": {"$gte": week_start}}},
         {"$group": {"_id": None, "total": {"$sum": "$amount"}}}
-    ]))
+    ])
 
-    today_wit = list(transactions.aggregate([
+    today_wit = transactions.aggregate([
         {"$match": {"type": "withdrawal", "status": "approved", "timestamp": {"$gte": today_start}}},
         {"$group": {"_id": None, "total": {"$sum": "$amount"}}}
-    ]))
-    week_wit = list(transactions.aggregate([
+    ])
+    week_wit = transactions.aggregate([
         {"$match": {"type": "withdrawal", "status": "approved", "timestamp": {"$gte": week_start}}},
         {"$group": {"_id": None, "total": {"$sum": "$amount"}}}
-    ]))
+    ])
 
     t_comm = today_game_comm[0]["total"] if today_game_comm else 0.0
     w_comm = week_game_comm[0]["total"] if week_game_comm else 0.0
@@ -784,7 +1031,6 @@ def reset_game(room_type):
     })
     broadcast_game_state(room_type) 
 
-# መደበኛ የጨዋታ ሎፕ (Rooms: 10, 20, 50, 100, 200, 500)
 def run_game_loop(room_type):
     balls = [f"{'BINGO'[i//15]}{i+1}" for i in range(75)]
     global reset_task_references
@@ -865,7 +1111,6 @@ def run_game_loop(room_type):
             broadcast_game_state(room_type)
         socketio.sleep(1)
 
-# ሱፐር ጨዋታ ሎፕ (Super Game Loop - ራሱን ችሎ የሚሰራ)
 def super_game_loop():
     balls = [f"{'BINGO'[i//15]}{i+1}" for i in range(75)]
     global reset_task_references
@@ -1109,14 +1354,14 @@ def buy_ticket():
         return jsonify({"success": False, "msg": f"በቂ ባላንስ የለም! (የካርቴላ ዋጋ {price:,.2f} ETB ነው)"})
 
     res = wallets.find_one_and_update(
-        {"_id": user["_id"], "balance": {"$gte": price}}, 
+        {"id": user["id"], "balance": {"$gte": price}}, 
         {"$inc": {"balance": -float(price)}},
         return_document=True
     )
     if not res:
         new_b = max(0.0, cur_bal_raw - price)
-        wallets.update_one({"_id": user["_id"]}, {"$set": {"balance": new_b}})
-        res = wallets.find_one({"_id": user["_id"]})
+        wallets.update_one({"id": user["id"]}, {"$set": {"balance": new_b}})
+        res = wallets.find_one({"id": user["id"]})
         if not res:
             res = {"balance": new_b}
 
@@ -1169,7 +1414,7 @@ def cancel_ticket():
     db_phone = user["phone"]
 
     if state["sold_tickets"].get(t_num) == db_phone:
-        res = wallets.find_one_and_update({"_id": user["_id"]}, {"$inc": {"balance": price}}, return_document=True)
+        res = wallets.find_one_and_update({"id": user["id"]}, {"$inc": {"balance": price}}, return_document=True)
         state["pot"] -= price
         del state["sold_tickets"][t_num]
         state.get("all_cards", {}).pop(t_num, None)
@@ -1183,10 +1428,6 @@ def cancel_ticket():
         return jsonify({"success": True})
     return jsonify({"success": False})
 
-# =========================================================================
-# ULTRA-FAST, ZERO-LAG CLAIM BINGO HANDLER
-# Removes artificial delays, emits instant game_update in 0ms, and runs DB in background
-# =========================================================================
 @app.route('/claim_bingo', methods=['POST'])
 def claim_bingo():
     global claim_lock_active, pending_claims, reset_task_references
@@ -1200,7 +1441,6 @@ def claim_bingo():
     if state["status"] not in ["playing", "result"]:
         return jsonify({"success": False, "msg": "ጨዋታው በሂደት ላይ አይደለም!"})
 
-    # FAST IN-MEMORY PLAYER RESOLUTION (Avoids slow network DB queries during winning moment)
     clean_ph = format_phone_number(ph)
     db_phone = None
     if clean_ph in state["players"]:
@@ -1250,7 +1490,6 @@ def claim_bingo():
         if not valid_win_found:
             return jsonify({"success": False, "msg": "ቢንጎ ሙሉ በሙሉ አልሞላም (ሙሉ ዝግ ብቻ ነው የሚሰራው)!"})
     else:
-        # Check specific card if provided or scan player's cards
         target_ticket = str(d.get('ticket_num', ''))
         cards_to_test = {}
         if target_ticket and target_ticket in p_data["cards"]:
@@ -1283,7 +1522,6 @@ def claim_bingo():
 
     total_prize = state["pot"] * 0.8
 
-    # 1. IMMEDIATE STATE UPDATE & ZERO-LAG BROADCAST (No 0.2s sleep delay!)
     if state["status"] == "playing":
         claim_lock_active[room] = True
         state["status"] = "result"
@@ -1298,12 +1536,9 @@ def claim_bingo():
         state["winning_indices"] = claim_info["indices"]
         state["winning_line_name"] = claim_info["line_name"] 
 
-        # Broadcast instantly to every client over WebSockets in 0ms!
         broadcast_payload = broadcast_game_state(room)
 
-        # 2. RUN DB CREDITS & TELEGRAM NOTIFICATIONS ASYNCHRONOUSLY IN BACKGROUND
         def execute_background_payout(c_room, target_ball):
-            # Allow tight 350ms window to catch simultaneous claims for the same ball
             socketio.sleep(0.35)
 
             current_claims = pending_claims[c_room]
@@ -1369,7 +1604,6 @@ def claim_bingo():
 
         socketio.start_background_task(execute_background_payout, room, current_drawn_balls[-1])
 
-        # 3. COUNTDOWN AND NEXT ROUND TRANSITION
         def countdown_and_reset():
             global claim_lock_active, pending_claims
             c_state = game_states[room]
@@ -1401,7 +1635,6 @@ def claim_bingo():
 
     return jsonify({"success": True, "winner_payload": None})
 
-# የትራንስፈር ዋና ማከናወኛ (Transfer Logic)
 def process_user_transfer(chat_id, sender_phone, sender_wallet, target_phone_input, amount_input):
     try:
         amt_val = float(amount_input)
@@ -1450,7 +1683,7 @@ def process_user_transfer(chat_id, sender_phone, sender_wallet, target_phone_inp
     rec_chat_id = rec_wallet.get("chat_id")
 
     debit_res = wallets.find_one_and_update(
-        {"_id": sender_wallet["_id"], "balance": {"$gte": amt_val}},
+        {"id": sender_wallet["id"], "balance": {"$gte": amt_val}},
         {"$inc": {"balance": -amt_val}},
         return_document=True
     )
@@ -1459,7 +1692,7 @@ def process_user_transfer(chat_id, sender_phone, sender_wallet, target_phone_inp
         return False
 
     credit_res = wallets.find_one_and_update(
-        {"_id": rec_wallet["_id"]},
+        {"id": rec_wallet["id"]},
         {"$inc": {"balance": amt_val}},
         return_document=True
     )
@@ -1516,7 +1749,6 @@ def webhook():
                 upsert=False
             )
         
-        # 1. ተጠቃሚው ስልክ ቁጥሩን በ Contact Sharing ሲያጋራ
         if "contact" in msg:
             contact = msg["contact"]
             raw_phone = contact.get("phone_number", "")
@@ -1565,7 +1797,6 @@ def webhook():
             send_telegram_user(chat_id, "🕹 *PLAY IN:*\nጨዋታ ለመጀመር ከታች ካሉት ክፍሎች አንዱን ይምረጡ፦", reply_markup=play_keyboard)
             return "OK", 200
 
-        # የአድሚን ስቴት አያያዝ
         if chat_id == str(ADMIN_ID):
             state = admin_state.find_one({"chat_id": chat_id})
             
@@ -1708,7 +1939,7 @@ def webhook():
                         if tx_type in ["deposit", "withdrawal"]:
                             query["type"] = tx_type
 
-                        user_txs = list(transactions.find(query).sort("timestamp", -1))
+                        user_txs = list(transactions.find(query, sort=[("timestamp", -1)]))
                         
                         if not user_txs:
                             send_telegram(f"📭 ከተጠቀሰው ቀን ({start_date_str} እስከ {end_date_str}) እና ዓይነት ({tx_type}) ጋር የሚዛመድ ታሪክ አልተገኘም።")
@@ -1730,7 +1961,6 @@ def webhook():
                     send_telegram("❌ ትክክለኛ መረጃ አላስገቡም። እባክዎ እንደገና ይሞክሩ:\n`2026-10-01 2026-10-07 deposit`")
                 return "OK", 200
 
-        # የተጠቃሚ ስቴት አያያዝ
         u_state = user_state.find_one({"chat_id": chat_id})
         
         if u_state and u_state.get("action") == "awaiting_transfer_input":
@@ -1756,7 +1986,6 @@ def webhook():
                     )
                 return "OK", 200
 
-        # 1. ዴፖዚት የ SMS ማስገቢያ ፍሰት (ከ Transaction ID ፍተሻ እና ተደጋጋሚነት መከላከያ ጋር)
         if u_state and u_state.get("action") == "awaiting_deposit_sms":
             if text.startswith("/"):
                 user_state.delete_one({"chat_id": chat_id})
@@ -1791,7 +2020,6 @@ def webhook():
                     send_telegram_user(chat_id, err_msg)
                     return "OK", 200
 
-                # ★★★ የ TRANSACTION ID ፍተሻ (Duplicate Check) ★★★
                 extracted_txn_id = extract_transaction_id(text)
                 clean_sms_body = text.strip()
 
@@ -1869,7 +2097,6 @@ def webhook():
                 send_telegram(admin_notif, reply_markup=admin_kb)
                 return "OK", 200
 
-        # 2. ዊዝድሮዋል መረጃ ማስገቢያ ፍሰት
         if u_state and u_state.get("action") == "awaiting_withdraw_details":
             if text.startswith("/"):
                 user_state.delete_one({"chat_id": chat_id})
@@ -1947,7 +2174,7 @@ def webhook():
                     return "OK", 200
 
                 deducted_user = wallets.find_one_and_update(
-                    {"_id": user_wallet["_id"], "balance": {"$gte": w_amount}},
+                    {"id": user_wallet["id"], "balance": {"$gte": w_amount}},
                     {"$inc": {"balance": -w_amount}},
                     return_document=True
                 )
@@ -2010,7 +2237,6 @@ def webhook():
                 send_telegram(admin_wit_msg, reply_markup=admin_wit_kb)
                 return "OK", 200
 
-        # /deposit ትዕዛዝ
         if text.lower() == "/deposit":
             user_wallet, user_phone = get_user_wallet_and_phone(chat_id)
             if not user_phone:
@@ -2049,7 +2275,6 @@ def webhook():
             send_telegram_user(chat_id, msg_text, reply_markup=dep_keyboard)
             return "OK", 200
 
-        # /withdraw ትዕዛዝ
         if text.lower() == "/withdraw":
             user_wallet, user_phone = get_user_wallet_and_phone(chat_id)
             if not user_phone:
@@ -2088,7 +2313,6 @@ def webhook():
             send_telegram_user(chat_id, msg_text, reply_markup=wit_keyboard)
             return "OK", 200
 
-        # 3. ትራንስፈር (Transfer / P2P)
         if text.lower().startswith("/transfer"):
             user_wallet, user_phone = get_user_wallet_and_phone(chat_id)
             if not user_wallet or not user_phone:
@@ -2165,7 +2389,7 @@ def webhook():
             user_txs = list(transactions.find({
                 "$or": [{"phone": u_phone}, {"receiver_phone": u_phone}],
                 "timestamp": {"$gte": since_24h}
-            }).sort("timestamp", -1))
+            }, sort=[("timestamp", -1)]))
 
             if not user_txs:
                 send_telegram_user(chat_id, "📭 ባለፉት 24 ሰአታት ውስጥ ምንም አይነት የትራንዛክሽን ታሪክ የለዎትም።")
@@ -2187,7 +2411,6 @@ def webhook():
                 send_telegram("📢 እባክዎ ለሁሉም ተጠቃሚዎች ማስተላለፍ የሚፈልጉትን **ፎቶ ብቻ** (ካፕሽን ሳይጨምሩ) ወይም ጽሑፍ አሁን ይላኩ፦")
             return "OK", 200
 
-        # የአድሚን ትዕዛዞች
         if chat_id == str(ADMIN_ID):
             parts = text.split()
             cmd = parts[0] if parts else ""
@@ -2228,12 +2451,12 @@ def webhook():
                 return "OK", 200
 
             elif cmd == "/pending":
-                pendings = list(transactions.find({"status": "pending"}).limit(10))
+                pendings = list(transactions.find({"status": "pending"}, limit=10))
                 if not pendings:
                     send_telegram("✅ በአሁኑ ወቅት ምንም የሚጠብቅ የዲፖዚትም ሆነ የዊዝድሮዋል ጥያቄ የለም!")
                 else:
                     for p in pendings:
-                        p_id = str(p.get("_id"))
+                        p_id = str(p.get("id"))
                         p_type = p.get("type", "deposit").upper()
                         p_ph = p.get("phone")
                         p_amt = p.get("amount", 0)
@@ -2408,7 +2631,6 @@ def webhook():
             send_telegram_user(chat_id, rules_msg)
             return "OK", 200
 
-        # ተጠቃሚው የዲፖዚት መንገድ ሲመርጥ
         if data_str in ["user_select_tele_dep", "user_select_cbe_dep"]:
             u_doc, u_ph = get_user_wallet_and_phone(chat_id)
             if not u_ph:
@@ -2458,7 +2680,6 @@ def webhook():
             requests.post(answer_url, json={"callback_query_id": cq_id})
             return "OK", 200
 
-        # ተጠቃሚው የዊዝድሮዋል መንገድ ሲመርጥ
         if data_str in ["user_select_tele_wit", "user_select_cbe_wit"]:
             u_doc, u_ph = get_user_wallet_and_phone(chat_id)
             if not u_ph:
@@ -2496,7 +2717,6 @@ def webhook():
             requests.post(answer_url, json={"callback_query_id": cq_id})
             return "OK", 200
 
-        # የአድሚን Action Handlers
         if chat_id == str(ADMIN_ID):
             now_action_str = (datetime.utcnow() + timedelta(hours=3)).strftime("%Y-%m-%d %H:%M:%S")
 
@@ -2533,13 +2753,13 @@ def webhook():
                 return "OK", 200
 
             elif data_str == "admin_pending_req":
-                pendings = list(transactions.find({"status": "pending"}).limit(10))
+                pendings = list(transactions.find({"status": "pending"}, limit=10))
                 if not pendings:
                     requests.post(answer_url, json={"callback_query_id": cq_id, "text": "ምንም የሚጠብቅ ጥያቄ የለም!", "show_alert": True})
                 else:
                     requests.post(answer_url, json={"callback_query_id": cq_id, "text": f"{len(pendings)} ጥያቄዎች ተገኝተዋል"})
                     for p in pendings:
-                        p_id = str(p.get("_id"))
+                        p_id = str(p.get("id"))
                         p_type = p.get("type", "deposit").upper()
                         p_ph = p.get("phone")
                         p_amt = p.get("amount", 0)
@@ -2564,7 +2784,7 @@ def webhook():
 
             elif data_str == "admin_show_all_bal":
                 requests.post(answer_url, json={"callback_query_id": cq_id, "text": "የተጠቃሚዎች ዝርዝር እየተዘጋጀ ነው..."})
-                all_wallets = list(wallets.find().sort("balance", -1).limit(25))
+                all_wallets = list(wallets.find(sort=[("balance", -1)], limit=25))
                 total_sys_bal = sum([w.get("balance", 0) for w in wallets.find()])
                 total_users = wallets.count_documents({})
 
@@ -2608,11 +2828,11 @@ def webhook():
                 if "today" in data_str:
                     start_dt = datetime(now.year, now.month, now.day)
                     tx_type = "deposit" if "dep" in data_str else "withdrawal"
-                    txs = list(transactions.find({"type": tx_type, "timestamp": {"$gte": start_dt}}).sort("timestamp", -1).limit(15))
+                    txs = list(transactions.find({"type": tx_type, "timestamp": {"$gte": start_dt}}, sort=[("timestamp", -1)], limit=15))
                     title = f"የዛሬ {tx_type.upper()}"
                 else:
                     start_dt = now - timedelta(days=7)
-                    txs = list(transactions.find({"timestamp": {"$gte": start_dt}}).sort("timestamp", -1).limit(15))
+                    txs = list(transactions.find({"timestamp": {"$gte": start_dt}}, sort=[("timestamp", -1)], limit=15))
                     title = "የባለፉት 7 ቀናት ሁሉም"
 
                 if not txs:
@@ -2674,7 +2894,7 @@ def webhook():
                 amt = float(parts[4])
                 
                 tx_updated = transactions.find_one_and_update(
-                    {"_id": ObjectId(tx_id_str), "status": "pending"},
+                    {"id": tx_id_str, "status": "pending"},
                     {"$set": {"status": "approved", "processed_at": datetime.utcnow()}}
                 )
                 if tx_updated:
@@ -2717,7 +2937,7 @@ def webhook():
                 phone_num = format_phone_number(parts[3])
                 
                 tx_updated = transactions.find_one_and_update(
-                    {"_id": ObjectId(tx_id_str), "status": "pending"},
+                    {"id": tx_id_str, "status": "pending"},
                     {"$set": {"status": "rejected", "processed_at": datetime.utcnow()}}
                 )
                 if tx_updated:
@@ -2746,7 +2966,7 @@ def webhook():
                 amt = float(parts[4])
 
                 tx_updated = transactions.find_one_and_update(
-                    {"_id": ObjectId(tx_id_str), "status": "pending"},
+                    {"id": tx_id_str, "status": "pending"},
                     {"$set": {"status": "approved", "processed_at": datetime.utcnow()}}
                 )
                 if tx_updated:
@@ -2781,7 +3001,7 @@ def webhook():
                 amt = float(parts[4])
 
                 tx_updated = transactions.find_one_and_update(
-                    {"_id": ObjectId(tx_id_str), "status": "pending"},
+                    {"id": tx_id_str, "status": "pending"},
                     {"$set": {"status": "rejected", "processed_at": datetime.utcnow()}}
                 )
                 if tx_updated:
